@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phonecodex.app/evals/dataset-case.schema.json",
+  "title": "PhoneCodexEvalCase",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "packageName",
+    "appLabel",
+    "screenText",
+    "userGoal",
+    "strictnessLevel",
+    "activeGuardrails",
+    "expectedDecision",
+    "expectedReasonCategory",
+    "notes"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Stable slug for the eval case."
+    },
+    "packageName": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Android package name for the foreground app."
+    },
+    "appLabel": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable app label shown in prompts."
+    },
+    "screenText": {
+      "type": "string",
+      "description": "Simulated accessibility tree / on-screen text preview."
+    },
+    "screenshotPath": {
+      "type": "string",
+      "description": "Optional relative path to a screenshot fixture for vision evals."
+    },
+    "userGoal": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Active user promise / commitment for this session or guardrail."
+    },
+    "strictnessLevel": {
+      "type": "string",
+      "enum": ["SOFT", "SMART", "STRICT", "LOCKED"]
+    },
+    "activeGuardrails": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Enabled permanent guardrail ids (e.g. no_adult_content)."
+    },
+    "commitmentType": {
+      "type": "string",
+      "enum": [
+        "focus_session",
+        "quota_entertainment",
+        "time_threshold",
+        "permanent_guardrail",
+        "monk_mode",
+        "install_gate",
+        "emergency_override"
+      ],
+      "description": "What kind of promise governs this case."
+    },
+    "sessionCounters": {
+      "type": "object",
+      "description": "Optional session counters influencing limit decisions.",
+      "properties": {
+        "shortsWatched": { "type": "integer", "minimum": 0 },
+        "shortsLimit": { "type": "integer", "minimum": 0 },
+        "reelsWatched": { "type": "integer", "minimum": 0 },
+        "reelsLimit": { "type": "integer", "minimum": 0 },
+        "sessionMinutes": { "type": "integer", "minimum": 0 },
+        "warnAfterMinutes": { "type": "integer", "minimum": 0 },
+        "blockAfterMinutes": { "type": "integer", "minimum": 0 },
+        "attemptCount": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": true
+    },
+    "limitState": {
+      "type": "string",
+      "enum": ["not_reached", "reached", "n/a"],
+      "description": "Whether a quota or time threshold has been hit."
+    },
+    "expectedDecision": {
+      "type": "string",
+      "enum": ["ALLOW", "WARN", "BLOCK", "LOCK"]
+    },
+    "expectedReasonCategory": {
+      "type": "string",
+      "enum": [
+        "study_aligned",
+        "user_allowed_entertainment",
+        "limit_not_reached",
+        "limit_reached",
+        "adult_content",
+        "short_form_disallowed",
+        "strict_monk_mode",
+        "install_disallowed",
+        "tamper_attempt",
+        "ambiguous",
+        "safe_app",
+        "emergency_or_system",
+        "neutral_navigation",
+        "social_feed",
+        "gaming",
+        "shopping",
+        "install_page_productivity"
+      ]
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}

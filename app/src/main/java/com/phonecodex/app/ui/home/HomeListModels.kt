@@ -1,0 +1,104 @@
+package com.phonecodex.app.ui.home
+
+import androidx.compose.runtime.Immutable
+import com.phonecodex.app.domain.model.InstalledApp
+
+/**
+ * One row in the home LazyColumn. Building a list of these (instead of one giant Column)
+ * lets Compose compose only on-screen sections.
+ */
+@Immutable
+internal sealed class HomeListItem(val id: String) {
+    data object Header : HomeListItem("header")
+    data object ProtectionSetup : HomeListItem("protection_setup")
+    data object ActiveCommitment : HomeListItem("active_commitment")
+    data object PromiseComposer : HomeListItem("promise_composer")
+    data object PromiseUnderstanding : HomeListItem("promise_understanding")
+    data object AdvancedToggle : HomeListItem("advanced_toggle")
+
+    data object AdvancedIntro : HomeListItem("adv_intro")
+    data object AdvancedSessionTuning : HomeListItem("adv_tuning")
+    data object AdvancedPermanentCommitments : HomeListItem("adv_permanent")
+    data object AdvancedProtectionHealth : HomeListItem("adv_protection")
+    data object AdvancedActiveSession : HomeListItem("adv_session")
+    data object AdvancedRecoveryPolicy : HomeListItem("adv_recovery")
+    data object AdvancedAppRules : HomeListItem("adv_app_rules")
+    data object AdvancedSafeApps : HomeListItem("adv_safe_apps")
+    data object AdvancedEvents : HomeListItem("adv_events")
+    data object AdvancedDebug : HomeListItem("adv_debug")
+    data object AdvancedFeedback : HomeListItem("adv_feedback")
+    data object BottomSpacer : HomeListItem("bottom_spacer")
+}
+
+/**
+ * Builds the visible home list from lightweight flags. Pure function — no I/O.
+ */
+internal fun buildHomeListItems(
+    isAccessibilityEnabled: Boolean,
+    hasStoredSession: Boolean,
+    hasPromiseUnderstanding: Boolean,
+    showAdvancedControls: Boolean
+): List<HomeListItem> {
+    val items = ArrayList<HomeListItem>(20)
+    items += HomeListItem.Header
+    if (!isAccessibilityEnabled) {
+        items += HomeListItem.ProtectionSetup
+    }
+    if (hasStoredSession) {
+        items += HomeListItem.ActiveCommitment
+    } else {
+        items += HomeListItem.PromiseComposer
+        if (hasPromiseUnderstanding) {
+            items += HomeListItem.PromiseUnderstanding
+        }
+    }
+    items += HomeListItem.AdvancedToggle
+    if (showAdvancedControls) {
+        items += HomeListItem.AdvancedIntro
+        items += HomeListItem.AdvancedSessionTuning
+        items += HomeListItem.AdvancedPermanentCommitments
+        items += HomeListItem.AdvancedProtectionHealth
+        if (hasStoredSession) {
+            items += HomeListItem.AdvancedActiveSession
+        }
+        items += HomeListItem.AdvancedRecoveryPolicy
+        items += HomeListItem.AdvancedAppRules
+        items += HomeListItem.AdvancedSafeApps
+        items += HomeListItem.AdvancedEvents
+        items += HomeListItem.AdvancedDebug
+        items += HomeListItem.AdvancedFeedback
+    }
+    items += HomeListItem.BottomSpacer
+    return items
+}
+
+/**
+ * Cached filtering for installed-app pickers. Call from remember() / derivedStateOf, never
+ * recompute on every scroll frame.
+ */
+internal fun filterInstalledApps(
+    installedApps: List<InstalledApp>,
+    excludedPackages: Set<String>,
+    searchQuery: String,
+    limit: Int = MAX_VISIBLE_INSTALLED_APPS
+): FilteredInstalledApps {
+    val query = searchQuery.trim().lowercase()
+    val matching = installedApps.asSequence()
+        .filter { app -> app.packageName !in excludedPackages }
+        .filter { app ->
+            query.isEmpty() ||
+                app.label.lowercase().contains(query) ||
+                app.packageName.lowercase().contains(query)
+        }
+        .toList()
+    return FilteredInstalledApps(
+        visible = matching.take(limit),
+        totalMatching = matching.size
+    )
+}
+
+@Immutable
+internal data class FilteredInstalledApps(
+    val visible: List<InstalledApp>,
+    val totalMatching: Int
+)

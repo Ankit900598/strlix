@@ -1,0 +1,13 @@
+{
+  "sku": {
+    "name": "GlobalStandard",
+    "capacity": 1
+  },
+  "properties": {
+    "model": {
+      "format": "OpenAI",
+      "name": "gpt-5.4",
+      "version": "2026-03-05"
+    }
+  }
+}

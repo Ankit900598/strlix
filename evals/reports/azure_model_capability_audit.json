@@ -1,0 +1,1853 @@
+{
+  "account": "ay186mnc-1561-resource",
+  "region": "westus3",
+  "total_entries": 139,
+  "models": [
+    {
+      "name": "claude-haiku-4-5",
+      "version": "2",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "claude",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "claude-haiku-4-5",
+      "version": "20251001",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "claude",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "claude-opus-4-5",
+      "version": "20251101",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "claude",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "claude-opus-4-6",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "claude",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "claude-opus-4-7",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "claude",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "claude-opus-4-8",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "claude",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "claude-opus-4-8",
+      "version": "2",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard"
+      ],
+      "category": "claude",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": false
+    },
+    {
+      "name": "claude-opus-5",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "claude",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "claude-opus-5",
+      "version": "2",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard"
+      ],
+      "category": "claude",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": false
+    },
+    {
+      "name": "claude-sonnet-4-5",
+      "version": "20250929",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "claude",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "claude-sonnet-4-6",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "claude",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "claude-sonnet-5",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "claude",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "claude-sonnet-5",
+      "version": "2",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard"
+      ],
+      "category": "claude",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": false
+    },
+    {
+      "name": "Cohere-embed-v3-english",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "embedding",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Cohere-embed-v3-multilingual",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "embedding",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "embed-v-4-0",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "embedding",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "text-embedding-3-large",
+      "version": "1",
+      "skus": [
+        "Standard",
+        "GlobalStandard",
+        "DataZoneStandard"
+      ],
+      "category": "embedding",
+      "has_standard": true,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": false
+    },
+    {
+      "name": "text-embedding-3-small",
+      "version": "1",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard"
+      ],
+      "category": "embedding",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": false
+    },
+    {
+      "name": "text-embedding-ada-002",
+      "version": "2",
+      "skus": [
+        "Standard",
+        "GlobalStandard",
+        "DataZoneStandard"
+      ],
+      "category": "embedding",
+      "has_standard": true,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": false
+    },
+    {
+      "name": "gpt-4.1",
+      "version": "2025-04-14",
+      "skus": [
+        "Standard",
+        "GlobalStandard",
+        "DataZoneStandard",
+        "ProvisionedManaged",
+        "DataZoneProvisionedManaged",
+        "GlobalProvisionedManaged",
+        "GlobalStandard",
+        "DeveloperTier",
+        "GlobalBatch",
+        "DataZoneBatch"
+      ],
+      "category": "openai_chat",
+      "has_standard": true,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": true
+    },
+    {
+      "name": "gpt-4.1-mini",
+      "version": "2025-04-14",
+      "skus": [
+        "Standard",
+        "GlobalStandard",
+        "DataZoneStandard",
+        "GlobalStandard",
+        "DataZoneStandard",
+        "DeveloperTier",
+        "GlobalProvisionedManaged",
+        "ProvisionedManaged",
+        "DataZoneProvisionedManaged",
+        "GlobalBatch",
+        "DataZoneBatch"
+      ],
+      "category": "openai_chat",
+      "has_standard": true,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": true
+    },
+    {
+      "name": "gpt-4.1-nano",
+      "version": "2025-04-14",
+      "skus": [
+        "GlobalStandard",
+        "GlobalStandard",
+        "DataZoneStandard",
+        "DeveloperTier",
+        "DataZoneStandard",
+        "DataZoneProvisionedManaged",
+        "GlobalProvisionedManaged",
+        "ProvisionedManaged",
+        "GlobalBatch",
+        "DataZoneBatch"
+      ],
+      "category": "openai_chat",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": true
+    },
+    {
+      "name": "gpt-6-astra",
+      "version": "2026-09-03",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard",
+        "GlobalProvisionedManaged",
+        "DataZoneProvisionedManaged"
+      ],
+      "category": "openai_chat",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": true
+    },
+    {
+      "name": "gpt-chat-latest",
+      "version": "2026-05-05",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "openai_chat",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "gpt-chat-latest",
+      "version": "2026-05-28",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "openai_chat",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "gpt-chat-latest",
+      "version": "2026-06-24",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "openai_chat",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "gpt-chat-latest",
+      "version": "2026-08-06",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "openai_chat",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "gpt-image-1",
+      "version": "2025-04-15",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "openai_chat",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "gpt-image-1-mini",
+      "version": "2025-10-06",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "openai_chat",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "gpt-image-1.5",
+      "version": "2025-12-16",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard"
+      ],
+      "category": "openai_chat",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": false
+    },
+    {
+      "name": "gpt-image-2",
+      "version": "2026-04-21",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "openai_chat",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "gpt-oss-120b",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "openai_chat",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "gpt-oss-20b",
+      "version": "11",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard"
+      ],
+      "category": "openai_chat",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": false
+    },
+    {
+      "name": "gpt-5",
+      "version": "2025-08-07",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard",
+        "ProvisionedManaged",
+        "DataZoneProvisionedManaged",
+        "GlobalProvisionedManaged",
+        "GlobalBatch",
+        "DataZoneBatch"
+      ],
+      "category": "openai_reasoning",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": true
+    },
+    {
+      "name": "gpt-5-codex",
+      "version": "2025-09-15",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "openai_reasoning",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "gpt-5-mini",
+      "version": "2025-08-07",
+      "skus": [
+        "GlobalStandard",
+        "ProvisionedManaged",
+        "DataZoneProvisionedManaged",
+        "GlobalProvisionedManaged",
+        "DataZoneStandard"
+      ],
+      "category": "openai_reasoning",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": true
+    },
+    {
+      "name": "gpt-5-nano",
+      "version": "2025-08-07",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard"
+      ],
+      "category": "openai_reasoning",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": false
+    },
+    {
+      "name": "gpt-5-pro",
+      "version": "2025-10-06",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "openai_reasoning",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "gpt-5.1",
+      "version": "2025-11-13",
+      "skus": [
+        "Standard",
+        "GlobalStandard",
+        "DataZoneStandard",
+        "ProvisionedManaged",
+        "DataZoneProvisionedManaged",
+        "GlobalProvisionedManaged",
+        "GlobalBatch",
+        "DataZoneBatch"
+      ],
+      "category": "openai_reasoning",
+      "has_standard": true,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": true
+    },
+    {
+      "name": "gpt-5.1-chat",
+      "version": "2025-11-13",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "openai_reasoning",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "gpt-5.1-codex",
+      "version": "2025-11-13",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneProvisionedManaged",
+        "GlobalProvisionedManaged"
+      ],
+      "category": "openai_reasoning",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": true
+    },
+    {
+      "name": "gpt-5.1-codex-max",
+      "version": "2025-12-04",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "openai_reasoning",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "gpt-5.1-codex-mini",
+      "version": "2025-11-13",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "openai_reasoning",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "gpt-5.2",
+      "version": "2025-12-11",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard",
+        "ProvisionedManaged",
+        "DataZoneProvisionedManaged",
+        "GlobalProvisionedManaged"
+      ],
+      "category": "openai_reasoning",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": true
+    },
+    {
+      "name": "gpt-5.2-chat",
+      "version": "2025-12-11",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "openai_reasoning",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "gpt-5.2-chat",
+      "version": "2026-02-10",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "openai_reasoning",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "gpt-5.2-codex",
+      "version": "2026-01-14",
+      "skus": [
+        "GlobalStandard",
+        "GlobalProvisionedManaged"
+      ],
+      "category": "openai_reasoning",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": true
+    },
+    {
+      "name": "gpt-5.3-chat",
+      "version": "2026-03-03",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "openai_reasoning",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "gpt-5.3-codex",
+      "version": "2026-02-24",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard",
+        "GlobalProvisionedManaged"
+      ],
+      "category": "openai_reasoning",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": true
+    },
+    {
+      "name": "gpt-5.4",
+      "version": "2026-03-05",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard",
+        "ProvisionedManaged",
+        "DataZoneProvisionedManaged",
+        "GlobalProvisionedManaged",
+        "GlobalBatch",
+        "DataZoneBatch"
+      ],
+      "category": "openai_reasoning",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": true
+    },
+    {
+      "name": "gpt-5.4-mini",
+      "version": "2026-03-17",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard",
+        "ProvisionedManaged",
+        "DataZoneProvisionedManaged",
+        "GlobalProvisionedManaged",
+        "GlobalBatch",
+        "DataZoneBatch"
+      ],
+      "category": "openai_reasoning",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": true
+    },
+    {
+      "name": "gpt-5.4-nano",
+      "version": "2026-03-17",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard"
+      ],
+      "category": "openai_reasoning",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": false
+    },
+    {
+      "name": "gpt-5.4-pro",
+      "version": "2026-03-05",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "openai_reasoning",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "gpt-5.5",
+      "version": "2026-04-24",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard",
+        "DataZoneProvisionedManaged",
+        "GlobalProvisionedManaged"
+      ],
+      "category": "openai_reasoning",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": true
+    },
+    {
+      "name": "gpt-5.6-luna",
+      "version": "2026-07-09",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard",
+        "GlobalProvisionedManaged",
+        "DataZoneProvisionedManaged"
+      ],
+      "category": "openai_reasoning",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": true
+    },
+    {
+      "name": "gpt-5.6-sol",
+      "version": "2026-07-09",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard",
+        "GlobalProvisionedManaged",
+        "DataZoneProvisionedManaged"
+      ],
+      "category": "openai_reasoning",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": true
+    },
+    {
+      "name": "gpt-5.6-terra",
+      "version": "2026-07-09",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard",
+        "GlobalProvisionedManaged",
+        "DataZoneProvisionedManaged"
+      ],
+      "category": "openai_reasoning",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": true
+    },
+    {
+      "name": "o1",
+      "version": "2024-12-17",
+      "skus": [
+        "Standard",
+        "GlobalStandard",
+        "DataZoneStandard",
+        "GlobalProvisionedManaged",
+        "DataZoneProvisionedManaged",
+        "ProvisionedManaged"
+      ],
+      "category": "openai_reasoning",
+      "has_standard": true,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": true
+    },
+    {
+      "name": "o3",
+      "version": "2025-04-16",
+      "skus": [
+        "GlobalStandard",
+        "ProvisionedManaged",
+        "GlobalProvisionedManaged",
+        "DataZoneProvisionedManaged",
+        "GlobalBatch",
+        "DataZoneStandard",
+        "DataZoneBatch"
+      ],
+      "category": "openai_reasoning",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": true
+    },
+    {
+      "name": "o3-mini",
+      "version": "2025-01-31",
+      "skus": [
+        "GlobalStandard",
+        "GlobalBatch",
+        "DataZoneBatch",
+        "DataZoneStandard",
+        "GlobalProvisionedManaged",
+        "DataZoneProvisionedManaged"
+      ],
+      "category": "openai_reasoning",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": true
+    },
+    {
+      "name": "o4-mini",
+      "version": "2025-04-16",
+      "skus": [
+        "Standard",
+        "GlobalStandard",
+        "GlobalStandard",
+        "DataZoneStandard",
+        "DeveloperTier",
+        "ProvisionedManaged",
+        "DataZoneProvisionedManaged",
+        "GlobalProvisionedManaged",
+        "GlobalBatch",
+        "DataZoneBatch",
+        "DataZoneStandard"
+      ],
+      "category": "openai_reasoning",
+      "has_standard": true,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": true
+    },
+    {
+      "name": "Llama-3.2-11B-Vision-Instruct",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "openai_vision",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Llama-3.2-11B-Vision-Instruct",
+      "version": "2",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "openai_vision",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Llama-3.2-90B-Vision-Instruct",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "openai_vision",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Llama-3.2-90B-Vision-Instruct",
+      "version": "2",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "openai_vision",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Llama-3.2-90B-Vision-Instruct",
+      "version": "3",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "openai_vision",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "gpt-4o",
+      "version": "2024-05-13",
+      "skus": [
+        "Standard",
+        "GlobalStandard",
+        "ProvisionedManaged",
+        "GlobalBatch",
+        "DataZoneStandard",
+        "DataZoneProvisionedManaged",
+        "GlobalProvisionedManaged"
+      ],
+      "category": "openai_vision",
+      "has_standard": true,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": true
+    },
+    {
+      "name": "gpt-4o",
+      "version": "2024-08-06",
+      "skus": [
+        "Standard",
+        "GlobalStandard",
+        "ProvisionedManaged",
+        "GlobalProvisionedManaged",
+        "GlobalStandard",
+        "DataZoneStandard",
+        "GlobalBatch",
+        "DataZoneStandard",
+        "DataZoneProvisionedManaged",
+        "DataZoneBatch"
+      ],
+      "category": "openai_vision",
+      "has_standard": true,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": true
+    },
+    {
+      "name": "gpt-4o",
+      "version": "2024-11-20",
+      "skus": [
+        "Standard",
+        "ProvisionedManaged",
+        "DataZoneStandard",
+        "GlobalStandard",
+        "DataZoneBatch",
+        "GlobalBatch",
+        "GlobalProvisionedManaged",
+        "DataZoneProvisionedManaged"
+      ],
+      "category": "openai_vision",
+      "has_standard": true,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": true
+    },
+    {
+      "name": "gpt-4o-mini",
+      "version": "2024-07-18",
+      "skus": [
+        "Standard",
+        "GlobalStandard",
+        "GlobalBatch",
+        "ProvisionedManaged",
+        "GlobalStandard",
+        "DataZoneStandard",
+        "GlobalProvisionedManaged",
+        "DataZoneStandard",
+        "DataZoneProvisionedManaged",
+        "DataZoneBatch"
+      ],
+      "category": "openai_vision",
+      "has_standard": true,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": true
+    },
+    {
+      "name": "Codestral-2501",
+      "version": "2",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Cohere-command-a-plus-05-2026",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Cohere-parse-v5",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Cohere-rerank-v4.0-fast",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Cohere-rerank-v4.0-pro",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "DeepSeek-R1",
+      "version": "1",
+      "skus": [
+        "GlobalStandard",
+        "GlobalProvisionedManaged"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": true
+    },
+    {
+      "name": "DeepSeek-R1-0528",
+      "version": "1",
+      "skus": [
+        "GlobalStandard",
+        "GlobalProvisionedManaged"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": true
+    },
+    {
+      "name": "DeepSeek-V3-0324",
+      "version": "1",
+      "skus": [
+        "GlobalStandard",
+        "GlobalProvisionedManaged"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": true
+    },
+    {
+      "name": "DeepSeek-V3.1",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "DeepSeek-V3.2",
+      "version": "1",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneProvisionedManaged",
+        "GlobalProvisionedManaged"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": true
+    },
+    {
+      "name": "DeepSeek-V3.2-Speciale",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "DeepSeek-V4-Flash",
+      "version": "2026-04-23",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": false
+    },
+    {
+      "name": "DeepSeek-V4-Flash-0731",
+      "version": "2026-07-31",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "DeepSeek-V4-Pro",
+      "version": "2026-04-23",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": false
+    },
+    {
+      "name": "FLUX-1.1-pro",
+      "version": "1",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": false
+    },
+    {
+      "name": "FLUX.1-Kontext-pro",
+      "version": "1",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": false
+    },
+    {
+      "name": "FLUX.2-flex",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "FLUX.2-pro",
+      "version": "1",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": false
+    },
+    {
+      "name": "Kimi-K2.5",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Kimi-K2.6",
+      "version": "2026-04-20",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Kimi-K2.7-Code",
+      "version": "2026-06-12",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Llama-3.3-70B-Instruct",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Llama-3.3-70B-Instruct",
+      "version": "2",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Llama-3.3-70B-Instruct",
+      "version": "3",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Llama-3.3-70B-Instruct",
+      "version": "4",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Llama-3.3-70B-Instruct",
+      "version": "5",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Llama-3.3-70B-Instruct",
+      "version": "9",
+      "skus": [
+        "GlobalStandard",
+        "GlobalStandard",
+        "DataZoneStandard",
+        "DataZoneProvisionedManaged",
+        "GlobalProvisionedManaged"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": true
+    },
+    {
+      "name": "Llama-4-Maverick-17B-128E-Instruct-FP8",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Llama-4-Scout-17B-16E-Instruct",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "MAI-Thinking-1",
+      "version": "2026-06-01",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Meta-Llama-3.1-405B-Instruct",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Meta-Llama-3.1-8B-Instruct",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Meta-Llama-3.1-8B-Instruct",
+      "version": "2",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Meta-Llama-3.1-8B-Instruct",
+      "version": "3",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Meta-Llama-3.1-8B-Instruct",
+      "version": "4",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Meta-Llama-3.1-8B-Instruct",
+      "version": "5",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Ministral-3B",
+      "version": "1",
+      "skus": [
+        "GlobalStandard",
+        "GlobalStandard",
+        "DataZoneStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": false
+    },
+    {
+      "name": "Mistral-Large-3",
+      "version": "1",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": false
+    },
+    {
+      "name": "Mistral-large",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Phi-4",
+      "version": "2",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Phi-4",
+      "version": "3",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Phi-4",
+      "version": "4",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Phi-4",
+      "version": "5",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Phi-4",
+      "version": "6",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Phi-4",
+      "version": "7",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Phi-4-mini-instruct",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Phi-4-mini-reasoning",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Phi-4-multimodal-instruct",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "Phi-4-reasoning",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "cohere-command-a",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "grok-4-1-fast-non-reasoning",
+      "version": "1",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": false
+    },
+    {
+      "name": "grok-4-1-fast-reasoning",
+      "version": "1",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": false
+    },
+    {
+      "name": "grok-4-20-non-reasoning",
+      "version": "1",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": false
+    },
+    {
+      "name": "grok-4-20-reasoning",
+      "version": "1",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": false
+    },
+    {
+      "name": "grok-4.3",
+      "version": "1",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": false
+    },
+    {
+      "name": "grok-4.6",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "mistral-document-ai-2505",
+      "version": "1",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": false
+    },
+    {
+      "name": "mistral-document-ai-2512",
+      "version": "1",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": false
+    },
+    {
+      "name": "mistral-medium-2505",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "mistral-medium-3-5",
+      "version": "1",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": false
+    },
+    {
+      "name": "mistral-ocr-4-0",
+      "version": "1",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": false
+    },
+    {
+      "name": "mistral-small-2503",
+      "version": "1",
+      "skus": [
+        "GlobalStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "model-router",
+      "version": "2025-05-19",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": false
+    },
+    {
+      "name": "model-router",
+      "version": "2025-08-07",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": false
+    },
+    {
+      "name": "model-router",
+      "version": "2025-11-18",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": false
+    },
+    {
+      "name": "qwen3-32b",
+      "version": "1",
+      "skus": [
+        "GlobalStandard",
+        "DataZoneStandard"
+      ],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": true,
+      "has_datazone": true,
+      "has_provisioned": false
+    },
+    {
+      "name": "tts",
+      "version": "001",
+      "skus": [
+        "Standard"
+      ],
+      "category": "other",
+      "has_standard": true,
+      "has_global_standard": false,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "tts-hd",
+      "version": "001",
+      "skus": [
+        "Standard"
+      ],
+      "category": "other",
+      "has_standard": true,
+      "has_global_standard": false,
+      "has_datazone": false,
+      "has_provisioned": false
+    },
+    {
+      "name": "whisper",
+      "version": "001",
+      "skus": [],
+      "category": "other",
+      "has_standard": false,
+      "has_global_standard": false,
+      "has_datazone": false,
+      "has_provisioned": false
+    }
+  ]
+}

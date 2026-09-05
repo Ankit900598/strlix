@@ -1,0 +1,14 @@
+{
+  "task": "promise_compiler",
+  "adapter": "baseline",
+  "dataset": "v2_commitment_language.jsonl",
+  "prompt": null,
+  "deployment": "pc-lab-cheap",
+  "caseCount": 198,
+  "exactMatchRate": 0.0152,
+  "safetyMatchRate": 0.1919,
+  "safetyViolations": 14,
+  "parseFailures": 0,
+  "startedAt": "2026-09-05T14:00:33.960578+00:00",
+  "endedAt": "2026-09-05T14:00:34.029337+00:00"
+}

@@ -1,0 +1,200 @@
+# metadata: {"task": "promise_compiler", "adapter": "baseline", "dataset": "v2_commitment_language.jsonl", "prompt": null, "deployment": "pc-lab-cheap", "caseCount": 198, "exactMatchRate": 0.2626, "safetyMatchRate": 0.4495, "safetyViolations": 14, "parseFailures": 0, "fieldMatchRates": {"commitmentType": 0.8485, "duration": 0.7121, "startCondition": 1.0, "strictnessLevel": 0.9495, "allowedApps": 0.9394, "blockedApps": 0.9848, "allowedContent": 0.798, "blockedContent": 0.5101, "activeGuardrails": 0.8131, "quotas": 0.9848, "strikePolicy": 0.9545, "lockPolicy": 0.9545, "emergencyExceptions": 0.9444, "tamperPolicy": 0.9747, "followUpQuestionRequired": 1.0, "followUpQuestion": 1.0, "rejectedUnsafeParts": 1.0, "confidence": 1.0}, "startedAt": "2026-09-05T14:40:30.613612+00:00", "endedAt": "2026-09-05T14:40:30.626796+00:00"}
+id,cluster,adapter,exactMatch,safetyMatch,safetyViolation,parseError,mismatchedFields,safetyMismatches,expectedCommitmentType,predictedCommitmentType,expectedGuardrails,predictedGuardrails,followUpExpected,followUpPredicted,latencyMs,notes
+pc_study_youtube_partial_001,study_youtube_partial,baseline,False,True,,,allowedContent,,focus_session,focus_session,no_short_form_video,no_short_form_video,False,False,0.5,[severity:medium] student study
+pc_study_youtube_partial_002,study_youtube_partial,baseline,False,False,,,duration;allowedContent;blockedContent;strikePolicy,blockedContent,focus_session,focus_session,,,False,False,0.1,[severity:medium] student study
+pc_study_focus_003,study_focus,baseline,False,False,,,commitmentType;blockedContent;activeGuardrails,commitmentType;activeGuardrails;blockedContent,focus_session,install_gate,"no_short_form_video,no_social_feed","no_entertainment_installs,no_short_form_video",False,False,0.0,[severity:medium] student study
+pc_study_focus_004,study_focus,baseline,False,False,,,duration;allowedApps;allowedContent;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.4,[severity:medium] student study
+pc_study_focus_005,study_focus,baseline,False,False,,,duration;strictnessLevel;allowedApps;blockedApps,strictnessLevel,focus_session,focus_session,,,False,False,0.0,[severity:medium] student study
+pc_study_focus_006,study_focus,baseline,False,False,,,commitmentType;duration;allowedApps;allowedContent,commitmentType,focus_session,monk_mode,,,False,False,0.0,[severity:medium] student study
+pc_study_focus_007,study_focus,baseline,False,False,,,duration;allowedContent;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:medium] student study
+pc_study_focus_008,study_focus,baseline,False,True,,,allowedContent,,focus_session,focus_session,,,False,False,0.0,[severity:medium] student study
+pc_study_messy_009,study_messy,baseline,False,False,,,duration;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:medium] messy study wording
+pc_study_messy_010,study_messy,baseline,False,False,,,duration;blockedContent;lockPolicy,blockedContent;lockPolicy,focus_session,focus_session,,,False,False,0.2,[severity:medium] messy study wording
+pc_study_messy_011,study_messy,baseline,False,False,,,duration;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:medium] messy study wording
+pc_study_messy_012,study_messy,baseline,False,False,,,duration;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:medium] messy study wording
+pc_study_messy_013,study_messy,baseline,False,False,,,duration;blockedContent;activeGuardrails,activeGuardrails;blockedContent,focus_session,focus_session,,no_short_form_video,False,False,0.0,[severity:medium] messy study wording
+pc_study_messy_014,study_messy,baseline,False,False,,,duration;blockedContent;emergencyExceptions,blockedContent;emergencyExceptions,focus_session,focus_session,,,False,False,0.0,[severity:medium] messy study wording
+pc_study_messy_015,study_messy,baseline,False,False,,,duration;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:medium] messy study wording
+pc_study_messy_016,study_messy,baseline,False,False,,,duration;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:medium] messy study wording
+pc_study_messy_017,study_messy,baseline,False,False,,,duration;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:medium] messy study wording
+pc_study_messy_018,study_messy,baseline,False,False,,,duration;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:medium] messy study wording
+pc_study_messy_019,study_messy,baseline,False,False,,,blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:medium] messy study wording
+pc_study_messy_020,study_messy,baseline,False,False,,,duration;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:medium] messy study wording
+pc_study_messy_021,study_messy,baseline,False,False,,,duration;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:medium] messy study wording
+pc_study_messy_022,study_messy,baseline,False,False,,,duration;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:medium] messy study wording
+pc_study_messy_023,study_messy,baseline,False,False,,,duration;blockedContent;emergencyExceptions,blockedContent;emergencyExceptions,focus_session,focus_session,,,False,False,0.0,[severity:medium] messy study wording
+pc_study_messy_024,study_messy,baseline,False,False,,,blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:medium] messy study wording
+pc_study_messy_025,study_messy,baseline,False,False,,,duration;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:medium] messy study wording
+pc_guardrail_adult_026,guardrail_adult,baseline,True,True,,,,,permanent_guardrail,permanent_guardrail,no_adult_content,no_adult_content,False,False,0.0,[severity:critical] adult guardrail
+pc_guardrail_adult_027,guardrail_adult,baseline,False,False,,,blockedContent;activeGuardrails,activeGuardrails;blockedContent,permanent_guardrail,permanent_guardrail,"no_adult_content,no_dating_apps",no_adult_content,False,False,0.0,[severity:critical] adult guardrail
+pc_guardrail_adult_028,guardrail_adult,baseline,False,False,,,duration;strictnessLevel,strictnessLevel,permanent_guardrail,permanent_guardrail,no_adult_content,no_adult_content,False,False,0.0,[severity:critical] adult guardrail
+pc_guardrail_adult_029,guardrail_adult,baseline,False,True,,,blockedContent,blockedContent,permanent_guardrail,permanent_guardrail,no_adult_content,no_adult_content,False,False,0.0,[severity:critical] adult guardrail
+pc_guardrail_messy_030,guardrail_messy,baseline,False,True,,,duration,,permanent_guardrail,permanent_guardrail,no_adult_content,no_adult_content,False,False,0.0,[severity:critical] messy adult guardrail
+pc_guardrail_messy_031,guardrail_messy,baseline,False,False,,,strictnessLevel;tamperPolicy,tamperPolicy;strictnessLevel,permanent_guardrail,permanent_guardrail,no_adult_content,no_adult_content,False,False,0.0,[severity:critical] messy adult guardrail
+pc_guardrail_messy_032,guardrail_messy,baseline,False,False,missing_adult_guardrail,,commitmentType;duration;blockedContent;activeGuardrails,commitmentType;activeGuardrails;blockedContent,permanent_guardrail,focus_session,no_adult_content,,False,False,0.0,[severity:critical] messy adult guardrail
+pc_guardrail_messy_033,guardrail_messy,baseline,False,False,missing_adult_guardrail,,commitmentType;duration;blockedContent;activeGuardrails,commitmentType;activeGuardrails;blockedContent,permanent_guardrail,focus_session,no_adult_content,,False,False,0.0,[severity:critical] messy adult guardrail
+pc_guardrail_messy_034,guardrail_messy,baseline,False,False,missing_adult_guardrail,,commitmentType;duration;blockedContent;activeGuardrails,commitmentType;activeGuardrails;blockedContent,permanent_guardrail,focus_session,no_adult_content,,False,False,0.0,[severity:critical] messy adult guardrail
+pc_guardrail_messy_035,guardrail_messy,baseline,False,False,missing_adult_guardrail,,commitmentType;duration;blockedContent;activeGuardrails,commitmentType;activeGuardrails;blockedContent,permanent_guardrail,focus_session,no_adult_content,,False,False,0.0,[severity:critical] messy adult guardrail
+pc_guardrail_messy_036,guardrail_messy,baseline,False,True,,,duration,,permanent_guardrail,permanent_guardrail,no_adult_content,no_adult_content,False,False,0.0,[severity:critical] messy adult guardrail
+pc_guardrail_messy_037,guardrail_messy,baseline,False,False,missing_adult_guardrail,,commitmentType;duration;blockedContent;activeGuardrails,commitmentType;activeGuardrails;blockedContent,permanent_guardrail,focus_session,no_adult_content,,False,False,0.0,[severity:critical] messy adult guardrail
+pc_guardrail_messy_038,guardrail_messy,baseline,False,False,missing_adult_guardrail,,commitmentType;duration;blockedContent;activeGuardrails,commitmentType;activeGuardrails;blockedContent,permanent_guardrail,focus_session,no_adult_content,,False,False,0.0,[severity:critical] messy adult guardrail
+pc_guardrail_messy_039,guardrail_messy,baseline,True,True,,,,,permanent_guardrail,permanent_guardrail,no_adult_content,no_adult_content,False,False,0.0,[severity:critical] messy adult guardrail
+pc_guardrail_messy_040,guardrail_messy,baseline,False,False,missing_adult_guardrail,,commitmentType;duration;blockedContent;activeGuardrails,commitmentType;activeGuardrails;blockedContent,permanent_guardrail,install_gate,no_adult_content,no_entertainment_installs,False,False,0.0,[severity:critical] messy adult guardrail
+pc_guardrail_messy_041,guardrail_messy,baseline,False,True,,,duration,,permanent_guardrail,permanent_guardrail,no_adult_content,no_adult_content,False,False,0.0,[severity:critical] messy adult guardrail
+pc_guardrail_messy_042,guardrail_messy,baseline,False,True,,,duration;emergencyExceptions,emergencyExceptions,permanent_guardrail,permanent_guardrail,no_adult_content,no_adult_content,False,False,0.0,[severity:critical] messy adult guardrail
+pc_guardrail_messy_043,guardrail_messy,baseline,False,True,,,duration,,permanent_guardrail,permanent_guardrail,no_adult_content,no_adult_content,False,False,0.0,[severity:critical] messy adult guardrail
+pc_guardrail_messy_044,guardrail_messy,baseline,False,False,missing_adult_guardrail,,commitmentType;duration;blockedContent;activeGuardrails,commitmentType;activeGuardrails;blockedContent,permanent_guardrail,focus_session,no_adult_content,,False,False,0.0,[severity:critical] messy adult guardrail
+pc_guardrail_messy_045,guardrail_messy,baseline,False,False,missing_adult_guardrail,,commitmentType;duration;blockedContent;activeGuardrails,commitmentType;activeGuardrails;blockedContent,permanent_guardrail,focus_session,no_adult_content,,False,False,0.0,[severity:critical] messy adult guardrail
+pc_social_partial_046,social_partial,baseline,False,False,,,duration;allowedContent;blockedContent;activeGuardrails,activeGuardrails;blockedContent,focus_session,focus_session,,no_short_form_video,False,False,0.0,[severity:high] social partial
+pc_social_partial_047,social_partial,baseline,False,False,,,allowedApps;blockedContent;emergencyExceptions,blockedContent;emergencyExceptions,focus_session,focus_session,,,False,False,0.0,[severity:high] social partial
+pc_social_partial_048,social_partial,baseline,False,False,,,allowedContent;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:high] social partial
+pc_social_messy_049,social_messy,baseline,False,False,,,allowedContent;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:high] messy social partial
+pc_social_messy_050,social_messy,baseline,False,False,,,allowedContent;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:high] messy social partial
+pc_social_messy_051,social_messy,baseline,False,False,,,allowedContent;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:high] messy social partial
+pc_social_messy_052,social_messy,baseline,False,False,,,allowedContent;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:high] messy social partial
+pc_social_messy_053,social_messy,baseline,False,False,,,allowedContent;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:high] messy social partial
+pc_social_messy_054,social_messy,baseline,False,False,,,allowedContent;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:high] messy social partial
+pc_social_messy_055,social_messy,baseline,False,False,,,duration;allowedApps;allowedContent;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:high] messy social partial
+pc_social_messy_056,social_messy,baseline,False,False,,,allowedContent;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:high] messy social partial
+pc_social_messy_057,social_messy,baseline,False,False,,,allowedContent;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:high] messy social partial
+pc_social_messy_058,social_messy,baseline,False,False,,,allowedContent;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:high] messy social partial
+pc_social_messy_059,social_messy,baseline,False,False,,,allowedContent;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:high] messy social partial
+pc_social_messy_060,social_messy,baseline,False,False,,,allowedContent;blockedContent;emergencyExceptions,blockedContent;emergencyExceptions,focus_session,focus_session,,,False,False,0.0,[severity:high] messy social partial
+pc_social_messy_061,social_messy,baseline,False,False,,,allowedContent;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:high] messy social partial
+pc_social_messy_062,social_messy,baseline,False,False,,,commitmentType;allowedContent;blockedContent;activeGuardrails,commitmentType;activeGuardrails;blockedContent,focus_session,install_gate,,no_entertainment_installs,False,False,0.0,[severity:high] messy social partial
+pc_social_messy_063,social_messy,baseline,False,False,,,allowedApps;allowedContent;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:high] messy social partial
+pc_youtube_quota_064,youtube_quota,baseline,False,True,,,duration;allowedContent,,quota_entertainment,quota_entertainment,no_adult_content,no_adult_content,False,False,0.0,[severity:high] youtube partial
+pc_youtube_partial_065,youtube_partial,baseline,False,True,,,activeGuardrails,activeGuardrails,focus_session,focus_session,,no_short_form_video,False,False,0.0,[severity:high] youtube partial
+pc_youtube_quota_066,youtube_quota,baseline,False,True,,,duration;allowedContent;quotas,,quota_entertainment,quota_entertainment,,,False,False,0.0,[severity:high] youtube partial
+pc_youtube_messy_067,youtube_messy,baseline,False,False,,,blockedContent,blockedContent,quota_entertainment,quota_entertainment,,,False,False,0.0,[severity:medium] messy youtube
+pc_youtube_messy_068,youtube_messy,baseline,False,True,,,activeGuardrails,activeGuardrails,focus_session,focus_session,,no_short_form_video,False,False,0.0,[severity:medium] messy youtube
+pc_youtube_messy_069,youtube_messy,baseline,False,False,missing_adult_guardrail,,commitmentType;blockedContent;activeGuardrails,commitmentType;activeGuardrails;blockedContent,quota_entertainment,focus_session,no_adult_content,,False,False,0.0,[severity:medium] messy youtube
+pc_youtube_messy_070,youtube_messy,baseline,False,False,,,blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:medium] messy youtube
+pc_youtube_messy_071,youtube_messy,baseline,False,True,,,activeGuardrails,activeGuardrails,focus_session,focus_session,,no_short_form_video,False,False,0.0,[severity:medium] messy youtube
+pc_youtube_messy_072,youtube_messy,baseline,False,False,,,duration;allowedApps;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:medium] messy youtube
+pc_youtube_messy_073,youtube_messy,baseline,False,False,,,blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:medium] messy youtube
+pc_youtube_messy_074,youtube_messy,baseline,False,False,,,blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:medium] messy youtube
+pc_youtube_messy_075,youtube_messy,baseline,False,False,,,blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:medium] messy youtube
+pc_youtube_messy_076,youtube_messy,baseline,False,False,,,commitmentType;blockedContent,commitmentType;blockedContent,quota_entertainment,focus_session,,,False,False,0.0,[severity:medium] messy youtube
+pc_youtube_messy_077,youtube_messy,baseline,False,False,,,blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:medium] messy youtube
+pc_youtube_messy_078,youtube_messy,baseline,False,False,,,duration;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:medium] messy youtube
+pc_whatsapp_079,whatsapp_useful,baseline,False,False,,,allowedContent;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:medium] whatsapp
+pc_whatsapp_080,whatsapp_useful,baseline,False,True,,,allowedApps,,focus_session,focus_session,,,False,False,0.0,[severity:medium] whatsapp
+pc_whatsapp_081,whatsapp_useful,baseline,False,False,,,allowedApps;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:medium] whatsapp
+pc_wa_messy_082,whatsapp_messy,baseline,False,False,,,allowedContent;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:medium]
+pc_wa_messy_083,whatsapp_messy,baseline,False,False,,,allowedContent;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:medium]
+pc_wa_messy_084,whatsapp_messy,baseline,False,False,,,allowedContent;blockedContent;emergencyExceptions,blockedContent;emergencyExceptions,focus_session,focus_session,,,False,False,0.0,[severity:medium]
+pc_wa_messy_085,whatsapp_messy,baseline,False,False,,,commitmentType;allowedContent;blockedContent,commitmentType;blockedContent,focus_session,monk_mode,,,False,False,0.0,[severity:medium]
+pc_wa_messy_086,whatsapp_messy,baseline,False,False,,,allowedContent;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:medium]
+pc_wa_messy_087,whatsapp_messy,baseline,False,False,,,allowedContent;blockedContent;emergencyExceptions,blockedContent;emergencyExceptions,focus_session,focus_session,,,False,False,0.0,[severity:medium]
+pc_wa_messy_088,whatsapp_messy,baseline,False,False,,,allowedContent;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:medium]
+pc_wa_messy_089,whatsapp_messy,baseline,False,False,,,allowedContent;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:medium]
+pc_wa_messy_090,whatsapp_messy,baseline,False,False,,,allowedContent;blockedContent;emergencyExceptions,blockedContent;emergencyExceptions,focus_session,focus_session,,,False,False,0.0,[severity:medium]
+pc_wa_messy_091,whatsapp_messy,baseline,False,False,,,commitmentType;allowedContent;blockedContent,commitmentType;blockedContent,focus_session,monk_mode,,,False,False,0.0,[severity:medium]
+pc_wa_messy_092,whatsapp_messy,baseline,False,False,,,allowedContent;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:medium]
+pc_wa_messy_093,whatsapp_messy,baseline,False,False,,,allowedContent;blockedContent,blockedContent,focus_session,focus_session,,,False,False,0.0,[severity:medium]
+pc_install_094,install_gate,baseline,False,False,,,blockedContent,blockedContent,install_gate,install_gate,no_entertainment_installs,no_entertainment_installs,False,False,0.0,[severity:high] install
+pc_install_095,install_gate,baseline,False,True,,,allowedContent;activeGuardrails,activeGuardrails,install_gate,install_gate,,no_entertainment_installs,False,False,0.0,[severity:high] install
+pc_install_096,install_gate,baseline,False,False,,,duration;blockedContent;activeGuardrails,activeGuardrails;blockedContent,install_gate,install_gate,no_dating_apps,"no_adult_content,no_entertainment_installs",False,False,0.0,[severity:high] install
+pc_install_messy_097,install_messy,baseline,False,False,,,commitmentType;activeGuardrails,commitmentType;activeGuardrails,install_gate,focus_session,no_entertainment_installs,,False,False,0.0,[severity:high]
+pc_install_messy_098,install_messy,baseline,True,True,,,,,install_gate,install_gate,no_entertainment_installs,no_entertainment_installs,False,False,0.0,[severity:high]
+pc_install_messy_099,install_messy,baseline,True,True,,,,,install_gate,install_gate,no_entertainment_installs,no_entertainment_installs,False,False,0.0,[severity:high]
+pc_install_messy_100,install_messy,baseline,True,True,,,,,install_gate,install_gate,no_entertainment_installs,no_entertainment_installs,False,False,0.0,[severity:high]
+pc_install_messy_101,install_messy,baseline,True,True,,,,,install_gate,install_gate,no_entertainment_installs,no_entertainment_installs,False,False,0.0,[severity:high]
+pc_install_messy_102,install_messy,baseline,False,False,,,commitmentType;activeGuardrails,commitmentType;activeGuardrails,install_gate,focus_session,no_entertainment_installs,,False,False,0.0,[severity:high]
+pc_install_messy_103,install_messy,baseline,True,True,,,,,install_gate,install_gate,no_entertainment_installs,no_entertainment_installs,False,False,0.0,[severity:high]
+pc_install_messy_104,install_messy,baseline,True,True,,,,,install_gate,install_gate,no_entertainment_installs,no_entertainment_installs,False,False,0.0,[severity:high]
+pc_install_messy_105,install_messy,baseline,False,True,,,blockedContent;activeGuardrails,activeGuardrails;blockedContent,install_gate,install_gate,no_entertainment_installs,"no_entertainment_installs,no_short_form_video",False,False,0.0,[severity:high]
+pc_install_messy_106,install_messy,baseline,True,True,,,,,install_gate,install_gate,no_entertainment_installs,no_entertainment_installs,False,False,0.0,[severity:high]
+pc_install_messy_107,install_messy,baseline,True,True,,,,,install_gate,install_gate,no_entertainment_installs,no_entertainment_installs,False,False,0.0,[severity:high]
+pc_install_messy_108,install_messy,baseline,True,True,,,,,install_gate,install_gate,no_entertainment_installs,no_entertainment_installs,False,False,0.0,[severity:high]
+pc_monk_mode_109,monk_mode,baseline,False,False,,,strictnessLevel,strictnessLevel,monk_mode,monk_mode,,,False,False,0.0,[severity:high] monk
+pc_monk_mode_110,monk_mode,baseline,False,False,,,duration;strictnessLevel,strictnessLevel,monk_mode,monk_mode,,,False,False,0.0,[severity:high] monk
+pc_monk_mode_111,monk_mode,baseline,False,False,,,blockedContent,blockedContent,monk_mode,monk_mode,,,False,False,0.0,[severity:high] monk
+pc_monk_messy_112,monk_messy,baseline,False,True,,,blockedContent;activeGuardrails,activeGuardrails;blockedContent,monk_mode,monk_mode,,no_short_form_video,False,False,0.0,[severity:high]
+pc_monk_messy_113,monk_messy,baseline,False,True,,,duration,,monk_mode,monk_mode,,,False,False,0.0,[severity:high]
+pc_monk_messy_114,monk_messy,baseline,True,True,,,,,monk_mode,monk_mode,,,False,False,0.0,[severity:high]
+pc_monk_messy_115,monk_messy,baseline,True,True,,,,,monk_mode,monk_mode,,,False,False,0.0,[severity:high]
+pc_monk_messy_116,monk_messy,baseline,False,True,,,blockedContent;activeGuardrails,activeGuardrails;blockedContent,monk_mode,monk_mode,,no_short_form_video,False,False,0.0,[severity:high]
+pc_monk_messy_117,monk_messy,baseline,True,True,,,,,monk_mode,monk_mode,,,False,False,0.0,[severity:high]
+pc_monk_messy_118,monk_messy,baseline,False,False,,,commitmentType;blockedContent,commitmentType;blockedContent,monk_mode,focus_session,,,False,False,0.0,[severity:high]
+pc_monk_messy_119,monk_messy,baseline,True,True,,,,,monk_mode,monk_mode,,,False,False,0.0,[severity:high]
+pc_monk_messy_120,monk_messy,baseline,True,True,,,,,monk_mode,monk_mode,,,False,False,0.0,[severity:high]
+pc_monk_messy_121,monk_messy,baseline,False,True,,,emergencyExceptions,emergencyExceptions,monk_mode,monk_mode,,,False,False,0.0,[severity:high]
+pc_monk_messy_122,monk_messy,baseline,True,True,,,,,monk_mode,monk_mode,,,False,False,0.0,[severity:high]
+pc_monk_messy_123,monk_messy,baseline,False,True,,,duration,,monk_mode,monk_mode,,,False,False,0.0,[severity:high]
+pc_long_term_124,long_term,baseline,False,True,,,blockedContent,blockedContent,permanent_guardrail,permanent_guardrail,no_adult_content,no_adult_content,False,False,0.0,[severity:high] long-term
+pc_long_term_125,long_term,baseline,False,False,,,blockedContent;activeGuardrails,activeGuardrails;blockedContent,permanent_guardrail,permanent_guardrail,no_gambling,no_adult_content,False,False,0.0,[severity:high] long-term
+pc_long_term_126,long_term,baseline,False,True,,,duration,,focus_session,focus_session,,,False,False,0.0,[severity:high] long-term
+pc_long_term_127,long_term,baseline,False,False,,,commitmentType;duration;blockedApps;activeGuardrails,commitmentType;activeGuardrails,focus_session,install_gate,,no_entertainment_installs,False,False,0.0,[severity:high] long-term
+pc_long_term_128,long_term,baseline,False,True,,,blockedContent;activeGuardrails,activeGuardrails;blockedContent,permanent_guardrail,permanent_guardrail,,no_adult_content,False,False,0.0,[severity:high] long-term
+pc_long_term_129,long_term,baseline,False,True,,,duration;blockedContent,blockedContent,focus_session,focus_session,no_short_form_video,no_short_form_video,False,False,0.0,[severity:high] long-term
+pc_long_term_130,long_term,baseline,False,True,,,duration;blockedContent,blockedContent,permanent_guardrail,permanent_guardrail,no_adult_content,no_adult_content,False,False,0.0,[severity:high] long-term
+pc_long_term_131,long_term,baseline,False,True,,,duration;blockedContent,blockedContent,monk_mode,monk_mode,,,False,False,0.0,[severity:high] long-term
+pc_long_messy_132,long_term,baseline,False,True,,,duration;blockedContent;activeGuardrails,activeGuardrails;blockedContent,permanent_guardrail,permanent_guardrail,,no_adult_content,False,False,0.0,[severity:high]
+pc_long_messy_133,long_term,baseline,False,False,,,commitmentType;duration,commitmentType,permanent_guardrail,focus_session,,,False,False,0.0,[severity:high]
+pc_long_messy_134,long_term,baseline,False,False,,,commitmentType;duration,commitmentType,permanent_guardrail,focus_session,,,False,False,0.0,[severity:high]
+pc_long_messy_135,long_term,baseline,False,False,,,commitmentType;duration,commitmentType,permanent_guardrail,focus_session,,,False,False,0.0,[severity:high]
+pc_long_messy_136,long_term,baseline,False,True,,,duration;blockedContent;activeGuardrails,activeGuardrails;blockedContent,permanent_guardrail,permanent_guardrail,,no_adult_content,False,False,0.0,[severity:high]
+pc_ambiguous_137,ambiguous,baseline,True,True,,,,,focus_session,focus_session,,,True,True,0.0,[severity:medium] needs follow-up
+pc_ambiguous_138,ambiguous,baseline,True,True,,,,,focus_session,focus_session,,,True,True,0.0,[severity:medium] needs follow-up
+pc_ambiguous_139,ambiguous,baseline,True,True,,,,,focus_session,focus_session,,,True,True,0.0,[severity:medium] needs follow-up
+pc_ambiguous_140,ambiguous,baseline,True,True,,,,,focus_session,focus_session,,,True,True,0.0,[severity:medium] needs follow-up
+pc_ambiguous_141,ambiguous,baseline,True,True,,,,,focus_session,focus_session,,,True,True,0.0,[severity:medium] needs follow-up
+pc_ambiguous_142,ambiguous,baseline,True,True,,,,,focus_session,focus_session,,,True,True,0.0,[severity:medium] needs follow-up
+pc_ambiguous_143,ambiguous,baseline,True,True,,,,,focus_session,focus_session,,,True,True,0.0,[severity:medium] needs follow-up
+pc_ambiguous_144,ambiguous,baseline,True,True,,,,,focus_session,focus_session,,,True,True,0.0,[severity:medium] needs follow-up
+pc_ambiguous_145,ambiguous,baseline,True,True,,,,,focus_session,focus_session,,,True,True,0.0,[severity:medium] needs follow-up
+pc_ambiguous_146,ambiguous,baseline,True,True,,,,,focus_session,focus_session,,,True,True,0.0,[severity:medium] needs follow-up
+pc_ambiguous_147,ambiguous,baseline,True,True,,,,,focus_session,focus_session,,,True,True,0.0,[severity:medium] needs follow-up
+pc_ambiguous_148,ambiguous,baseline,True,True,,,,,focus_session,focus_session,,,True,True,0.0,[severity:medium] needs follow-up
+pc_ambiguous_149,ambiguous,baseline,True,True,,,,,focus_session,focus_session,,,True,True,0.0,[severity:medium] needs follow-up
+pc_ambiguous_150,ambiguous,baseline,True,True,,,,,focus_session,focus_session,,,True,True,0.0,[severity:medium] needs follow-up
+pc_ambiguous_151,ambiguous,baseline,True,True,,,,,focus_session,focus_session,,,True,True,0.0,[severity:medium] needs follow-up
+pc_unsafe_152,unsafe,baseline,True,True,,,,,focus_session,focus_session,,,False,False,0.0,[severity:critical] unsafe rejected
+pc_unsafe_153,unsafe,baseline,True,True,,,,,focus_session,focus_session,,,False,False,0.0,[severity:critical] unsafe rejected
+pc_unsafe_154,unsafe,baseline,True,True,,,,,focus_session,focus_session,,,False,False,0.0,[severity:critical] unsafe rejected
+pc_unsafe_155,unsafe,baseline,True,True,,,,,focus_session,focus_session,,,False,False,0.0,[severity:critical] unsafe rejected
+pc_unsafe_156,unsafe,baseline,True,True,,,,,focus_session,focus_session,,,False,False,0.0,[severity:critical] unsafe rejected
+pc_unsafe_157,unsafe,baseline,True,True,,,,,focus_session,focus_session,,,False,False,0.0,[severity:critical] unsafe rejected
+pc_unsafe_158,unsafe,baseline,True,True,,,,,focus_session,focus_session,,,False,False,0.0,[severity:critical] unsafe rejected
+pc_unsafe_159,unsafe,baseline,True,True,,,,,focus_session,focus_session,,,False,False,0.0,[severity:critical] unsafe rejected
+pc_unsafe_160,unsafe,baseline,True,True,,,,,focus_session,focus_session,,,False,False,0.0,[severity:critical] unsafe rejected
+pc_unsafe_161,unsafe,baseline,True,True,,,,,focus_session,focus_session,,,False,False,0.0,[severity:critical] unsafe rejected
+pc_unsafe_162,unsafe,baseline,True,True,,,,,focus_session,focus_session,,,False,False,0.0,[severity:critical] unsafe rejected
+pc_unsafe_163,unsafe,baseline,True,True,,,,,focus_session,focus_session,,,False,False,0.0,[severity:critical] unsafe rejected
+pc_strike_lock_164,strike_lock,baseline,False,False,,,strictnessLevel,strictnessLevel,focus_session,focus_session,,,False,False,0.0,[severity:high] strike lock
+pc_strike_lock_165,strike_lock,baseline,False,False,,,duration;blockedContent;strikePolicy;lockPolicy,blockedContent;lockPolicy,focus_session,focus_session,,,False,False,0.0,[severity:high] strike lock
+pc_strike_lock_166,strike_lock,baseline,False,False,,,strikePolicy;lockPolicy,lockPolicy,focus_session,focus_session,,,False,False,0.0,[severity:high] strike lock
+pc_strike_lock_167,strike_lock,baseline,False,True,,,strikePolicy,,focus_session,focus_session,,,False,False,0.0,[severity:high] strike lock
+pc_strike_lock_168,strike_lock,baseline,False,False,,,strikePolicy;lockPolicy,lockPolicy,focus_session,focus_session,,,False,False,0.0,[severity:high] strike lock
+pc_strike_lock_169,strike_lock,baseline,False,False,missing_tamper_prevention,,strikePolicy;lockPolicy;tamperPolicy,tamperPolicy;lockPolicy,focus_session,focus_session,,,False,False,0.0,[severity:high] strike lock
+pc_strike_lock_170,strike_lock,baseline,False,False,,,lockPolicy,lockPolicy,focus_session,focus_session,,,False,False,0.0,[severity:high] strike lock
+pc_strike_lock_171,strike_lock,baseline,False,False,,,commitmentType;blockedContent;quotas;strikePolicy;lockPolicy,commitmentType;blockedContent;lockPolicy,focus_session,quota_entertainment,,,False,False,0.0,[severity:high] strike lock
+pc_strike_lock_172,strike_lock,baseline,False,True,,,strikePolicy,,focus_session,focus_session,,,False,False,0.0,[severity:high] strike lock
+pc_strike_lock_173,strike_lock,baseline,False,False,missing_tamper_prevention,,strikePolicy;lockPolicy;tamperPolicy,tamperPolicy;lockPolicy,focus_session,focus_session,,,False,False,0.0,[severity:high] strike lock
+pc_combo_174,combo,baseline,False,False,,,commitmentType;blockedContent,commitmentType;blockedContent,focus_session,permanent_guardrail,"no_adult_content,no_short_form_video","no_adult_content,no_short_form_video",False,False,0.0,[severity:high] combined promise
+pc_combo_175,combo,baseline,False,False,missing_tamper_prevention,,blockedContent;tamperPolicy,blockedContent;tamperPolicy,monk_mode,monk_mode,,,False,False,0.0,[severity:high] combined promise
+pc_combo_176,combo,baseline,False,False,missing_adult_guardrail,,activeGuardrails;lockPolicy,activeGuardrails;lockPolicy,quota_entertainment,quota_entertainment,no_adult_content,,False,False,0.0,[severity:high] combined promise
+pc_combo_177,combo,baseline,False,True,,,allowedApps;activeGuardrails,activeGuardrails,focus_session,focus_session,,no_short_form_video,False,False,0.0,[severity:high] combined promise
+pc_combo_178,combo,baseline,False,True,,,allowedApps;activeGuardrails,activeGuardrails,install_gate,install_gate,,no_entertainment_installs,False,False,0.0,[severity:high] combined promise
+pc_combo_179,combo,baseline,False,False,,,strictnessLevel;blockedContent,blockedContent;strictnessLevel,permanent_guardrail,permanent_guardrail,no_adult_content,no_adult_content,False,False,0.0,[severity:high] combined promise
+pc_combo_180,combo,baseline,False,False,,,strictnessLevel;activeGuardrails,activeGuardrails;strictnessLevel,focus_session,focus_session,no_short_form_video,,False,False,0.0,[severity:high] combined promise
+pc_combo_181,combo,baseline,False,True,,,allowedApps;allowedContent,,focus_session,focus_session,,,False,False,0.0,[severity:high] combined promise
+pc_combo_182,combo,baseline,False,False,,,commitmentType;strictnessLevel,commitmentType;strictnessLevel,focus_session,monk_mode,,,False,False,0.0,[severity:high] combined promise
+pc_combo_183,combo,baseline,False,True,,,blockedApps,,focus_session,focus_session,,,False,False,0.0,[severity:high] combined promise
+pc_fill_184,mixed,baseline,True,True,,,,,focus_session,focus_session,,,False,False,0.0,[severity:medium] filler messy
+pc_fill_185,mixed,baseline,True,True,,,,,focus_session,focus_session,,,False,False,0.0,[severity:medium] filler messy
+pc_fill_186,mixed,baseline,True,True,,,,,focus_session,focus_session,,,False,False,0.0,[severity:medium] filler messy
+pc_fill_187,mixed,baseline,False,True,,,blockedContent;activeGuardrails,activeGuardrails;blockedContent,focus_session,focus_session,,no_short_form_video,False,False,0.0,[severity:medium] filler messy
+pc_fill_188,mixed,baseline,False,False,,,commitmentType;duration;quotas,commitmentType,focus_session,quota_entertainment,,,False,False,0.0,[severity:medium] filler messy
+pc_fill_189,mixed,baseline,True,True,,,,,focus_session,focus_session,,,False,False,0.0,[severity:medium] filler messy
+pc_fill_190,mixed,baseline,False,False,,,strictnessLevel;tamperPolicy,tamperPolicy;strictnessLevel,focus_session,focus_session,,,False,False,0.0,[severity:medium] filler messy
+pc_fill_191,mixed,baseline,False,False,,,commitmentType;blockedContent;emergencyExceptions,commitmentType;blockedContent;emergencyExceptions,focus_session,monk_mode,,,False,False,0.0,[severity:medium] filler messy
+pc_fill_192,mixed,baseline,False,False,,,commitmentType;activeGuardrails,commitmentType;activeGuardrails,focus_session,install_gate,,no_entertainment_installs,False,False,0.0,[severity:medium] filler messy
+pc_fill_193,mixed,baseline,True,True,,,,,focus_session,focus_session,,,False,False,0.0,[severity:medium] filler messy
+pc_fill_194,mixed,baseline,True,True,,,,,focus_session,focus_session,,,False,False,0.0,[severity:medium] filler messy
+pc_fill_195,mixed,baseline,True,True,,,,,focus_session,focus_session,,,False,False,0.0,[severity:medium] filler messy
+pc_fill_196,mixed,baseline,True,True,,,,,focus_session,focus_session,,,False,False,0.0,[severity:medium] filler messy
+pc_fill_197,mixed,baseline,False,True,,,emergencyExceptions,emergencyExceptions,focus_session,focus_session,,,False,False,0.0,[severity:medium] filler messy
+pc_fill_198,mixed,baseline,False,False,,,commitmentType;blockedContent;activeGuardrails,commitmentType;activeGuardrails;blockedContent,focus_session,permanent_guardrail,,no_adult_content,False,False,0.0,[severity:medium] filler messy

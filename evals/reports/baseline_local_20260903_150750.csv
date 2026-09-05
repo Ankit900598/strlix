@@ -1,0 +1,101 @@
+id,packageName,expectedDecision,predictedDecision,expectedReasonCategory,predictedReasonCategory,confidence,reason,correct,falseAllow,falseBlock,notes
+yt_lecture_001,com.google.android.youtube,ALLOW,ALLOW,study_aligned,study_aligned,0.80,Allowed by study or productivity keyword,True,False,False,Long-form lecture aligned with study goal
+yt_lecture_002,com.google.android.youtube,ALLOW,ALLOW,study_aligned,study_aligned,0.80,Allowed by study or productivity keyword,True,False,False,Technical tutorial during build session
+yt_shorts_001,com.google.android.youtube,BLOCK,BLOCK,short_form_entertainment,short_form_entertainment,0.85,Blocked by distraction or adult keyword,True,False,False,Clear Shorts player UI
+yt_shorts_002,com.google.android.youtube,BLOCK,BLOCK,short_form_entertainment,short_form_entertainment,0.85,Blocked by distraction or adult keyword,True,False,False,Shorts navigation selected
+chrome_study_001,com.android.chrome,ALLOW,ALLOW,study_aligned,study_aligned,0.80,Allowed by study or productivity keyword,True,False,False,Study-related browsing
+chrome_study_002,com.android.chrome,ALLOW,ALLOW,study_aligned,study_aligned,0.80,Allowed by study or productivity keyword,True,False,False,Developer documentation
+chrome_adult_001,com.android.chrome,BLOCK,BLOCK,adult_content,adult_content,0.85,Blocked by distraction or adult keyword,True,False,False,Age-gated adult site without explicit body text
+chrome_adult_002,com.android.chrome,BLOCK,BLOCK,adult_content,adult_content,0.85,Blocked by distraction or adult keyword,True,False,False,Incognito plus adult site signals
+chrome_movie_001,com.android.chrome,WARN,WARN,ambiguous,ambiguous,0.70,Movie or piracy-style distraction page,True,False,False,Piracy-style distraction page; warn unless clearly blocked
+chrome_movie_002,com.android.chrome,BLOCK,BLOCK,ambiguous,ambiguous,0.85,Blocked by distraction or adult keyword,True,False,False,Clear piracy/entertainment distraction
+chatgpt_coding_001,com.openai.chatgpt,ALLOW,ALLOW,study_aligned,study_aligned,0.75,Assistant use appears aligned with study or build goal,True,False,False,Coding help aligned with goal
+chatgpt_coding_002,com.openai.chatgpt,ALLOW,ALLOW,study_aligned,study_aligned,0.75,Assistant use appears aligned with study or build goal,True,False,False,Build-session coding assistance
+whatsapp_useful_001,com.whatsapp,ALLOW,ALLOW,safe_app,safe_app,0.70,Message appears useful or safety-related,True,False,False,Useful family check-in; allow or soft warn
+whatsapp_useful_002,com.whatsapp,WARN,WARN,social_feed,social_feed,0.65,Social chat appears low-value during study,True,False,False,Low-value social distraction
+instagram_reels_001,com.instagram.android,BLOCK,BLOCK,short_form_entertainment,short_form_entertainment,0.90,Short-form social feed detected,True,False,False,Instagram Reels feed
+instagram_reels_002,com.instagram.android,BLOCK,BLOCK,short_form_entertainment,short_form_entertainment,0.90,Short-form social feed detected,True,False,False,Reels tab active
+playstore_entertainment_001,com.android.vending,WARN,WARN,install_page_risky,install_page_risky,0.80,Install page appears entertainment or short-form related,True,False,False,Casual game install during study
+playstore_entertainment_002,com.android.vending,BLOCK,BLOCK,install_page_risky,install_page_risky,0.80,Install page appears entertainment or short-form related,True,False,False,Short-form entertainment install
+settings_tamper_001,com.android.settings,LOCK,LOCK,session_locked,session_locked,0.95,User is on PhoneCodex accessibility controls during a locked commitment,True,False,False,Tampering with PhoneCodex accessibility during locked session
+settings_tamper_002,com.android.settings,LOCK,LOCK,session_locked,session_locked,0.95,User is on PhoneCodex accessibility controls during a locked commitment,True,False,False,Attempt to disable protection controls
+yt_shorts_003,com.google.android.youtube,WARN,WARN,short_form_entertainment,short_form_entertainment,0.65,Short-form signal in SOFT mode; warn first,True,False,False,SOFT may warn first on Shorts; guardrail still flags category
+chrome_study_003,com.android.chrome,ALLOW,ALLOW,study_aligned,study_aligned,0.80,Allowed by study or productivity keyword,True,False,False,Coding Q&A aligned with study
+chrome_adult_003,com.android.chrome,BLOCK,BLOCK,adult_content,adult_content,0.85,Blocked by distraction or adult keyword,True,False,False,Dating/adult landing page with safe placeholder wording
+chrome_movie_003,com.android.chrome,WARN,WARN,ambiguous,ambiguous,0.45,No strong allow or block signal,True,False,False,Movie distraction during build session
+chatgpt_coding_003,com.openai.chatgpt,ALLOW,ALLOW,study_aligned,study_aligned,0.75,Assistant use appears aligned with study or build goal,True,False,False,Study assistant use in SOFT mode
+whatsapp_useful_003,com.whatsapp,ALLOW,ALLOW,safe_app,safe_app,0.70,Message appears useful or safety-related,True,False,False,Academic group message
+instagram_reels_003,com.instagram.android,WARN,WARN,social_feed,social_feed,0.60,Social messaging without clear study value,True,False,False,DMs not Reels; warn not hard block
+playstore_productivity_001,com.android.vending,ALLOW,ALLOW,install_page_productivity,install_page_productivity,0.75,Install page appears productivity-related,True,False,False,Study tool install should allow
+phone_emergency_001,com.google.android.dialer,ALLOW,ALLOW,emergency_or_system,emergency_or_system,0.99,Emergency or phone use is always allowed,True,False,False,Emergency always allow even in LOCKED
+settings_browse_001,com.android.settings,WARN,WARN,neutral_navigation,neutral_navigation,0.55,Benign settings navigation during focus session,True,False,False,Benign settings browse; not tamper
+yt_hard_001,com.google.android.youtube,ALLOW,BLOCK,study_aligned,short_form_entertainment,0.85,Blocked by distraction or adult keyword,False,False,True,Lecture playing; Shorts shelf label visible only
+yt_hard_002,com.google.android.youtube,ALLOW,BLOCK,study_aligned,short_form_entertainment,0.85,Blocked by distraction or adult keyword,False,False,True,Shorts only in comments; lecture is foreground
+yt_hard_003,com.google.android.youtube,ALLOW,BLOCK,study_aligned,short_form_entertainment,0.85,Blocked by distraction or adult keyword,False,False,True,Shorts in sidebar; lecture primary
+yt_hard_004,com.google.android.youtube,WARN,BLOCK,ambiguous,short_form_entertainment,0.85,Blocked by distraction or adult keyword,False,False,False,Homepage Shorts shelf visible; user not in Shorts player
+yt_hard_005,com.google.android.youtube,WARN,BLOCK,ambiguous,short_form_entertainment,0.85,Blocked by distraction or adult keyword,False,False,False,Home with Shorts tab visible; not inside player
+yt_hard_006,com.google.android.youtube,WARN,BLOCK,ambiguous,short_form_entertainment,0.85,Blocked by distraction or adult keyword,False,False,False,Mixed search; Shorts not opened
+yt_hard_007,com.google.android.youtube,BLOCK,BLOCK,short_form_entertainment,short_form_entertainment,0.85,Blocked by distraction or adult keyword,True,False,False,Inside Shorts player
+yt_hard_008,com.google.android.youtube,BLOCK,BLOCK,short_form_entertainment,short_form_entertainment,0.85,Blocked by distraction or adult keyword,True,False,False,Shorts tab active with player
+yt_hard_009,com.google.android.youtube,BLOCK,BLOCK,short_form_entertainment,short_form_entertainment,0.85,Blocked by distraction or adult keyword,True,False,False,Clear Shorts consumption
+yt_hard_010,com.google.android.youtube,WARN,BLOCK,ambiguous,short_form_entertainment,0.85,Blocked by distraction or adult keyword,False,False,False,Loading; unclear lecture vs Shorts
+yt_hard_011,com.google.android.youtube,ALLOW,WARN,study_aligned,short_form_entertainment,0.65,Short-form signal in SOFT mode; warn first,False,False,False,SOFT: lecture with Shorts rail visible
+yt_hard_012,com.google.android.youtube,ALLOW,WARN,study_aligned,short_form_entertainment,0.65,Short-form signal in SOFT mode; warn first,False,False,False,Study audio; no Shorts UI
+chrome_hard_001,com.android.chrome,ALLOW,ALLOW,study_aligned,study_aligned,0.80,Allowed by study or productivity keyword,True,False,False,Study page with distracting ads still study content
+chrome_hard_002,com.android.chrome,ALLOW,ALLOW,study_aligned,study_aligned,0.80,Allowed by study or productivity keyword,True,False,False,Coding Q&A with ad sidebar
+chrome_hard_003,com.android.chrome,WARN,ALLOW,study_aligned,study_aligned,0.80,Allowed by study or productivity keyword,False,False,False,Study content but intrusive ad friction
+chrome_hard_004,com.android.chrome,WARN,WARN,ambiguous,ambiguous,0.70,Movie or piracy-style distraction page,True,False,False,Movie distraction; no adult signals
+chrome_hard_005,com.android.chrome,BLOCK,BLOCK,ambiguous,ambiguous,0.85,Blocked by distraction or adult keyword,True,False,False,Clear piracy distraction; not adult_content category
+chrome_hard_006,com.android.chrome,WARN,WARN,ambiguous,ambiguous,0.45,No strong allow or block signal,True,False,False,Movie streaming distraction during build
+chrome_hard_007,com.android.chrome,WARN,ALLOW,ambiguous,study_aligned,0.80,Allowed by study or productivity keyword,False,False,False,Legit streaming distraction; not adult
+chrome_hard_008,com.android.chrome,WARN,WARN,ambiguous,ambiguous,0.45,No strong allow or block signal,True,False,False,Entertainment news scroll
+chrome_hard_009,com.android.chrome,ALLOW,ALLOW,study_aligned,study_aligned,0.80,Allowed by study or productivity keyword,True,False,False,Docs study work
+chrome_hard_010,com.android.chrome,WARN,WARN,neutral_navigation,ambiguous,0.45,No strong allow or block signal,True,False,False,Empty new tab
+gpt_hard_001,com.openai.chatgpt,ALLOW,ALLOW,study_aligned,study_aligned,0.75,Assistant use appears aligned with study or build goal,True,False,False,Productive coding help
+gpt_hard_002,com.openai.chatgpt,ALLOW,ALLOW,study_aligned,study_aligned,0.75,Assistant use appears aligned with study or build goal,True,False,False,Build debugging
+gpt_hard_003,com.openai.chatgpt,WARN,ALLOW,ambiguous,study_aligned,0.75,Assistant use appears aligned with study or build goal,False,False,False,Entertainment prompt
+gpt_hard_004,com.openai.chatgpt,WARN,ALLOW,ambiguous,study_aligned,0.75,Assistant use appears aligned with study or build goal,False,False,False,Random roleplay distraction
+gpt_hard_005,com.openai.chatgpt,WARN,ALLOW,ambiguous,study_aligned,0.75,Assistant use appears aligned with study or build goal,False,False,False,Entertainment recommendation
+gpt_hard_006,com.openai.chatgpt,ALLOW,ALLOW,study_aligned,study_aligned,0.75,Assistant use appears aligned with study or build goal,True,False,False,Exam revision even in LOCKED
+gpt_hard_007,com.openai.chatgpt,WARN,ALLOW,social_feed,study_aligned,0.75,Assistant use appears aligned with study or build goal,False,False,False,Social content generation
+gpt_hard_008,com.openai.chatgpt,WARN,ALLOW,ambiguous,study_aligned,0.75,Assistant use appears aligned with study or build goal,False,False,False,Trivia entertainment
+wa_hard_001,com.whatsapp,ALLOW,ALLOW,safe_app,study_aligned,0.80,Allowed by study or productivity keyword,True,False,False,Tutor study material
+wa_hard_002,com.whatsapp,ALLOW,ALLOW,safe_app,safe_app,0.70,Message appears useful or safety-related,True,False,False,Academic group discussion
+wa_hard_003,com.whatsapp,ALLOW,WARN,safe_app,ambiguous,0.45,No strong allow or block signal,False,False,False,Official exam logistics
+wa_hard_004,com.whatsapp,ALLOW,WARN,safe_app,ambiguous,0.45,No strong allow or block signal,False,False,False,Family safety check
+wa_hard_005,com.whatsapp,WARN,WARN,social_feed,ambiguous,0.45,No strong allow or block signal,True,False,False,Gossip time-waste
+wa_hard_006,com.whatsapp,WARN,WARN,social_feed,ambiguous,0.45,No strong allow or block signal,True,False,False,Flirting distraction; safe wording
+wa_hard_007,com.whatsapp,WARN,WARN,social_feed,social_feed,0.65,Social chat appears low-value during study,True,False,False,Low-value sticker chat
+wa_hard_008,com.whatsapp,BLOCK,WARN,social_feed,social_feed,0.65,Social chat appears low-value during study,False,False,False,Meme spam during LOCKED session
+ps_hard_001,com.android.vending,ALLOW,ALLOW,install_page_productivity,install_page_productivity,0.75,Install page appears productivity-related,True,False,False,Focus app install
+ps_hard_002,com.android.vending,ALLOW,ALLOW,install_page_productivity,install_page_productivity,0.75,Install page appears productivity-related,True,False,False,Study tool install
+ps_hard_003,com.android.vending,ALLOW,ALLOW,install_page_productivity,install_page_productivity,0.75,Install page appears productivity-related,True,False,False,Education app
+ps_hard_004,com.android.vending,WARN,WARN,install_page_risky,ambiguous,0.55,Unclear install page during focus session,True,False,False,Music app; may help or distract
+ps_hard_005,com.android.vending,WARN,WARN,install_page_risky,install_page_risky,0.80,Install page appears entertainment or short-form related,True,False,False,Casual game install
+ps_hard_006,com.android.vending,BLOCK,BLOCK,install_page_risky,install_page_risky,0.80,Install page appears entertainment or short-form related,True,False,False,Short-form entertainment install
+ps_hard_007,com.android.vending,BLOCK,WARN,install_page_risky,install_page_risky,0.80,Install page appears entertainment or short-form related,False,False,False,Adult-ish dating install with guardrail
+ps_hard_008,com.android.vending,BLOCK,WARN,install_page_risky,ambiguous,0.55,Unclear install page during focus session,False,False,False,Streaming install during LOCKED
+set_hard_001,com.android.settings,WARN,WARN,neutral_navigation,neutral_navigation,0.55,Benign settings navigation during focus session,True,False,False,Normal display settings
+set_hard_002,com.android.settings,WARN,WARN,neutral_navigation,ambiguous,0.45,No strong allow or block signal,True,False,False,Battery settings browse
+set_hard_003,com.android.settings,WARN,WARN,neutral_navigation,neutral_navigation,0.55,Benign settings navigation during focus session,True,False,False,Wi-Fi settings
+set_hard_004,com.android.settings,WARN,WARN,neutral_navigation,ambiguous,0.45,No strong allow or block signal,True,False,False,App permissions not tamper
+set_hard_005,com.android.settings,WARN,WARN,neutral_navigation,ambiguous,0.45,No strong allow or block signal,True,False,False,Generic accessibility; no PhoneCodex tamper
+set_hard_006,com.android.settings,WARN,LOCK,neutral_navigation,session_locked,0.95,User is on PhoneCodex accessibility controls during a locked commitment,False,False,False,Viewing PhoneCodex in list without disable
+set_hard_007,com.android.settings,LOCK,LOCK,session_locked,session_locked,0.95,User is on PhoneCodex accessibility controls during a locked commitment,True,False,False,Tamper attempt during LOCKED
+set_hard_008,com.android.settings,LOCK,LOCK,session_locked,session_locked,0.95,User is on PhoneCodex accessibility controls during a locked commitment,True,False,False,Disable PhoneCodex accessibility
+launcher_001,com.miui.home,WARN,WARN,neutral_navigation,ambiguous,0.45,No strong allow or block signal,True,False,False,Distracting icons visible; user on home
+launcher_002,com.google.android.apps.nexuslauncher,WARN,WARN,neutral_navigation,ambiguous,0.45,No strong allow or block signal,True,False,False,App drawer with mixed icons
+launcher_003,com.miui.home,ALLOW,ALLOW,neutral_navigation,study_aligned,0.80,Allowed by study or productivity keyword,True,False,False,Home with study-aligned icons only
+launcher_004,com.miui.home,ALLOW,WARN,safe_app,ambiguous,0.45,No strong allow or block signal,False,False,False,Missed call on home
+launcher_005,com.google.android.apps.nexuslauncher,WARN,WARN,neutral_navigation,ambiguous,0.45,No strong allow or block signal,True,False,False,Social icons on dock; not opened
+launcher_006,com.miui.home,WARN,WARN,social_feed,ambiguous,0.45,No strong allow or block signal,True,False,False,Notification preview not in-app
+launcher_007,com.android.systemui,WARN,ALLOW,neutral_navigation,study_aligned,0.80,Allowed by study or productivity keyword,False,False,False,Recents overview mixed apps
+launcher_008,com.miui.home,ALLOW,ALLOW,study_aligned,study_aligned,0.80,Allowed by study or productivity keyword,True,False,False,Split screen study setup
+ig_hard_001,com.instagram.android,WARN,WARN,social_feed,ambiguous,0.45,No strong allow or block signal,True,False,False,Feed scroll not Reels
+ig_hard_002,com.instagram.android,WARN,ALLOW,social_feed,study_aligned,0.80,Allowed by study or productivity keyword,False,False,False,Stories still social
+ig_hard_003,com.instagram.android,BLOCK,BLOCK,short_form_entertainment,short_form_entertainment,0.90,Short-form social feed detected,True,False,False,Reels player
+ig_hard_004,com.instagram.android,WARN,WARN,social_feed,social_feed,0.60,Social messaging without clear study value,True,False,False,Study-related DM
+ig_hard_005,com.instagram.android,WARN,ALLOW,social_feed,study_aligned,0.80,Allowed by study or productivity keyword,False,False,False,Browsing study tips on IG
+ig_hard_006,com.instagram.android,WARN,WARN,neutral_navigation,ambiguous,0.45,No strong allow or block signal,True,False,False,IG settings browse
+ig_hard_007,com.instagram.android,BLOCK,BLOCK,short_form_entertainment,short_form_entertainment,0.90,Short-form social feed detected,True,False,False,Reels during LOCKED
+ig_hard_008,com.instagram.android,WARN,BLOCK,social_feed,short_form_entertainment,0.90,Short-form social feed detected,False,False,False,Profile browse without Reels

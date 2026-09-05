@@ -1,0 +1,18 @@
+{
+  "sku": {
+    "name": "GlobalStandard",
+    "capacity": 50
+  },
+  "properties": {
+    "model": {
+      "format": "Anthropic",
+      "name": "claude-opus-5",
+      "version": "2"
+    },
+    "modelProviderData": {
+      "industry": "technology",
+      "organizationName": "PhoneCodex",
+      "countryCode": "IN"
+    }
+  }
+}

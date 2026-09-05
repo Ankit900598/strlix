@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phonecodex.app/evals/block-experience.schema.json",
+  "title": "PhoneCodexBlockExperience",
+  "description": "Structured overlay copy + actions for a PolicyEngine decision. Promise-cited, non-shaming, strictness-aware.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "title",
+    "message",
+    "primaryAction",
+    "secondaryAction",
+    "forbiddenActions",
+    "tone",
+    "showCooldown",
+    "showPromise",
+    "allowEmergencyExit"
+  ],
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 80,
+      "description": "Headline. Promise/contract framed, not shame."
+    },
+    "message": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 280,
+      "description": "Body: cite promise + evidence. No motivational fluff."
+    },
+    "primaryAction": {
+      "$ref": "#/$defs/actionId"
+    },
+    "secondaryAction": {
+      "anyOf": [
+        { "$ref": "#/$defs/actionId" },
+        { "type": "null" }
+      ]
+    },
+    "forbiddenActions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/forbiddenActionId" },
+      "uniqueItems": true
+    },
+    "tone": {
+      "type": "string",
+      "enum": [
+        "soft_nudge",
+        "smart_cost",
+        "strict_guard",
+        "locked_vault",
+        "contract_life_rule",
+        "tamper_cold"
+      ]
+    },
+    "showCooldown": {
+      "type": "boolean",
+      "description": "True for COOLING_OFF / override wait UX."
+    },
+    "showPromise": {
+      "type": "boolean",
+      "description": "Must be true whenever a user promise is active."
+    },
+    "allowEmergencyExit": {
+      "type": "boolean",
+      "description": "Almost always true; false only in synthetic negative tests."
+    }
+  },
+  "$defs": {
+    "actionId": {
+      "type": "string",
+      "enum": [
+        "RETURN_SAFE",
+        "EXIT_SURFACE",
+        "OPEN_ALLOWED_LECTURE",
+        "OPEN_PLAYLIST",
+        "OPEN_STUDY_HOME",
+        "STAY_IN_MESSAGES",
+        "REVIEW_PROMISE",
+        "EMERGENCY_EXIT",
+        "CONTINUE_WITH_STRIKE",
+        "WAIT_LOCK",
+        "ACKNOWLEDGE",
+        "REDIRECT_NOW"
+      ]
+    },
+    "forbiddenActionId": {
+      "type": "string",
+      "enum": [
+        "DISABLE_PHONECODEX",
+        "IGNORE_ANYWAY",
+        "OPEN_SETTINGS_EDITOR",
+        "CONTINUE_FREE",
+        "SKIP_COOLDOWN",
+        "UNINSTALL_HINT"
+      ]
+    }
+  }
+}

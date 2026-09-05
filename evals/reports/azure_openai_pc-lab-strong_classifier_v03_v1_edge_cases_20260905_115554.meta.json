@@ -1,0 +1,18 @@
+{
+  "adapter": "azure_openai",
+  "dataset": "v1_edge_cases.jsonl",
+  "datasetPath": "evals\\datasets\\v1_edge_cases.jsonl",
+  "prompt": "classifier_v03.txt",
+  "promptPath": "C:\\Users\\HP\\strlix\\evals\\prompts\\classifier_v03.txt",
+  "deployment": "pc-lab-strong",
+  "model": "gpt-4.1",
+  "caseCount": 114,
+  "correct": 102,
+  "accuracy": 0.8947,
+  "falseAllows": 1,
+  "falseBlocks": 0,
+  "totalLatencyMs": 212822.6,
+  "avgLatencyMs": 1866.9,
+  "startedAt": "2026-09-05T11:52:21.848102+00:00",
+  "endedAt": "2026-09-05T11:55:54.703839+00:00"
+}

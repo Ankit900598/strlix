@@ -1,0 +1,14 @@
+{
+  "task": "promise_compiler",
+  "adapter": "azure_openai",
+  "dataset": "v2_commitment_language.jsonl",
+  "prompt": "promise_compiler_v01.txt",
+  "deployment": "pc-lab-cheap",
+  "caseCount": 198,
+  "exactMatchRate": 0.0,
+  "safetyMatchRate": 0.0,
+  "safetyViolations": 6,
+  "parseFailures": 1,
+  "startedAt": "2026-09-05T14:00:45.675705+00:00",
+  "endedAt": "2026-09-05T14:20:27.275792+00:00"
+}

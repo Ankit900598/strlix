@@ -1,0 +1,27 @@
+{
+  "task": "block_experience",
+  "adapter": "baseline",
+  "dataset": "v1_block_experience.jsonl",
+  "prompt": null,
+  "deployment": "pc-lab-cheap",
+  "caseCount": 332,
+  "exactMatchRate": 0.5964,
+  "safetyMatchRate": 1.0,
+  "safetyViolations": 0,
+  "parseFailures": 0,
+  "contentFilterBlocks": 0,
+  "fieldMatchRates": {
+    "title": 1.0,
+    "message": 1.0,
+    "primaryAction": 0.75,
+    "secondaryAction": 0.8133,
+    "forbiddenActions": 0.8795,
+    "tone": 1.0,
+    "showCooldown": 1.0,
+    "showPromise": 1.0,
+    "allowEmergencyExit": 1.0
+  },
+  "violationCounts": {},
+  "startedAt": "2026-09-05T18:09:38.295975+00:00",
+  "endedAt": "2026-09-05T18:09:38.315620+00:00"
+}

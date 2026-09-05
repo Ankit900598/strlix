@@ -1,0 +1,424 @@
+﻿[
+  {
+    "name": "gpt-4o",
+    "skus": [
+      "Standard",
+      "GlobalStandard",
+      "ProvisionedManaged",
+      "GlobalBatch",
+      "DataZoneStandard",
+      "DataZoneProvisionedManaged",
+      "GlobalProvisionedManaged"
+    ],
+    "version": "2024-05-13"
+  },
+  {
+    "name": "gpt-4o",
+    "skus": [
+      "Standard",
+      "GlobalStandard",
+      "ProvisionedManaged",
+      "GlobalProvisionedManaged",
+      "GlobalStandard",
+      "DataZoneStandard",
+      "GlobalBatch",
+      "DataZoneStandard",
+      "DataZoneProvisionedManaged",
+      "DataZoneBatch"
+    ],
+    "version": "2024-08-06"
+  },
+  {
+    "name": "gpt-4o-mini",
+    "skus": [
+      "Standard",
+      "GlobalStandard",
+      "GlobalBatch",
+      "ProvisionedManaged",
+      "GlobalStandard",
+      "DataZoneStandard",
+      "GlobalProvisionedManaged",
+      "DataZoneStandard",
+      "DataZoneProvisionedManaged",
+      "DataZoneBatch"
+    ],
+    "version": "2024-07-18"
+  },
+  {
+    "name": "gpt-4o",
+    "skus": [
+      "Standard",
+      "ProvisionedManaged",
+      "DataZoneStandard",
+      "GlobalStandard",
+      "DataZoneBatch",
+      "GlobalBatch",
+      "GlobalProvisionedManaged",
+      "DataZoneProvisionedManaged"
+    ],
+    "version": "2024-11-20"
+  },
+  {
+    "name": "gpt-4.1",
+    "skus": [
+      "Standard",
+      "GlobalStandard",
+      "DataZoneStandard",
+      "ProvisionedManaged",
+      "DataZoneProvisionedManaged",
+      "GlobalProvisionedManaged",
+      "GlobalStandard",
+      "DeveloperTier",
+      "GlobalBatch",
+      "DataZoneBatch"
+    ],
+    "version": "2025-04-14"
+  },
+  {
+    "name": "gpt-4.1-mini",
+    "skus": [
+      "Standard",
+      "GlobalStandard",
+      "DataZoneStandard",
+      "GlobalStandard",
+      "DataZoneStandard",
+      "DeveloperTier",
+      "GlobalProvisionedManaged",
+      "ProvisionedManaged",
+      "DataZoneProvisionedManaged",
+      "GlobalBatch",
+      "DataZoneBatch"
+    ],
+    "version": "2025-04-14"
+  },
+  {
+    "name": "gpt-4.1-nano",
+    "skus": [
+      "GlobalStandard",
+      "GlobalStandard",
+      "DataZoneStandard",
+      "DeveloperTier",
+      "DataZoneStandard",
+      "DataZoneProvisionedManaged",
+      "GlobalProvisionedManaged",
+      "ProvisionedManaged",
+      "GlobalBatch",
+      "DataZoneBatch"
+    ],
+    "version": "2025-04-14"
+  },
+  {
+    "name": "gpt-5",
+    "skus": [
+      "GlobalStandard",
+      "DataZoneStandard",
+      "ProvisionedManaged",
+      "DataZoneProvisionedManaged",
+      "GlobalProvisionedManaged",
+      "GlobalBatch",
+      "DataZoneBatch"
+    ],
+    "version": "2025-08-07"
+  },
+  {
+    "name": "gpt-5-mini",
+    "skus": [
+      "GlobalStandard",
+      "ProvisionedManaged",
+      "DataZoneProvisionedManaged",
+      "GlobalProvisionedManaged",
+      "DataZoneStandard"
+    ],
+    "version": "2025-08-07"
+  },
+  {
+    "name": "gpt-5-nano",
+    "skus": [
+      "GlobalStandard",
+      "DataZoneStandard"
+    ],
+    "version": "2025-08-07"
+  },
+  {
+    "name": "gpt-5-codex",
+    "skus": [
+      "GlobalStandard"
+    ],
+    "version": "2025-09-15"
+  },
+  {
+    "name": "gpt-5-pro",
+    "skus": [
+      "GlobalStandard"
+    ],
+    "version": "2025-10-06"
+  },
+  {
+    "name": "gpt-5.1-chat",
+    "skus": [
+      "GlobalStandard"
+    ],
+    "version": "2025-11-13"
+  },
+  {
+    "name": "gpt-5.1",
+    "skus": [
+      "Standard",
+      "GlobalStandard",
+      "DataZoneStandard",
+      "ProvisionedManaged",
+      "DataZoneProvisionedManaged",
+      "GlobalProvisionedManaged",
+      "GlobalBatch",
+      "DataZoneBatch"
+    ],
+    "version": "2025-11-13"
+  },
+  {
+    "name": "gpt-5.1-codex",
+    "skus": [
+      "GlobalStandard",
+      "DataZoneProvisionedManaged",
+      "GlobalProvisionedManaged"
+    ],
+    "version": "2025-11-13"
+  },
+  {
+    "name": "gpt-5.1-codex-mini",
+    "skus": [
+      "GlobalStandard"
+    ],
+    "version": "2025-11-13"
+  },
+  {
+    "name": "gpt-5.1-codex-max",
+    "skus": [
+      "GlobalStandard"
+    ],
+    "version": "2025-12-04"
+  },
+  {
+    "name": "gpt-5.2",
+    "skus": [
+      "GlobalStandard",
+      "DataZoneStandard",
+      "ProvisionedManaged",
+      "DataZoneProvisionedManaged",
+      "GlobalProvisionedManaged"
+    ],
+    "version": "2025-12-11"
+  },
+  {
+    "name": "gpt-5.2-chat",
+    "skus": [
+      "GlobalStandard"
+    ],
+    "version": "2025-12-11"
+  },
+  {
+    "name": "gpt-5.2-codex",
+    "skus": [
+      "GlobalStandard",
+      "GlobalProvisionedManaged"
+    ],
+    "version": "2026-01-14"
+  },
+  {
+    "name": "gpt-5.2-chat",
+    "skus": [
+      "GlobalStandard"
+    ],
+    "version": "2026-02-10"
+  },
+  {
+    "name": "gpt-5.3-codex",
+    "skus": [
+      "GlobalStandard",
+      "DataZoneStandard",
+      "GlobalProvisionedManaged"
+    ],
+    "version": "2026-02-24"
+  },
+  {
+    "name": "gpt-5.3-chat",
+    "skus": [
+      "GlobalStandard"
+    ],
+    "version": "2026-03-03"
+  },
+  {
+    "name": "gpt-5.4",
+    "skus": [
+      "GlobalStandard",
+      "DataZoneStandard",
+      "ProvisionedManaged",
+      "DataZoneProvisionedManaged",
+      "GlobalProvisionedManaged",
+      "GlobalBatch",
+      "DataZoneBatch"
+    ],
+    "version": "2026-03-05"
+  },
+  {
+    "name": "gpt-5.4-pro",
+    "skus": [
+      "GlobalStandard"
+    ],
+    "version": "2026-03-05"
+  },
+  {
+    "name": "gpt-5.4-mini",
+    "skus": [
+      "GlobalStandard",
+      "DataZoneStandard",
+      "ProvisionedManaged",
+      "DataZoneProvisionedManaged",
+      "GlobalProvisionedManaged",
+      "GlobalBatch",
+      "DataZoneBatch"
+    ],
+    "version": "2026-03-17"
+  },
+  {
+    "name": "gpt-5.4-nano",
+    "skus": [
+      "GlobalStandard",
+      "DataZoneStandard"
+    ],
+    "version": "2026-03-17"
+  },
+  {
+    "name": "gpt-5.5",
+    "skus": [
+      "GlobalStandard",
+      "DataZoneStandard",
+      "DataZoneProvisionedManaged",
+      "GlobalProvisionedManaged"
+    ],
+    "version": "2026-04-24"
+  },
+  {
+    "name": "gpt-5.6-terra",
+    "skus": [
+      "GlobalStandard",
+      "DataZoneStandard",
+      "GlobalProvisionedManaged",
+      "DataZoneProvisionedManaged"
+    ],
+    "version": "2026-07-09"
+  },
+  {
+    "name": "gpt-5.6-luna",
+    "skus": [
+      "GlobalStandard",
+      "DataZoneStandard",
+      "GlobalProvisionedManaged",
+      "DataZoneProvisionedManaged"
+    ],
+    "version": "2026-07-09"
+  },
+  {
+    "name": "gpt-5.6-sol",
+    "skus": [
+      "GlobalStandard",
+      "DataZoneStandard",
+      "GlobalProvisionedManaged",
+      "DataZoneProvisionedManaged"
+    ],
+    "version": "2026-07-09"
+  },
+  {
+    "name": "claude-sonnet-4-5",
+    "skus": [
+      "GlobalStandard"
+    ],
+    "version": "20250929"
+  },
+  {
+    "name": "claude-haiku-4-5",
+    "skus": [
+      "GlobalStandard"
+    ],
+    "version": "20251001"
+  },
+  {
+    "name": "claude-haiku-4-5",
+    "skus": [
+      "GlobalStandard"
+    ],
+    "version": "2"
+  },
+  {
+    "name": "claude-opus-4-5",
+    "skus": [
+      "GlobalStandard"
+    ],
+    "version": "20251101"
+  },
+  {
+    "name": "claude-opus-4-6",
+    "skus": [
+      "GlobalStandard"
+    ],
+    "version": "1"
+  },
+  {
+    "name": "claude-sonnet-4-6",
+    "skus": [
+      "GlobalStandard"
+    ],
+    "version": "1"
+  },
+  {
+    "name": "claude-opus-4-7",
+    "skus": [
+      "GlobalStandard"
+    ],
+    "version": "1"
+  },
+  {
+    "name": "claude-opus-4-8",
+    "skus": [
+      "GlobalStandard"
+    ],
+    "version": "1"
+  },
+  {
+    "name": "claude-opus-4-8",
+    "skus": [
+      "GlobalStandard",
+      "DataZoneStandard"
+    ],
+    "version": "2"
+  },
+  {
+    "name": "claude-sonnet-5",
+    "skus": [
+      "GlobalStandard"
+    ],
+    "version": "1"
+  },
+  {
+    "name": "claude-sonnet-5",
+    "skus": [
+      "GlobalStandard",
+      "DataZoneStandard"
+    ],
+    "version": "2"
+  },
+  {
+    "name": "claude-opus-5",
+    "skus": [
+      "GlobalStandard"
+    ],
+    "version": "1"
+  },
+  {
+    "name": "claude-opus-5",
+    "skus": [
+      "GlobalStandard",
+      "DataZoneStandard"
+    ],
+    "version": "2"
+  }
+]

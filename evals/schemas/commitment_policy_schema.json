@@ -1,0 +1,249 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phonecodex.app/evals/commitment-policy.schema.json",
+  "title": "PhoneCodexCommitmentPolicy",
+  "description": "Structured output of the Promise Compiler — turns natural-language user promises into enforceable policy.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "commitmentType",
+    "duration",
+    "startCondition",
+    "strictnessLevel",
+    "allowedApps",
+    "blockedApps",
+    "allowedContent",
+    "blockedContent",
+    "activeGuardrails",
+    "quotas",
+    "strikePolicy",
+    "lockPolicy",
+    "emergencyExceptions",
+    "tamperPolicy",
+    "followUpQuestionRequired",
+    "followUpQuestion",
+    "rejectedUnsafeParts",
+    "confidence"
+  ],
+  "properties": {
+    "commitmentType": {
+      "type": "string",
+      "enum": [
+        "focus_session",
+        "quota_entertainment",
+        "time_threshold",
+        "permanent_guardrail",
+        "monk_mode",
+        "install_gate",
+        "emergency_override"
+      ]
+    },
+    "duration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "value", "unit", "until"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["fixed", "until_clock", "indefinite", "none"]
+        },
+        "value": {
+          "type": ["number", "null"],
+          "minimum": 0
+        },
+        "unit": {
+          "type": ["string", "null"],
+          "enum": ["minutes", "hours", "days", "years", null]
+        },
+        "until": {
+          "type": ["string", "null"],
+          "description": "Clock time HH:MM or ISO date when kind=until_clock"
+        }
+      }
+    },
+    "startCondition": {
+      "type": "string",
+      "enum": ["immediate", "scheduled", "on_next_unlock", "manual_confirm"]
+    },
+    "strictnessLevel": {
+      "type": "string",
+      "enum": ["SOFT", "SMART", "STRICT", "LOCKED"]
+    },
+    "allowedApps": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/appRule" }
+    },
+    "blockedApps": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/appRule" }
+    },
+    "allowedContent": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/contentRule" }
+    },
+    "blockedContent": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/contentRule" }
+    },
+    "activeGuardrails": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "no_adult_content",
+          "no_dating_apps",
+          "no_gambling",
+          "no_short_form_video",
+          "no_social_feed",
+          "no_entertainment_installs"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "quotas": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/quota" }
+    },
+    "strikePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["warnBeforeLock", "strikesBeforeLock", "resetPeriod"],
+      "properties": {
+        "warnBeforeLock": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of WARN decisions before counting a strike"
+        },
+        "strikesBeforeLock": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "resetPeriod": {
+          "type": "string",
+          "enum": ["session", "day", "never"]
+        }
+      }
+    },
+    "lockPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "durationMinutes", "scope"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "durationMinutes": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "scope": {
+          "type": "string",
+          "enum": ["app", "device_overlay", "commitment_pause"]
+        }
+      }
+    },
+    "emergencyExceptions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/emergencyException" }
+    },
+    "tamperPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["preventDisable", "onTamper", "allowSettingsBrowse"],
+      "properties": {
+        "preventDisable": { "type": "boolean" },
+        "onTamper": {
+          "type": "string",
+          "enum": ["LOCK", "WARN", "BLOCK", "NONE"]
+        },
+        "allowSettingsBrowse": { "type": "boolean" }
+      }
+    },
+    "followUpQuestionRequired": { "type": "boolean" },
+    "followUpQuestion": { "type": ["string", "null"] },
+    "rejectedUnsafeParts": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    }
+  },
+  "$defs": {
+    "appRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["packageName", "appLabel", "scope"],
+      "properties": {
+        "packageName": { "type": "string" },
+        "appLabel": { "type": "string" },
+        "scope": {
+          "type": "string",
+          "description": "Human-readable allowance scope, e.g. calculus_only, dm_college_team_only"
+        }
+      }
+    },
+    "contentRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "description"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "study",
+            "short_form_video",
+            "long_form_video",
+            "social_dm",
+            "social_feed",
+            "adult_sexual",
+            "gaming",
+            "entertainment",
+            "install",
+            "calls",
+            "other"
+          ]
+        },
+        "description": { "type": "string" },
+        "apps": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "quota": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metric", "limit", "period"],
+      "properties": {
+        "metric": {
+          "type": "string",
+          "enum": ["shorts", "reels", "entertainment_minutes", "social_minutes"]
+        },
+        "limit": { "type": "integer", "minimum": 0 },
+        "period": {
+          "type": "string",
+          "enum": ["session", "day", "week"]
+        }
+      }
+    },
+    "emergencyException": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "detail"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "family_calls",
+            "emergency_calls",
+            "whitelist_contacts",
+            "whitelist_packages",
+            "sos"
+          ]
+        },
+        "detail": { "type": "string" }
+      }
+    }
+  }
+}

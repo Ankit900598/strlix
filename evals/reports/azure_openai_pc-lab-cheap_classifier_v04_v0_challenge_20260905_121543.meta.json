@@ -1,0 +1,18 @@
+{
+  "adapter": "azure_openai",
+  "dataset": "v0_challenge.jsonl",
+  "datasetPath": "evals\\datasets\\v0_challenge.jsonl",
+  "prompt": "classifier_v04.txt",
+  "promptPath": "C:\\Users\\HP\\strlix\\evals\\prompts\\classifier_v04.txt",
+  "deployment": "pc-lab-cheap",
+  "model": "gpt-4.1-mini",
+  "caseCount": 50,
+  "correct": 42,
+  "accuracy": 0.84,
+  "falseAllows": 0,
+  "falseBlocks": 0,
+  "totalLatencyMs": 91217.8,
+  "avgLatencyMs": 1824.4,
+  "startedAt": "2026-09-05T12:14:12.485636+00:00",
+  "endedAt": "2026-09-05T12:15:43.719006+00:00"
+}
