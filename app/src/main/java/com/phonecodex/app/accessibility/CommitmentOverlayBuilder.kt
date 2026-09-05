@@ -12,13 +12,25 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import com.phonecodex.app.domain.model.DecisionType
+import com.phonecodex.app.domain.model.StrictnessLevel
 
 /**
  * View-based WindowManager overlay for WARN / BLOCK / LOCK.
+ *
  * Product voice: "You promised this. I’m helping you keep it."
+ * Anatomy: mode chip → promise → evidence → strictness → attempts/cooldown → actions.
  * Technical metadata stays out of this surface (Decision Inspector only).
  */
 object CommitmentOverlayCopy {
+
+    private val PACKAGE_NAME_REGEX =
+        Regex("""\b[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*){2,}\b""", RegexOption.IGNORE_CASE)
+    private val TECHNICAL_META_REGEX = Regex(
+        pattern = """(?i)\b(?:confidence|source|deployment|reasonCategory|riskLevel)\s*[:=]\s*\S+"""
+    )
+    private val UNDER_STRICTNESS_REGEX = Regex(
+        pattern = """(?i)\s+under\s+(?:SOFT|SMART|STRICT|LOCKED)\b"""
+    )
 
     fun overlayKind(decision: String): OverlayKind {
         return when (decision.uppercase()) {
@@ -35,8 +47,8 @@ object CommitmentOverlayCopy {
     }
 
     fun headline(kind: OverlayKind): String = when (kind) {
-        OverlayKind.WARN -> "Stay on promise"
-        OverlayKind.BLOCK -> "This steps away from your promise"
+        OverlayKind.WARN -> "Drift from your promise"
+        OverlayKind.BLOCK -> "Outside your promise"
         OverlayKind.LOCK -> "Your commitment is locked"
     }
 
@@ -44,27 +56,61 @@ object CommitmentOverlayCopy {
         OverlayKind.WARN -> "You promised this. I’m helping you keep it."
         OverlayKind.BLOCK -> "You promised this. I’m helping you keep it."
         OverlayKind.LOCK ->
-            "Lock is active because of repeated attempts or a strict commitment. " +
-                "There is no quick bypass here."
+            "You asked not to get an easy way out. Lock is active — wait it out or open PhoneCodex."
     }
 
-    fun shortReason(decision: String, reason: String): String {
-        val cleaned = reason.trim()
+    fun promiseLine(goal: String?): String? {
+        val cleaned = goal?.trim().orEmpty()
+        if (cleaned.isEmpty()) return null
+        return truncateWords(cleaned, maxWords = 12)
+    }
+
+    /** Human evidence for the overlay — never raw tech metadata. */
+    fun evidenceLine(decision: String, reason: String): String {
+        val cleaned = sanitizeEvidence(reason)
         if (cleaned.isNotEmpty()) return cleaned
         return when (overlayKind(decision)) {
-            OverlayKind.LOCK, OverlayKind.BLOCK ->
-                "This doesn’t match your current commitment."
-            OverlayKind.WARN ->
-                "This might pull you off your commitment."
+            OverlayKind.WARN -> "This might pull you off your commitment."
+            OverlayKind.BLOCK -> "This doesn’t match your current commitment."
+            OverlayKind.LOCK -> "Repeated attempts or a strict commitment paused this path."
+        }
+    }
+
+    /** @deprecated Prefer [evidenceLine]. Kept for call-site clarity during migration. */
+    fun shortReason(decision: String, reason: String): String = evidenceLine(decision, reason)
+
+    fun sanitizeEvidence(raw: String): String {
+        var text = raw.trim()
+        if (text.isEmpty()) return ""
+        text = PACKAGE_NAME_REGEX.replace(text, "")
+        text = TECHNICAL_META_REGEX.replace(text, "")
+        text = UNDER_STRICTNESS_REGEX.replace(text, "")
+        text = text
+            .replace(Regex("""\s{2,}"""), " ")
+            .replace(Regex("""\s+([,.;:])"""), "$1")
+            .trim()
+            .trimStart('-', '—', ':', ',')
+            .trimEnd('-', '—', ':', ',')
+            .trim()
+        return text
+    }
+
+    fun strictnessCue(strictness: StrictnessLevel?): String? {
+        return when (strictness) {
+            StrictnessLevel.SOFT -> "SOFT"
+            StrictnessLevel.SMART -> "SMART"
+            StrictnessLevel.STRICT -> "STRICT"
+            StrictnessLevel.LOCKED -> "LOCKED"
+            null -> null
         }
     }
 
     fun attemptLabel(attemptCount: Int?): String? {
         if (attemptCount == null || attemptCount <= 0) return null
         return if (attemptCount == 1) {
-            "1 drift so far"
+            "1 attempt"
         } else {
-            "$attemptCount drifts so far"
+            "$attemptCount attempts"
         }
     }
 
@@ -88,6 +134,31 @@ object CommitmentOverlayCopy {
             else -> "Under a minute left"
         }
     }
+
+    /** Continue is only for WARN under SOFT/SMART — never BLOCK/LOCK or STRICT/LOCKED. */
+    fun allowsContinue(kind: OverlayKind, strictness: StrictnessLevel?): Boolean {
+        if (kind != OverlayKind.WARN) return false
+        return strictness == StrictnessLevel.SOFT || strictness == StrictnessLevel.SMART
+    }
+
+    fun primaryActionLabel(kind: OverlayKind): String = when (kind) {
+        OverlayKind.WARN -> "Return to safe path"
+        OverlayKind.BLOCK -> "Leave this screen"
+        OverlayKind.LOCK -> "Back to safe screen"
+    }
+
+    fun continueActionLabel(strictness: StrictnessLevel?): String {
+        return when (strictness) {
+            StrictnessLevel.SMART -> "Continue · counts as a strike"
+            else -> "Continue carefully"
+        }
+    }
+
+    private fun truncateWords(text: String, maxWords: Int): String {
+        val words = text.split(Regex("\\s+")).filter { it.isNotEmpty() }
+        if (words.size <= maxWords) return text
+        return words.take(maxWords).joinToString(" ") + "…"
+    }
 }
 
 enum class OverlayKind {
@@ -101,7 +172,8 @@ data class CommitmentOverlayModel(
     val reason: String,
     val promiseGoal: String? = null,
     val attemptCount: Int? = null,
-    val remainingMillis: Long? = null
+    val remainingMillis: Long? = null,
+    val strictness: StrictnessLevel? = null
 )
 
 data class CommitmentOverlayActions(
@@ -119,20 +191,24 @@ class CommitmentOverlayBuilder(private val context: Context) {
 
         val root = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Palette.SCRIM)
+            setBackgroundColor(
+                if (model.kind == OverlayKind.WARN) Palette.SCRIM_WARN else Palette.SCRIM
+            )
             setPadding(dp(24), dp(48), dp(24), dp(48))
             gravity = Gravity.CENTER
             isClickable = true
             isFocusable = true
+            contentDescription = "PhoneCodex ${CommitmentOverlayCopy.decisionBadge(model.kind)} overlay"
         }
 
         val card = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             background = roundedRect(Palette.CARD, dp(20).toFloat())
             setPadding(dp(28), dp(28), dp(28), dp(28))
-            elevation = 8f * density
+            elevation = if (model.kind == OverlayKind.WARN) 4f * density else 8f * density
         }
 
+        // 1. Mode chip
         val badge = TextView(context).apply {
             text = CommitmentOverlayCopy.decisionBadge(model.kind)
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
@@ -142,49 +218,45 @@ class CommitmentOverlayBuilder(private val context: Context) {
             background = roundedRect(badgeFill(model.kind), dp(999).toFloat())
             setPadding(dp(12), dp(6), dp(12), dp(6))
             gravity = Gravity.CENTER
+            contentDescription = "Mode ${CommitmentOverlayCopy.decisionBadge(model.kind)}"
         }
         val badgeWrap = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.START
             addView(badge)
         }
-
-        val headline = TextView(context).apply {
-            text = CommitmentOverlayCopy.headline(model.kind)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 24f)
-            setTextColor(Palette.TEXT_PRIMARY)
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            setPadding(0, dp(18), 0, 0)
-        }
-
-        val companion = TextView(context).apply {
-            text = CommitmentOverlayCopy.companionLine(model.kind)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
-            setTextColor(Palette.TEXT_MUTED)
-            setPadding(0, dp(10), 0, 0)
-            setLineSpacing(0f, 1.25f)
-        }
-
-        val reason = TextView(context).apply {
-            text = model.reason
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
-            setTextColor(Palette.TEXT_PRIMARY)
-            setPadding(0, dp(18), 0, 0)
-            setLineSpacing(0f, 1.3f)
-        }
-
         card.addView(badgeWrap)
-        card.addView(headline)
-        card.addView(companion)
-        card.addView(reason)
 
-        val goal = model.promiseGoal?.trim().orEmpty()
-        if (goal.isNotEmpty()) {
-            card.addView(metaLabel("Your promise", dp))
+        // Headline (mode-specific, contract tone — not brand-as-judge)
+        card.addView(
+            TextView(context).apply {
+                text = CommitmentOverlayCopy.headline(model.kind)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 22f)
+                setTextColor(Palette.TEXT_PRIMARY)
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                setPadding(0, dp(18), 0, 0)
+            }
+        )
+
+        // Soft product voice
+        card.addView(
+            TextView(context).apply {
+                text = CommitmentOverlayCopy.companionLine(model.kind)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+                setTextColor(Palette.TEXT_MUTED)
+                setPadding(0, dp(8), 0, 0)
+                setLineSpacing(0f, 1.25f)
+            }
+        )
+
+        // 2. Promise line
+        val promise = CommitmentOverlayCopy.promiseLine(model.promiseGoal)
+        if (promise != null) {
+            card.addView(metaLabel("Your promise", dp, top = 18))
             card.addView(
                 TextView(context).apply {
-                    text = goal
-                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+                    text = promise
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
                     setTextColor(Palette.CLAY)
                     setPadding(0, dp(4), 0, 0)
                     setLineSpacing(0f, 1.25f)
@@ -192,35 +264,73 @@ class CommitmentOverlayBuilder(private val context: Context) {
             )
         }
 
-        val attempt = CommitmentOverlayCopy.attemptLabel(model.attemptCount)
-        if (attempt != null) {
-            card.addView(metaLabel(attempt, dp, top = 14))
-        }
+        // 3. Evidence / reason line
+        card.addView(metaLabel("Why this screen", dp, top = 16))
+        card.addView(
+            TextView(context).apply {
+                text = model.reason
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+                setTextColor(Palette.TEXT_PRIMARY)
+                setPadding(0, dp(4), 0, 0)
+                setLineSpacing(0f, 1.3f)
+            }
+        )
 
-        val remaining = CommitmentOverlayCopy.remainingLabel(model.kind, model.remainingMillis)
-        if (remaining != null) {
-            card.addView(metaLabel(remaining, dp, top = if (attempt != null) 6 else 14))
+        // 4–5. Strictness cue + attempt / cooldown (quiet meta row)
+        val metaBits = mutableListOf<String>()
+        CommitmentOverlayCopy.strictnessCue(model.strictness)?.let { metaBits.add(it) }
+        CommitmentOverlayCopy.attemptLabel(model.attemptCount)?.let { metaBits.add(it) }
+        CommitmentOverlayCopy.remainingLabel(model.kind, model.remainingMillis)?.let {
+            metaBits.add(it)
+        }
+        if (metaBits.isNotEmpty()) {
+            card.addView(
+                TextView(context).apply {
+                    text = metaBits.joinToString(" · ")
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+                    setTextColor(Palette.TEXT_MUTED)
+                    letterSpacing = 0.04f
+                    setPadding(0, dp(14), 0, 0)
+                }
+            )
         }
 
         card.addView(spacer(dp(22)))
 
+        // Actions — mode fidelity
         when (model.kind) {
             OverlayKind.WARN -> {
                 card.addView(
-                    primaryButton("Stay on promise", actions.onBackToSafe, dp)
+                    primaryButton(
+                        CommitmentOverlayCopy.primaryActionLabel(OverlayKind.WARN),
+                        actions.onBackToSafe,
+                        dp
+                    )
                 )
                 actions.onGoBack?.let { goBack ->
                     card.addView(spacer(dp(10)))
-                    card.addView(secondaryButton("Go Back", goBack, dp))
+                    card.addView(secondaryButton("Go back", goBack, dp))
                 }
-                actions.onContinue?.let { continueAction ->
-                    card.addView(spacer(dp(10)))
-                    card.addView(quietButton("Continue", continueAction, dp))
+                if (CommitmentOverlayCopy.allowsContinue(model.kind, model.strictness)) {
+                    actions.onContinue?.let { continueAction ->
+                        card.addView(spacer(dp(10)))
+                        card.addView(
+                            quietButton(
+                                CommitmentOverlayCopy.continueActionLabel(model.strictness),
+                                continueAction,
+                                dp
+                            )
+                        )
+                    }
                 }
             }
             OverlayKind.BLOCK -> {
                 card.addView(
-                    primaryButton("Back to safe screen", actions.onBackToSafe, dp)
+                    primaryButton(
+                        CommitmentOverlayCopy.primaryActionLabel(OverlayKind.BLOCK),
+                        actions.onBackToSafe,
+                        dp
+                    )
                 )
                 actions.onOpenPhoneCodex?.let { openApp ->
                     card.addView(spacer(dp(10)))
@@ -228,8 +338,13 @@ class CommitmentOverlayBuilder(private val context: Context) {
                 }
             }
             OverlayKind.LOCK -> {
+                // No Continue — lock has no easy bypass.
                 card.addView(
-                    primaryButton("Back to safe screen", actions.onBackToSafe, dp)
+                    primaryButton(
+                        CommitmentOverlayCopy.primaryActionLabel(OverlayKind.LOCK),
+                        actions.onBackToSafe,
+                        dp
+                    )
                 )
                 actions.onOpenPhoneCodex?.let { openApp ->
                     card.addView(spacer(dp(10)))
@@ -272,8 +387,9 @@ class CommitmentOverlayBuilder(private val context: Context) {
     ): TextView {
         return TextView(context).apply {
             this.text = text
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
             setTextColor(Palette.TEXT_MUTED)
+            letterSpacing = 0.02f
             setPadding(0, dp(top), 0, 0)
         }
     }
@@ -295,6 +411,7 @@ class CommitmentOverlayBuilder(private val context: Context) {
             setTextColor(Palette.ON_CLAY)
             background = roundedRect(Palette.CLAY, dp(14).toFloat())
             setPadding(dp(16), dp(14), dp(16), dp(14))
+            contentDescription = label
             setOnClickListener { onClick() }
         }
     }
@@ -307,6 +424,7 @@ class CommitmentOverlayBuilder(private val context: Context) {
             setTextColor(Palette.TEXT_PRIMARY)
             background = roundedRect(Palette.SURFACE_RAISED, dp(14).toFloat(), Palette.OUTLINE)
             setPadding(dp(16), dp(12), dp(16), dp(12))
+            contentDescription = label
             setOnClickListener { onClick() }
         }
     }
@@ -319,6 +437,7 @@ class CommitmentOverlayBuilder(private val context: Context) {
             setTextColor(Palette.TEXT_MUTED)
             background = roundedRect(Color.TRANSPARENT, dp(14).toFloat())
             setPadding(dp(16), dp(10), dp(16), dp(10))
+            contentDescription = label
             setOnClickListener { onClick() }
         }
     }
@@ -353,6 +472,7 @@ class CommitmentOverlayBuilder(private val context: Context) {
     /** Soft dark / warm clay tokens mirrored from Compose theme (View overlay). */
     private object Palette {
         val SCRIM = Color.parseColor("#F20C0C10")
+        val SCRIM_WARN = Color.parseColor("#CC0C0C10")
         val CARD = Color.parseColor("#FF15151B")
         val SURFACE_RAISED = Color.parseColor("#FF1D1D25")
         val OUTLINE = Color.parseColor("#FF2B2B35")

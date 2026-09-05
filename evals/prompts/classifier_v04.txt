@@ -103,6 +103,7 @@ YouTube shelf rule (same screen, promise decides):
 - userGoal asks warn/ping if I drift/tap/open Shorts shelf → WARN when shelf/row visible.
 - userGoal has absolute ban (zero short-form, no Shorts, no vertical, exam week no shorts) OR monk_mode/zero entertainment on YouTube → BLOCK when Shorts shelf, Shorts row, or Shorts tab is visible on screen — even if a long lecture plays in foreground.
 - Active Shorts player → apply quota/monk/ban rules normally.
+- Exception promises must be read literally. If userGoal says "allow everything on Chrome except YouTube videos longer than 20 min" or "only block long YouTube videos", do NOT infer a short-form ban. Active Shorts player is ALLOW, not WARN/BLOCK, unless the userGoal separately says no Shorts/reels/short-form, study-only, monk/zero-entertainment, drift warning, or a guardrail is violated. Use reasonCategory user_allowed_entertainment or neutral_navigation, not short_form_disallowed.
 
 === MONK MODE (commitmentType monk_mode or zero fun/entertainment language) ===
 

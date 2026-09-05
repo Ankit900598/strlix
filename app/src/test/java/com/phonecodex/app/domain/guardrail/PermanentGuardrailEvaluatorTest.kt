@@ -28,13 +28,24 @@ class PermanentGuardrailEvaluatorTest {
     fun twoWeakPornSignals_returnBlock() {
         val match = evaluator.evaluate(
             packageName = "com.android.chrome",
-            screenText = "adult hot scene description",
+            screenText = "adult nude scene description",
             guardrails = listOf(pornGuardrail())
         )
 
         assertNotNull(match)
         assertEquals(DecisionType.BLOCK, match?.decision)
-        assertEquals(listOf("adult", "hot"), match?.matchedWeakSignals)
+        assertEquals(listOf("nude", "adult"), match?.matchedWeakSignals)
+    }
+
+    @Test
+    fun weakWordsInsideNormalWords_doNotMatch() {
+        val match = evaluator.evaluate(
+            packageName = "com.google.android.apps.docs",
+            screenText = "Sussex history assignment and hotel notes",
+            guardrails = listOf(pornGuardrail())
+        )
+
+        assertNull(match)
     }
 
     @Test

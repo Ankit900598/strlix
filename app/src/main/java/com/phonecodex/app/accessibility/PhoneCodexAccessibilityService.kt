@@ -39,6 +39,7 @@ import com.phonecodex.app.domain.model.WorldMode
 import com.phonecodex.app.domain.policy.PolicyEngine
 import com.phonecodex.app.domain.feedback.FeedbackMemory
 import com.phonecodex.app.domain.guardrail.PermanentGuardrailEvaluator
+import com.phonecodex.app.domain.promise.PromiseIntentRules
 import com.phonecodex.app.domain.session.SessionExpiryPolicy
 import com.phonecodex.app.domain.signals.ContentSignalDetector
 import com.phonecodex.app.domain.tamper.AccessibilityTamperGuard
@@ -539,14 +540,20 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
             return false
         }
 
+        val sessionGoal = sessionStore.getActiveSession()?.goal.orEmpty()
         val signals = contentSignalDetector.detect(packageName, screenText)
 
-        if (packageName == YOUTUBE_PACKAGE && signals.isYouTubeShorts) {
+        if (
+            packageName == YOUTUBE_PACKAGE &&
+            signals.isYouTubeShorts &&
+            PromiseIntentRules.blocksShortForm(sessionGoal) &&
+            !PromiseIntentRules.allowsShortForm(sessionGoal)
+        ) {
             return applySignalDecision(
                 packageName = packageName,
                 screenText = screenText,
                 decision = DecisionType.BLOCK,
-                reason = "YouTube Shorts detected during Study World",
+                reason = "Short-form video conflicts with this promise",
                 source = "Content Signal",
                 matchedSignals = signals.matchedSignals,
                 block = true
@@ -577,12 +584,15 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
             )
         }
 
-        if (packageName == CHROME_PACKAGE && signals.isChromeStudyLike) {
+        if (
+            packageName == CHROME_PACKAGE &&
+            (signals.isChromeStudyLike || PromiseIntentRules.allowsBroadChromeUse(sessionGoal))
+        ) {
             return applySignalDecision(
                 packageName = packageName,
                 screenText = screenText,
                 decision = DecisionType.ALLOW,
-                reason = "Study-like Chrome content detected",
+                reason = "Chrome use is allowed by this promise",
                 source = "Content Signal",
                 matchedSignals = signals.matchedSignals,
                 block = false
@@ -864,10 +874,11 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
         val remaining = session?.let { it.deadlineMillis - System.currentTimeMillis() }
         return CommitmentOverlayModel(
             kind = kind,
-            reason = CommitmentOverlayCopy.shortReason(explanation.decision, explanation.reason),
+            reason = CommitmentOverlayCopy.evidenceLine(explanation.decision, explanation.reason),
             promiseGoal = session?.goal?.takeIf { it.isNotBlank() },
             attemptCount = session?.attemptCount,
-            remainingMillis = remaining
+            remainingMillis = remaining,
+            strictness = session?.strictness
         )
     }
 

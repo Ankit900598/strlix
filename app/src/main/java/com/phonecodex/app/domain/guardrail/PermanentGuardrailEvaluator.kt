@@ -49,8 +49,8 @@ class PermanentGuardrailEvaluator {
         val strongMatched = PORN_STRONG_SIGNALS.filter { signal ->
             normalizedText.contains(signal)
         }
-        val weakMatched = PORN_WEAK_SIGNALS.filter { signal ->
-            normalizedText.contains(signal)
+        val weakMatched = PORN_WEAK_SIGNALS.mapNotNull { signal ->
+            signal.label.takeIf { signal.pattern.containsMatchIn(normalizedText) }
         }
 
         if (strongMatched.isNotEmpty()) {
@@ -142,12 +142,15 @@ class PermanentGuardrailEvaluator {
             "xnxx"
         )
 
+        private data class WeakSignal(
+            val label: String,
+            val pattern: Regex
+        )
+
         private val PORN_WEAK_SIGNALS = listOf(
-            "sex",
-            "nude",
-            "adult",
-            "hot",
-            "bikini"
+            WeakSignal("sex", Regex("\\bsex\\b")),
+            WeakSignal("nude", Regex("\\bnude\\b")),
+            WeakSignal("adult", Regex("\\badult\\b"))
         )
     }
 }

@@ -1,7 +1,10 @@
 package com.phonecodex.app.accessibility
 
+import com.phonecodex.app.domain.model.StrictnessLevel
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class CommitmentOverlayCopyTest {
@@ -16,31 +19,73 @@ class CommitmentOverlayCopyTest {
     }
 
     @Test
-    fun shortReason_prefersClassifierReason() {
+    fun evidenceLine_prefersHumanReason() {
         assertEquals(
             "Shorts will pull you off lecture mode.",
-            CommitmentOverlayCopy.shortReason("BLOCK", "Shorts will pull you off lecture mode.")
+            CommitmentOverlayCopy.evidenceLine("BLOCK", "Shorts will pull you off lecture mode.")
         )
     }
 
     @Test
-    fun shortReason_fallsBackByKind() {
+    fun evidenceLine_fallsBackByKind() {
         assertEquals(
             "This doesn’t match your current commitment.",
-            CommitmentOverlayCopy.shortReason("BLOCK", "  ")
+            CommitmentOverlayCopy.evidenceLine("BLOCK", "  ")
         )
         assertEquals(
             "This might pull you off your commitment.",
-            CommitmentOverlayCopy.shortReason("WARN", "")
+            CommitmentOverlayCopy.evidenceLine("WARN", "")
         )
+        assertEquals(
+            "Repeated attempts or a strict commitment paused this path.",
+            CommitmentOverlayCopy.evidenceLine("LOCK", "")
+        )
+    }
+
+    @Test
+    fun evidenceLine_stripsPackageAndTechMeta() {
+        val cleaned = CommitmentOverlayCopy.evidenceLine(
+            "BLOCK",
+            "com.google.android.youtube is conditional in Study World under STRICT " +
+                "confidence=0.92 source=Policy reasonCategory=study_drift"
+        )
+        assertFalse(cleaned.contains("com.google.android.youtube"))
+        assertFalse(cleaned.contains("confidence", ignoreCase = true))
+        assertFalse(cleaned.contains("source=", ignoreCase = true))
+        assertFalse(cleaned.contains("reasonCategory", ignoreCase = true))
+        assertFalse(cleaned.contains("under STRICT", ignoreCase = true))
+        assertTrue(cleaned.contains("Study World") || cleaned.contains("conditional"))
+    }
+
+    @Test
+    fun shortReason_delegatesToEvidenceLine() {
+        assertEquals(
+            CommitmentOverlayCopy.evidenceLine("WARN", "Soft nudge."),
+            CommitmentOverlayCopy.shortReason("WARN", "Soft nudge.")
+        )
+    }
+
+    @Test
+    fun promiseLine_truncatesToTwelveWords() {
+        val longGoal =
+            "YouTube only for calculus lectures no Shorts and also no gaming related videos ever"
+        val line = CommitmentOverlayCopy.promiseLine(longGoal)
+        assertTrue(line!!.endsWith("…"))
+        assertEquals(12, line.removeSuffix("…").trim().split(Regex("\\s+")).size)
+    }
+
+    @Test
+    fun promiseLine_hidesBlank() {
+        assertNull(CommitmentOverlayCopy.promiseLine(null))
+        assertNull(CommitmentOverlayCopy.promiseLine("  "))
     }
 
     @Test
     fun attemptLabel_hidesZero() {
         assertNull(CommitmentOverlayCopy.attemptLabel(null))
         assertNull(CommitmentOverlayCopy.attemptLabel(0))
-        assertEquals("1 drift so far", CommitmentOverlayCopy.attemptLabel(1))
-        assertEquals("3 drifts so far", CommitmentOverlayCopy.attemptLabel(3))
+        assertEquals("1 attempt", CommitmentOverlayCopy.attemptLabel(1))
+        assertEquals("3 attempts", CommitmentOverlayCopy.attemptLabel(3))
     }
 
     @Test
@@ -57,7 +102,72 @@ class CommitmentOverlayCopyTest {
     }
 
     @Test
-    fun headline_warnSaysStayOnPromise() {
-        assertEquals("Stay on promise", CommitmentOverlayCopy.headline(OverlayKind.WARN))
+    fun headline_isContractToneNotShame() {
+        assertEquals("Drift from your promise", CommitmentOverlayCopy.headline(OverlayKind.WARN))
+        assertEquals("Outside your promise", CommitmentOverlayCopy.headline(OverlayKind.BLOCK))
+        assertEquals("Your commitment is locked", CommitmentOverlayCopy.headline(OverlayKind.LOCK))
+        listOf(OverlayKind.WARN, OverlayKind.BLOCK, OverlayKind.LOCK).forEach { kind ->
+            val copy = CommitmentOverlayCopy.headline(kind) + " " +
+                CommitmentOverlayCopy.companionLine(kind)
+            assertFalse(copy.contains("Stay strong", ignoreCase = true))
+            assertFalse(copy.contains("be better", ignoreCase = true))
+            assertFalse(copy.contains("inappropriate", ignoreCase = true))
+            assertFalse(copy.contains("AI thinks", ignoreCase = true))
+        }
+    }
+
+    @Test
+    fun strictnessCue_oneWordQuiet() {
+        assertEquals("SOFT", CommitmentOverlayCopy.strictnessCue(StrictnessLevel.SOFT))
+        assertEquals("SMART", CommitmentOverlayCopy.strictnessCue(StrictnessLevel.SMART))
+        assertEquals("STRICT", CommitmentOverlayCopy.strictnessCue(StrictnessLevel.STRICT))
+        assertEquals("LOCKED", CommitmentOverlayCopy.strictnessCue(StrictnessLevel.LOCKED))
+        assertNull(CommitmentOverlayCopy.strictnessCue(null))
+    }
+
+    @Test
+    fun allowsContinue_onlyWarnSoftOrSmart() {
+        assertTrue(
+            CommitmentOverlayCopy.allowsContinue(OverlayKind.WARN, StrictnessLevel.SOFT)
+        )
+        assertTrue(
+            CommitmentOverlayCopy.allowsContinue(OverlayKind.WARN, StrictnessLevel.SMART)
+        )
+        assertFalse(
+            CommitmentOverlayCopy.allowsContinue(OverlayKind.WARN, StrictnessLevel.STRICT)
+        )
+        assertFalse(
+            CommitmentOverlayCopy.allowsContinue(OverlayKind.WARN, StrictnessLevel.LOCKED)
+        )
+        assertFalse(
+            CommitmentOverlayCopy.allowsContinue(OverlayKind.BLOCK, StrictnessLevel.SOFT)
+        )
+        assertFalse(
+            CommitmentOverlayCopy.allowsContinue(OverlayKind.LOCK, StrictnessLevel.SOFT)
+        )
+        assertFalse(CommitmentOverlayCopy.allowsContinue(OverlayKind.WARN, null))
+    }
+
+    @Test
+    fun primaryActionLabels_matchModeJobs() {
+        assertEquals(
+            "Return to safe path",
+            CommitmentOverlayCopy.primaryActionLabel(OverlayKind.WARN)
+        )
+        assertEquals(
+            "Leave this screen",
+            CommitmentOverlayCopy.primaryActionLabel(OverlayKind.BLOCK)
+        )
+        assertEquals(
+            "Back to safe screen",
+            CommitmentOverlayCopy.primaryActionLabel(OverlayKind.LOCK)
+        )
+    }
+
+    @Test
+    fun decisionBadge_showsModeChip() {
+        assertEquals("WARN", CommitmentOverlayCopy.decisionBadge(OverlayKind.WARN))
+        assertEquals("BLOCK", CommitmentOverlayCopy.decisionBadge(OverlayKind.BLOCK))
+        assertEquals("LOCK", CommitmentOverlayCopy.decisionBadge(OverlayKind.LOCK))
     }
 }
