@@ -56,15 +56,18 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                 isAccessibilityEnabled = state.isAccessibilityEnabled,
                 hasStoredSession = state.hasStoredSession,
                 hasPromiseUnderstanding = state.promiseUnderstanding != null,
-                showAdvancedControls = state.showAdvancedControls
+                showAdvancedControls = state.showAdvancedControls,
+                showAdvancedEngineering = state.showAdvancedEngineering
             )
         }
     }
 
-    // Inspector poll only while the debug row is actually on-screen (or nearby).
+    // Inspector poll only while engineering debug rows are actually on-screen.
     val inspectorVisible by remember {
         derivedStateOf {
-            if (!state.showAdvancedControls) return@derivedStateOf false
+            if (!state.showAdvancedControls || !state.showAdvancedEngineering) {
+                return@derivedStateOf false
+            }
             listState.layoutInfo.visibleItemsInfo.any { info ->
                 val key = info.key as? String
                 key == HomeListItem.AdvancedDebug.id ||
@@ -196,6 +199,14 @@ fun HomeScreen(modifier: Modifier = Modifier) {
 
                 HomeListItem.AdvancedRecoveryPolicy -> {
                     AdvancedRecoveryPolicyCard(recoveryPolicy = recoveryPolicy)
+                    Spacer(modifier = Modifier.height(14.dp))
+                }
+
+                HomeListItem.AdvancedEngineeringToggle -> {
+                    AdvancedEngineeringToggle(
+                        showEngineering = state.showAdvancedEngineering,
+                        onToggle = state::toggleAdvancedEngineering
+                    )
                     Spacer(modifier = Modifier.height(14.dp))
                 }
 

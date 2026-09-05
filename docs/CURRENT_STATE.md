@@ -1,6 +1,6 @@
 # PhoneCodex — Current State
 
-**Updated:** 2026-09-05  
+**Updated:** 2026-09-06  
 **Audience:** Future Cursor / Codex sessions  
 **Rule:** Read this before shipping features. Prefer this file over chat memory.
 
@@ -9,7 +9,9 @@ Related depth (do not replace this file):
 - Product vision: `docs/PRODUCT_MEMORY.md`
 - AI / eval strategy: `docs/cto-strategy-phonecodex-ai.md`
 - Classifier shipping bar: `evals/reports/classifier_v04_recommendation.md`
-- Promise Compiler status: `evals/reports/promise_compiler_v03_failure_analysis.md`
+- Promise Compiler design: `evals/reports/promise_compiler_v04_design.md`
+- Promise Compiler eval: `evals/reports/promise_compiler_v04_eval.md`
+- Promise Compiler v03 failure analysis: `evals/reports/promise_compiler_v03_failure_analysis.md`
 
 ---
 
@@ -41,8 +43,8 @@ Android → local backend → Azure OpenAI
   → AiConfidenceGate → merge into PolicyEngine
 
 Promise Compiler (NL → CommitmentPolicy JSON)
-  → research-stage only (eval lab)
-  → NOT wired into the Android app yet
+  → research-stage only (eval lab; `promise_compiler_v04.txt`)
+  → NOT app-ready — do not auto-wire into PolicyEngine
 ```
 
 | Layer | Status |
@@ -51,11 +53,11 @@ Promise Compiler (NL → CommitmentPolicy JSON)
 | PolicyEngine + Decision Inspector | In app |
 | Overlay enforcement | In app — **unstable under own-package events** |
 | Backend `/classify` + Azure | Working in lab; default model = `pc-lab-cheap` + `classifier_v04` |
-| Promise Compiler | Lab only (`promise_compiler_v03`, ~64% safety match) |
+| Promise Compiler | Lab only (`promise_compiler_v04`; safety 62.5% on 200-case quality set — not product-ready) |
 
 ---
 
-## 3. Verified working parts (as of 2026-09-05)
+## 3. Verified working parts (as of 2026-09-06)
 
 **Android / product loop**
 
@@ -72,7 +74,12 @@ Promise Compiler (NL → CommitmentPolicy JSON)
 **AI Lab (not product-critical this week)**
 
 - Screen classifier **v04** on `v1_edge_cases`: ~95% accuracy on `pc-lab-cheap`, **0 false allows** — recommended production advisor prompt
-- Promise Compiler **v03**: parseFailures 0, safetyMatchRate **63.6%**, exactMatchRate **34.3%** — usable as research signal, **not** ship-ready as product input
+- Promise Compiler **v04** (`promise_compiler_v04.txt`) on quality set `evals/datasets/v3_commitment_messy_global.jsonl` (200 distinction cases, no `synthetic_fill`):
+  - `pc-lab-cheap`: exact **41.0%**, safety **62.5%**, violations **7**, parseFailures **0**
+  - Clarification recall **82.5%** (vs v03 **62.5%**); `duration_ambiguous` and `session_and_content` improved vs v03
+  - Aggregate safetyMatch slightly below v03 (**64.5% → 62.5%**) but load-bearing distinctions improved; remaining violations = missed follow-ups on vague phrases
+  - Verdict: still research-stage / **NOT app-ready** — do not auto-wire into PolicyEngine
+  - Design / eval: `evals/reports/promise_compiler_v04_design.md`, `evals/reports/promise_compiler_v04_eval.md`
 
 ---
 
@@ -104,7 +111,7 @@ Order:
 1. Prove overlay stays up on YouTube (or Instagram) under Study World.
 2. Prove PhoneCodex own-package events do **not** wrongly hide the overlay.
 3. Prove logs show a stable final decision (not thrashing ALLOW/BLOCK).
-4. Only then: polish, AI lab expansion, or new product surfaces.
+4. Only then: next product step for Promise Compiler — confirm-sheet for compiled policy + follow-ups before Start (still behind PolicyEngine; no auto-wire).
 
 ---
 
@@ -116,7 +123,7 @@ Order:
 | Azure expansion (new deployments, vision path) | Classifier is already past shipping bar for text; vision waits for OCR failure evidence |
 | UI polish / mascot / marketing screens | No product without reliable block |
 | Feature creep (payments, friends, pet, operator taps) | Premature |
-| Wire Promise Compiler into Android | Research-stage; wrong gold taught us not to ship early |
+| Auto-wire Promise Compiler into PolicyEngine | Research-stage / not app-ready; confirm-sheet + follow-ups first after overlay P0 |
 | Treat AI as sole authority | PolicyEngine must remain law |
 
 ---
@@ -145,7 +152,7 @@ From product memory + CTO strategy — park here until the loop is stable:
 |------|----------|
 | **Guided Study Rail** | Allowed path inside distracting apps (lecture track, not free roam) |
 | **Exact YouTube playlist / channel enforcement** | Promise-scoped allow: only named channel/playlist |
-| **Natural-language Promise Compiler** | Text → CommitmentPolicy; ship when safetyMatch is product-grade and wired behind PolicyEngine |
+| **Natural-language Promise Compiler** | Text → CommitmentPolicy (v04 lab done); next UX = confirm-sheet + follow-ups before Start; ship only when safetyMatch is product-grade and wired behind PolicyEngine |
 | **Strict mode / tamper protection** | Harder exit, preventDisable, LOCKED — with emergency always open |
 | **Vision classifier** | Screenshot / frame when OCR lies; opt-in; never bank/OTP |
 | **Safe phone operator** | Agentic “do X on phone” — long-term only; Play + liability constrained |

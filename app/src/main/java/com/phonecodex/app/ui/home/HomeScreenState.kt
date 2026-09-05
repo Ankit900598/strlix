@@ -101,6 +101,7 @@ internal class HomeScreenState(
     var backendProbeResult by mutableStateOf(BackendProbeResult.idle())
     var backendTestInProgress by mutableStateOf(false)
     var showAdvancedControls by mutableStateOf(false)
+    var showAdvancedEngineering by mutableStateOf(false)
     var isBootstrapped by mutableStateOf(false)
     private var bootstrapStarted: Boolean = false
     private var diagnosticsScope: CoroutineScope? = null
@@ -222,6 +223,12 @@ internal class HomeScreenState(
     fun startCommitment() {
         val draft = promiseDraft ?: return
 
+        if (draft.needsClarification) {
+            startBlockedMessage =
+                "I still need a clearer promise before I can protect it. Edit and tap Understand again."
+            return
+        }
+
         if (!isAccessibilityEnabled) {
             startBlockedMessage =
                 "Turn on protection first, otherwise I cannot keep this promise for you."
@@ -234,7 +241,7 @@ internal class HomeScreenState(
             draft = draft,
             studyWorldSettingsStore = studyWorldSettingsStore
         )
-        draft.suggestedAppRules.forEach { rule -> appRulesStore.applySuggestedRule(rule) }
+        appRulesStore.applyCommitmentSuggestions(draft.suggestedAppRules)
         appRules = appRulesStore.getRules()
         studyWorldSettings = studyWorldSettingsStore.getSettings()
 
@@ -299,6 +306,8 @@ internal class HomeScreenState(
     fun toggleAdvancedControls() {
         if (showAdvancedControls) {
             showAdvancedControls = false
+            showAdvancedEngineering = false
+            advancedSnapshotLoaded = false
             return
         }
         val started = SystemClock.elapsedRealtime()
@@ -310,8 +319,18 @@ internal class HomeScreenState(
         )
     }
 
+    fun toggleAdvancedEngineering() {
+        if (showAdvancedEngineering) {
+            showAdvancedEngineering = false
+            return
+        }
+        showAdvancedEngineering = true
+        // Snapshot (debug/events) loads only when engineering opens.
+        advancedSnapshotLoaded = false
+    }
+
     suspend fun loadAdvancedSnapshotIfNeeded() {
-        if (advancedSnapshotLoaded || !showAdvancedControls) return
+        if (advancedSnapshotLoaded || !showAdvancedControls || !showAdvancedEngineering) return
         val started = SystemClock.elapsedRealtime()
         val snapshot = withContext(Dispatchers.IO) {
             AdvancedSnapshot(

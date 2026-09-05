@@ -22,6 +22,7 @@ internal sealed class HomeListItem(val id: String) {
     data object AdvancedProtectionHealth : HomeListItem("adv_protection")
     data object AdvancedActiveSession : HomeListItem("adv_session")
     data object AdvancedRecoveryPolicy : HomeListItem("adv_recovery")
+    data object AdvancedEngineeringToggle : HomeListItem("adv_engineering_toggle")
     data object AdvancedAppRules : HomeListItem("adv_app_rules")
     data object AdvancedSafeApps : HomeListItem("adv_safe_apps")
     data object AdvancedEvents : HomeListItem("adv_events")
@@ -33,14 +34,16 @@ internal sealed class HomeListItem(val id: String) {
 
 /**
  * Builds the visible home list from lightweight flags. Pure function — no I/O.
+ * Engineering (app rules / debug / events / feedback) stays collapsed until explicitly opened.
  */
 internal fun buildHomeListItems(
     isAccessibilityEnabled: Boolean,
     hasStoredSession: Boolean,
     hasPromiseUnderstanding: Boolean,
-    showAdvancedControls: Boolean
+    showAdvancedControls: Boolean,
+    showAdvancedEngineering: Boolean = false
 ): List<HomeListItem> {
-    val items = ArrayList<HomeListItem>(20)
+    val items = ArrayList<HomeListItem>(24)
     items += HomeListItem.Header
     if (!isAccessibilityEnabled) {
         items += HomeListItem.ProtectionSetup
@@ -63,12 +66,15 @@ internal fun buildHomeListItems(
             items += HomeListItem.AdvancedActiveSession
         }
         items += HomeListItem.AdvancedRecoveryPolicy
-        items += HomeListItem.AdvancedAppRules
-        items += HomeListItem.AdvancedSafeApps
-        items += HomeListItem.AdvancedEvents
-        items += HomeListItem.AdvancedDebug
-        items += HomeListItem.AdvancedDiagnostics
-        items += HomeListItem.AdvancedFeedback
+        items += HomeListItem.AdvancedEngineeringToggle
+        if (showAdvancedEngineering) {
+            items += HomeListItem.AdvancedAppRules
+            items += HomeListItem.AdvancedSafeApps
+            items += HomeListItem.AdvancedEvents
+            items += HomeListItem.AdvancedDebug
+            items += HomeListItem.AdvancedDiagnostics
+            items += HomeListItem.AdvancedFeedback
+        }
     }
     items += HomeListItem.BottomSpacer
     return items

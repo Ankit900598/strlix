@@ -99,6 +99,8 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
     private var lastCountedBlockTimeMillis: Long = 0L
     private var lastSafeAppLoggedPackage: String? = null
     private var lastSafeAppLoggedTimeMillis: Long = 0L
+    private var lastForegroundLoggedPackage: String? = null
+    private var lastForegroundLoggedTimeMillis: Long = 0L
     private var latestExplanation: DecisionExplanation? = null
 
     private val debugWorld = FocusWorld(
@@ -115,7 +117,13 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
             "com.xiaomi.misettings",
             "com.android.dialer",
             "com.google.android.dialer",
-            "com.android.phone"
+            "com.android.phone",
+            "com.google.android.apps.docs",
+            "com.google.android.apps.docs.editors.docs",
+            "com.google.android.apps.docs.editors.sheets",
+            "com.google.android.apps.docs.editors.slides",
+            "com.google.android.apps.drive",
+            "com.google.android.gm"
         ),
         blockedPackages = emptySet(),
         conditionalPackages = emptySet()
@@ -133,7 +141,7 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
         when (event.eventType) {
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
                 val packageName = event.packageName?.toString() ?: return
-                Log.d("PhoneCodexA11y", "Foreground package: $packageName")
+                logForegroundPackageThrottled(packageName)
                 inspectAndEvaluate(packageName)
             }
 
@@ -244,6 +252,26 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
                 lastSafeAppLoggedPackage = packageName
                 lastSafeAppLoggedTimeMillis = now
             }
+            return
+        }
+
+        val sessionGoalEarly = storedSession?.goal.orEmpty()
+        if (
+            storedSession != null &&
+            PromiseIntentRules.isUnrelatedProductivityPackage(packageName, sessionGoalEarly)
+        ) {
+            hideWarningOverlay()
+            hideBlockOverlay()
+            recordExplanation(
+                packageName = packageName,
+                screenText = screenText,
+                explanation = DecisionExplanation(
+                    decision = DecisionType.ALLOW.name,
+                    reason = "Productivity app unrelated to this promise",
+                    source = "Safe App",
+                    confidence = 1.0
+                )
+            )
             return
         }
 
@@ -544,6 +572,32 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
         val signals = contentSignalDetector.detect(packageName, screenText)
 
         if (
+            packageName == CHROME_PACKAGE &&
+            PromiseIntentRules.chromeYouTubeVideoExceedsGoalLimit(sessionGoal, screenText)
+        ) {
+            return applySignalDecision(
+                packageName = packageName,
+                screenText = screenText,
+                decision = DecisionType.BLOCK,
+                reason = "Chrome YouTube video is longer than the promise allows",
+                source = "Duration Rule",
+                matchedSignals = listOf("chrome_youtube_duration_over_limit"),
+                block = true
+            )
+        }
+
+        if (
+            packageName == CHROME_PACKAGE &&
+            PromiseIntentRules.needsMoreChromeYouTubeDurationText(sessionGoal, screenText)
+        ) {
+            Log.d(
+                "PhoneCodexDecision",
+                "Waiting for Chrome YouTube duration text before classifying"
+            )
+            return true
+        }
+
+        if (
             packageName == YOUTUBE_PACKAGE &&
             signals.isYouTubeShorts &&
             PromiseIntentRules.blocksShortForm(sessionGoal) &&
@@ -586,7 +640,8 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
 
         if (
             packageName == CHROME_PACKAGE &&
-            (signals.isChromeStudyLike || PromiseIntentRules.allowsBroadChromeUse(sessionGoal))
+            (signals.isChromeStudyLike || PromiseIntentRules.allowsBroadChromeUse(sessionGoal)) &&
+            !shouldDeferChromeSurfaceToClassifier(sessionGoal, screenText)
         ) {
             return applySignalDecision(
                 packageName = packageName,
@@ -600,6 +655,14 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
         }
 
         return false
+    }
+
+    private fun shouldDeferChromeSurfaceToClassifier(
+        sessionGoal: String,
+        screenText: String
+    ): Boolean {
+        return PromiseIntentRules.hasLongYouTubeLimit(sessionGoal) &&
+            PromiseIntentRules.isYouTubeSurfaceInChrome(screenText)
     }
 
     private fun applyFeedbackMemoryRules(packageName: String, screenText: String): Boolean {
@@ -1107,6 +1170,10 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
                     hideBlockOverlay()
                     performGlobalAction(GLOBAL_ACTION_HOME)
                 },
+                onGoBack = {
+                    hideBlockOverlay()
+                    performGlobalAction(GLOBAL_ACTION_BACK)
+                },
                 onOpenPhoneCodex = {
                     hideBlockOverlay()
                     openPhoneCodexApp()
@@ -1309,9 +1376,22 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
         out.append(trimmed)
     }
 
+    private fun logForegroundPackageThrottled(packageName: String) {
+        val now = System.currentTimeMillis()
+        if (
+            packageName == lastForegroundLoggedPackage &&
+            now - lastForegroundLoggedTimeMillis < FOREGROUND_LOG_THROTTLE_MS
+        ) {
+            return
+        }
+        lastForegroundLoggedPackage = packageName
+        lastForegroundLoggedTimeMillis = now
+        Log.d("PhoneCodexA11y", "Foreground package: $packageName")
+    }
+
     companion object {
         private const val OWN_PACKAGE_NAME = "com.phonecodex.app"
-        private const val MAX_TEXT_LENGTH = 1000
+        private const val MAX_TEXT_LENGTH = 3000
         private const val MAX_DEPTH = 50
         private const val YOUTUBE_PACKAGE = "com.google.android.youtube"
         private const val CHROME_PACKAGE = "com.android.chrome"
@@ -1319,6 +1399,7 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
         private const val MIN_CLASSIFICATION_INTERVAL_MS = 2500L
         private const val WARNING_DISMISS_TTL_MS = 60000L
         private const val SAFE_APP_LOG_THROTTLE_MS = 10_000L
+        private const val FOREGROUND_LOG_THROTTLE_MS = 3_000L
         private const val OVERLAY_AWAY_DEBOUNCE_MS = 750L
         private const val LOCKED_SESSION_REASON =
             "Lock is active because of repeated attempts to leave your commitment."

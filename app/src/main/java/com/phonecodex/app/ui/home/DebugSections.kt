@@ -56,6 +56,8 @@ internal fun formatFeedbackEntry(entry: FeedbackEntry): String {
 @Composable
 internal fun DecisionDebugPanel(
     debugState: DebugState,
+    activePromise: String?,
+    backendStatusLine: String?,
     onRefresh: () -> Unit
 ) {
     val displaySource = formatDecisionSourceDisplay(debugState.lastSource)
@@ -65,6 +67,12 @@ internal fun DecisionDebugPanel(
     val displayReason = debugState.lastReason?.ifBlank { null } ?: "—"
     val displayScreenText = debugState.lastScreenTextPreview?.ifBlank { null } ?: "—"
     val displayTimestamp = formatDebugTimestamp(debugState.lastUpdatedMillis)
+    val displaySignals = if (debugState.lastMatchedSignals.isEmpty()) {
+        "—"
+    } else {
+        debugState.lastMatchedSignals.joinToString(", ")
+    }
+    val displayPromise = activePromise?.ifBlank { null } ?: "—"
 
     MicroLabel(text = "Decision inspector")
     Spacer(modifier = Modifier.height(6.dp))
@@ -77,8 +85,10 @@ internal fun DecisionDebugPanel(
     QuietAction(text = "Refresh inspector", onClick = onRefresh)
     Spacer(modifier = Modifier.height(16.dp))
 
-    InspectorField(label = "App / package", value = displayPackage)
-    InspectorField(label = "Decision", value = displayDecision)
+    InspectorField(label = "Current app", value = displayPackage)
+    InspectorField(label = "Screen summary", value = displayScreenText)
+    InspectorField(label = "Promise / goal", value = displayPromise)
+    InspectorField(label = "Final decision", value = displayDecision)
     InspectorField(
         label = "Source",
         value = displaySource,
@@ -93,13 +103,14 @@ internal fun DecisionDebugPanel(
         )
         Spacer(modifier = Modifier.height(12.dp))
     }
+    InspectorField(label = "Why", value = displayReason)
+    InspectorField(label = "Matched signals", value = displaySignals)
     InspectorField(
         label = "Confidence",
         value = displayConfidence,
         helperText = "How sure that source was."
     )
-    InspectorField(label = "Reason", value = displayReason)
-    InspectorField(label = "Screen text preview", value = displayScreenText)
+    InspectorField(label = "Backend status", value = backendStatusLine ?: "—")
     InspectorField(label = "Timestamp", value = displayTimestamp)
 
     val hasBackendMeta = debugState.lastBackendProvider != null ||

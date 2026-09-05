@@ -11,7 +11,14 @@ object SafeAppsCatalog {
         "com.android.settings",
         "com.miui.home",
         "com.android.systemui",
-        "com.whatsapp"
+        "com.whatsapp",
+        // Productivity — unrelated promises must not WARN these by default.
+        "com.google.android.apps.docs",
+        "com.google.android.apps.docs.editors.docs",
+        "com.google.android.apps.docs.editors.sheets",
+        "com.google.android.apps.docs.editors.slides",
+        "com.google.android.apps.drive",
+        "com.google.android.gm"
     )
 
     private val DEFAULT_LABELS: Map<String, String> = mapOf(
@@ -23,7 +30,13 @@ object SafeAppsCatalog {
         "com.android.settings" to "Settings",
         "com.miui.home" to "Home",
         "com.android.systemui" to "System UI",
-        "com.whatsapp" to "WhatsApp"
+        "com.whatsapp" to "WhatsApp",
+        "com.google.android.apps.docs" to "Google Docs",
+        "com.google.android.apps.docs.editors.docs" to "Google Docs",
+        "com.google.android.apps.docs.editors.sheets" to "Google Sheets",
+        "com.google.android.apps.docs.editors.slides" to "Google Slides",
+        "com.google.android.apps.drive" to "Google Drive",
+        "com.google.android.gm" to "Gmail"
     )
 
     fun isDefaultPackage(packageName: String): Boolean {

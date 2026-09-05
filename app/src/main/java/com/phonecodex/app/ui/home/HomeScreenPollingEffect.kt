@@ -23,8 +23,8 @@ internal fun HomeScreenPollingEffect(state: HomeScreenState) {
         ProtectionHeartbeatController.ensureRunningIfNeeded(state.context)
     }
 
-    LaunchedEffect(state.showAdvancedControls) {
-        if (state.showAdvancedControls) {
+    LaunchedEffect(state.showAdvancedControls, state.showAdvancedEngineering) {
+        if (state.showAdvancedControls && state.showAdvancedEngineering) {
             state.loadAdvancedSnapshotIfNeeded()
         }
     }
@@ -50,8 +50,8 @@ internal fun HomeAdvancedInspectorPollingEffect(
     state: HomeScreenState,
     inspectorVisible: () -> Boolean
 ) {
-    LaunchedEffect(state.showAdvancedControls) {
-        if (!state.showAdvancedControls) return@LaunchedEffect
+    LaunchedEffect(state.showAdvancedControls, state.showAdvancedEngineering) {
+        if (!state.showAdvancedControls || !state.showAdvancedEngineering) return@LaunchedEffect
         while (true) {
             if (!inspectorVisible()) {
                 delay(ADVANCED_POLL_IDLE_CHECK_MS)
@@ -59,10 +59,10 @@ internal fun HomeAdvancedInspectorPollingEffect(
             }
             val started = SystemClock.elapsedRealtime()
             pollInspectorHomeState(state)
-            Log.d(
-                "PhoneCodexUIPerf",
-                "debugPoll=${SystemClock.elapsedRealtime() - started}ms"
-            )
+            val elapsed = SystemClock.elapsedRealtime() - started
+            if (elapsed > 40L) {
+                Log.d("PhoneCodexUIPerf", "debugPoll=${elapsed}ms")
+            }
             delay(ADVANCED_POLL_MS)
         }
     }

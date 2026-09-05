@@ -332,6 +332,10 @@ class CommitmentOverlayBuilder(private val context: Context) {
                         dp
                     )
                 )
+                actions.onGoBack?.let { goBack ->
+                    card.addView(spacer(dp(10)))
+                    card.addView(secondaryButton("Go back", goBack, dp))
+                }
                 actions.onOpenPhoneCodex?.let { openApp ->
                     card.addView(spacer(dp(10)))
                     card.addView(secondaryButton("Open PhoneCodex", openApp, dp))

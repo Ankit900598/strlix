@@ -186,6 +186,12 @@ def parse_args() -> argparse.Namespace:
         choices=sorted(KNOWN_DEPLOYMENTS.keys()),
         default=None,
     )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Optional cap on cases (smoke / cost control)",
+    )
     return parser.parse_args()
 
 
@@ -208,6 +214,9 @@ def main() -> int:
         return 1
 
     cases = load_promise_jsonl(dataset_path)
+    if args.limit:
+        cases = cases[: args.limit]
+
     started_at = datetime.now(timezone.utc)
     rows, metrics = run_eval(compiler, cases)
     ended_at = datetime.now(timezone.utc)
@@ -236,6 +245,8 @@ def main() -> int:
     if args.adapter == "azure_openai":
         parts.append(prompt_path.stem)
     parts.append(dataset_path.stem)
+    if args.limit:
+        parts.append(f"limit{args.limit}")
     timestamp = ended_at.strftime("%Y%m%d_%H%M%S")
     report_path = args.report_dir / f"{'_'.join(parts)}_{timestamp}.csv"
     write_report(rows, report_path, metadata)

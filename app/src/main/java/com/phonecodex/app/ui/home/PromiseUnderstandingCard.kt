@@ -14,12 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 
-/**
- * The confirmation step: the app repeats the promise back before anything is enforced.
- *
- * Every value here comes from [PromiseUnderstanding]. Swapping the local heuristics for the
- * real Promise Compiler changes nothing in this file.
- */
 @Composable
 internal fun PromiseUnderstandingCard(
     understanding: PromiseUnderstanding,
@@ -28,6 +22,7 @@ internal fun PromiseUnderstandingCard(
     onEditPromise: () -> Unit
 ) {
     val colors = MaterialTheme.colorScheme
+    val needsClarification = !understanding.clarificationQuestion.isNullOrBlank()
 
     CalmCard(highlighted = true) {
         Row(
@@ -40,9 +35,14 @@ internal fun PromiseUnderstandingCard(
                 style = MaterialTheme.typography.headlineSmall,
                 color = colors.onSurface
             )
-            if (understanding.source == UnderstandingSource.LOCAL_PREVIEW) {
-                StatusPill(text = "Draft", tone = PillTone.CALM)
-            }
+            StatusPill(
+                text = when {
+                    needsClarification -> "Needs clarification"
+                    understanding.source == UnderstandingSource.LOCAL_PREVIEW -> "Draft"
+                    else -> "Compiled"
+                },
+                tone = if (needsClarification) PillTone.ALERT else PillTone.CALM
+            )
         }
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -57,36 +57,62 @@ internal fun PromiseUnderstandingCard(
         HorizontalDivider(color = colors.outlineVariant)
         Spacer(modifier = Modifier.height(18.dp))
 
-        SummaryRow(label = "Duration", value = understanding.durationLabel)
+        SummaryRow(label = "Time", value = understanding.sessionTimeLabel)
         Spacer(modifier = Modifier.height(12.dp))
         SummaryRow(label = "Allowed", value = understanding.allowedLabel)
         Spacer(modifier = Modifier.height(12.dp))
         SummaryRow(label = "Blocked", value = understanding.blockedLabel)
-        Spacer(modifier = Modifier.height(12.dp))
-        SummaryRow(label = "Strictness", value = understanding.strictnessLabel)
-        Spacer(modifier = Modifier.height(12.dp))
-        SummaryRow(label = "If I drift", value = understanding.driftLabel)
 
-        understanding.caution?.let { caution ->
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = caution,
-                style = MaterialTheme.typography.bodySmall,
-                color = colors.primary
+        understanding.conditionalLabel?.let { conditional ->
+            Spacer(modifier = Modifier.height(12.dp))
+            SummaryRow(label = "Conditional", value = conditional)
+        }
+
+        understanding.clarificationQuestion?.let { question ->
+            Spacer(modifier = Modifier.height(18.dp))
+            HorizontalDivider(color = colors.outlineVariant)
+            Spacer(modifier = Modifier.height(14.dp))
+            SummaryRow(label = "Need clarification", value = question)
+        }
+
+        if (understanding.cautions.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(14.dp))
+            SummaryRow(
+                label = "Cautions",
+                value = understanding.cautions.joinToString(" · ")
             )
         }
 
-        if (understanding.managedApps.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(16.dp))
+        if (!needsClarification) {
+            Spacer(modifier = Modifier.height(12.dp))
+            SummaryRow(label = "Strictness", value = understanding.strictnessLabel)
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Apps I will take over: ${understanding.managedApps.joinToString(" · ")}",
+                text = understanding.driftLabel,
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onSurfaceVariant
+            )
+        }
+
+        if (understanding.managedApps.isNotEmpty() && !needsClarification) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = "Apps involved: ${understanding.managedApps.joinToString(", ")}",
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.onSurfaceVariant
             )
         }
 
         Spacer(modifier = Modifier.height(22.dp))
-        PrimaryAction(text = "Start Commitment", onClick = onStartCommitment)
+        if (understanding.canStart) {
+            PrimaryAction(text = "Start Commitment", onClick = onStartCommitment)
+        } else {
+            Text(
+                text = "Edit your promise to answer the question, then tap Understand Promise again.",
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onSurfaceVariant
+            )
+        }
 
         startBlockedMessage?.let { message ->
             Spacer(modifier = Modifier.height(10.dp))
@@ -98,6 +124,9 @@ internal fun PromiseUnderstandingCard(
         }
 
         Spacer(modifier = Modifier.height(10.dp))
-        QuietAction(text = "Change my promise", onClick = onEditPromise)
+        QuietAction(
+            text = if (needsClarification) "Edit promise" else "Change my promise",
+            onClick = onEditPromise
+        )
     }
 }

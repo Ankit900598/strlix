@@ -77,6 +77,31 @@ class AppRulesStore(context: Context) {
         }
     }
 
+    /**
+     * Clears prior commitment overrides so old Instagram/YouTube behaviors cannot poison a new
+     * promise, then applies this promise's suggestions on top of catalog defaults.
+     */
+    fun applyCommitmentSuggestions(suggested: List<AppRule>) {
+        clearOverrides()
+        val byPackage = suggested.associateBy { it.packageName }
+        DEFAULT_RULES.forEach { default ->
+            val fromPromise = byPackage[default.packageName]
+            applySuggestedRule(fromPromise ?: default)
+        }
+        suggested
+            .filter { rule -> DEFAULT_RULES.none { it.packageName == rule.packageName } }
+            .forEach { applySuggestedRule(it) }
+    }
+
+    fun clearOverrides() {
+        val editor = prefs.edit()
+        prefs.all.keys
+            .filter { key -> key.startsWith("behavior_") }
+            .forEach { key -> editor.remove(key) }
+        editor.putStringSet(KEY_CUSTOM_RULES, emptySet())
+        editor.apply()
+    }
+
     fun isDefaultRule(packageName: String): Boolean {
         return DEFAULT_RULES.any { it.packageName == packageName }
     }
@@ -145,7 +170,8 @@ class AppRulesStore(context: Context) {
             AppRule(
                 packageName = "com.instagram.android",
                 label = "Instagram",
-                behavior = AppRuleBehavior.BLOCK
+                // Default AI_DECIDE — hard BLOCK only when the promise asks for it.
+                behavior = AppRuleBehavior.AI_DECIDE
             )
         )
     }

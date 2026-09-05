@@ -26,9 +26,25 @@ internal fun AdvancedControlsToggle(
 }
 
 @Composable
+internal fun AdvancedEngineeringToggle(
+    showEngineering: Boolean,
+    onToggle: () -> Unit
+) {
+    QuietAction(
+        text = if (showEngineering) {
+            "Hide engineering tools"
+        } else {
+            "Show engineering tools (app rules, debug, events)"
+        },
+        onClick = onToggle
+    )
+}
+
+@Composable
 internal fun AdvancedIntroCard() {
     Text(
-        text = "Engineering controls while we are still building the engine.",
+        text = "Session tuning and permanent commitments. Engineering tools stay collapsed " +
+            "so Home stays light.",
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant
     )
@@ -187,8 +203,20 @@ internal fun AdvancedEventsCard(state: HomeScreenState) {
 @Composable
 internal fun AdvancedDebugCard(state: HomeScreenState) {
     CalmCard {
+        val probe = state.backendProbeResult
+        val backendStatus = when {
+            state.backendTestInProgress -> "Probing…"
+            probe.statusLine == "Not tested yet" -> "Not probed — use Test Backend in diagnostics"
+            else -> buildString {
+                append(probe.statusLine)
+                if (probe.reachable) append(" (reachable)")
+                probe.detail?.takeIf { it.isNotBlank() }?.let { append(" — $it") }
+            }
+        }
         DecisionDebugPanel(
             debugState = state.debugState,
+            activePromise = state.session?.goal ?: state.goal.ifBlank { null },
+            backendStatusLine = backendStatus,
             onRefresh = state::refreshDebugState
         )
     }
