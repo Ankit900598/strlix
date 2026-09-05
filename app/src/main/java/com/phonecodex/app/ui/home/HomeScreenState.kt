@@ -8,6 +8,7 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.phonecodex.app.accessibility.AccessibilityHealthChecker
@@ -20,9 +21,12 @@ import com.phonecodex.app.data.InstalledAppsReader
 import com.phonecodex.app.data.PermanentGuardrailsStore
 import com.phonecodex.app.data.ProtectionViolationState
 import com.phonecodex.app.data.ProtectionViolationStore
+import com.phonecodex.app.data.RuntimeDiagStore
 import com.phonecodex.app.data.SafeAppsStore
 import com.phonecodex.app.data.SessionStore
 import com.phonecodex.app.data.StudyWorldSettingsStore
+import com.phonecodex.app.domain.diagnostics.BackendHealthProbe
+import com.phonecodex.app.domain.diagnostics.BackendProbeResult
 import com.phonecodex.app.domain.model.AppRule
 import com.phonecodex.app.domain.model.AppRuleBehavior
 import com.phonecodex.app.domain.model.FeedbackEntry
@@ -54,6 +58,7 @@ internal class HomeScreenState(
     val sessionStore: SessionStore,
     val eventLogStore: EventLogStore,
     val debugStateStore: DebugStateStore,
+    val runtimeDiagStore: RuntimeDiagStore,
     val feedbackStore: FeedbackStore,
     val appRulesStore: AppRulesStore,
     val studyWorldSettingsStore: StudyWorldSettingsStore,
@@ -91,9 +96,14 @@ internal class HomeScreenState(
     var safeApps by mutableStateOf<List<SafeApp>>(emptyList())
     var safeAppsSearch by mutableStateOf("")
     var isAccessibilityEnabled by mutableStateOf(false)
+    var isAccessibilityAlive by mutableStateOf(false)
+    var overlayActive by mutableStateOf(false)
+    var backendProbeResult by mutableStateOf(BackendProbeResult.idle())
+    var backendTestInProgress by mutableStateOf(false)
     var showAdvancedControls by mutableStateOf(false)
     var isBootstrapped by mutableStateOf(false)
     private var bootstrapStarted: Boolean = false
+    private var diagnosticsScope: CoroutineScope? = null
 
     val isSessionActive: Boolean
         get() = session?.status == SessionStatus.ACTIVE
@@ -109,6 +119,21 @@ internal class HomeScreenState(
 
     val enabledGuardrails: List<PermanentGuardrail>
         get() = permanentGuardrails.filter { it.enabled }
+
+    val developerDiagnostics: DeveloperDiagnosticsUiModel
+        get() = buildDeveloperDiagnosticsUiModel(
+            isAccessibilityEnabled = isAccessibilityEnabled,
+            isAccessibilityAlive = isAccessibilityAlive,
+            session = session,
+            overlayActive = overlayActive,
+            debugState = debugState,
+            probeResult = backendProbeResult,
+            testInProgress = backendTestInProgress
+        )
+
+    fun attachDiagnosticsScope(scope: CoroutineScope) {
+        diagnosticsScope = scope
+    }
 
     fun openAccessibilitySettings() {
         openAccessibilitySettings(context)
@@ -293,13 +318,17 @@ internal class HomeScreenState(
                 debugState = debugStateStore.getDebugState(),
                 recentEvents = eventLogStore.getRecentEvents(),
                 protectionViolationState = protectionViolationStore.getState(),
-                recentFeedback = feedbackStore.getRecentFeedback()
+                recentFeedback = feedbackStore.getRecentFeedback(),
+                accessibilityAlive = runtimeDiagStore.isAccessibilityServiceAlive(),
+                overlayActive = runtimeDiagStore.isOverlayActive()
             )
         }
         debugState = snapshot.debugState
         recentEvents = snapshot.recentEvents
         protectionViolationState = snapshot.protectionViolationState
         recentFeedback = snapshot.recentFeedback
+        isAccessibilityAlive = snapshot.accessibilityAlive
+        overlayActive = snapshot.overlayActive
         advancedSnapshotLoaded = true
         Log.d(
             "PhoneCodexUIPerf",
@@ -314,6 +343,29 @@ internal class HomeScreenState(
 
     fun refreshDebugState() {
         debugState = debugStateStore.getDebugState()
+    }
+
+    fun refreshDeveloperDiagnostics() {
+        debugState = debugStateStore.getDebugState()
+        isAccessibilityAlive = runtimeDiagStore.isAccessibilityServiceAlive()
+        overlayActive = runtimeDiagStore.isOverlayActive()
+        isAccessibilityEnabled =
+            AccessibilityHealthChecker.isPhoneCodexAccessibilityEnabled(context)
+        session = sessionStore.getStoredSession()
+    }
+
+    fun testBackend() {
+        if (backendTestInProgress) return
+        val scope = diagnosticsScope ?: return
+        backendTestInProgress = true
+        scope.launch {
+            val result = withContext(Dispatchers.IO) {
+                BackendHealthProbe.probe()
+            }
+            backendProbeResult = result
+            backendTestInProgress = false
+            refreshDeveloperDiagnostics()
+        }
     }
 
     fun refreshEventsFromStore() {
@@ -390,7 +442,9 @@ private data class AdvancedSnapshot(
     val debugState: DebugState,
     val recentEvents: List<String>,
     val protectionViolationState: ProtectionViolationState,
-    val recentFeedback: List<FeedbackEntry>
+    val recentFeedback: List<FeedbackEntry>,
+    val accessibilityAlive: Boolean,
+    val overlayActive: Boolean
 )
 
 private val EMPTY_DEBUG_STATE = DebugState(
@@ -426,15 +480,17 @@ private val DEFAULT_STUDY_SETTINGS = StudyWorldSettings(
 internal fun rememberHomeScreenState(): HomeScreenState {
     val context = LocalContext.current
     val appContext = context.applicationContext
+    val coroutineScope = rememberCoroutineScope()
 
-    return remember {
+    val state = remember {
         val started = SystemClock.elapsedRealtime()
-        val state = HomeScreenState(
+        val created = HomeScreenState(
             context = context,
             sessionManager = SessionManager(),
             sessionStore = SessionStore(appContext),
             eventLogStore = EventLogStore(appContext),
             debugStateStore = DebugStateStore(appContext),
+            runtimeDiagStore = RuntimeDiagStore(appContext),
             feedbackStore = FeedbackStore(appContext),
             appRulesStore = AppRulesStore(appContext),
             studyWorldSettingsStore = StudyWorldSettingsStore(appContext),
@@ -451,6 +507,8 @@ internal fun rememberHomeScreenState(): HomeScreenState {
             "PhoneCodexUIPerf",
             "rememberHomeScreenState construct=${SystemClock.elapsedRealtime() - started}ms"
         )
-        state
+        created
     }
+    state.attachDiagnosticsScope(coroutineScope)
+    return state
 }

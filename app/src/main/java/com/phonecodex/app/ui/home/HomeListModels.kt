@@ -26,6 +26,7 @@ internal sealed class HomeListItem(val id: String) {
     data object AdvancedSafeApps : HomeListItem("adv_safe_apps")
     data object AdvancedEvents : HomeListItem("adv_events")
     data object AdvancedDebug : HomeListItem("adv_debug")
+    data object AdvancedDiagnostics : HomeListItem("adv_diagnostics")
     data object AdvancedFeedback : HomeListItem("adv_feedback")
     data object BottomSpacer : HomeListItem("bottom_spacer")
 }
@@ -66,6 +67,7 @@ internal fun buildHomeListItems(
         items += HomeListItem.AdvancedSafeApps
         items += HomeListItem.AdvancedEvents
         items += HomeListItem.AdvancedDebug
+        items += HomeListItem.AdvancedDiagnostics
         items += HomeListItem.AdvancedFeedback
     }
     items += HomeListItem.BottomSpacer

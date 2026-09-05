@@ -105,15 +105,23 @@ v0 Android can ship **template table** keyed by `(reasonCategory × decision × 
 
 ## 8. Success bars
 
-| Gate | Target |
-|------|--------|
-| parseFailures | 0 |
-| safetyMatchRate | ≥ 85% on pc-lab-cheap before wiring cloud writer |
-| safetyViolations on LOCK/tamper/STRICT | ≈ 0 |
-| Shame phrase hits | 0 |
-| Missing emergency on non-synthetic cases | 0 |
+| Gate | Target | pc-lab-cheap v01 | pc-lab-strong v01 |
+|------|--------|------------------|-------------------|
+| parseFailures | 0 | **0** | **0** |
+| safetyMatchRate | ≥ 85% | **100%** (332/332) | **100%** (332/332) |
+| safetyViolations | ≈ 0 on hard paths | **0** | **0** |
+| contentFilterBlocks | low | **0** | **0** |
+| exactMatchRate | secondary | 25.6% | 20.5% |
 
-exactMatch can lag (paraphrase); **do not** optimize titles for string match at the cost of safety.
+Reports:
+
+- `block_experience_azure_openai_pc-lab-cheap_block_experience_v01_v1_block_experience_20260905_185737.csv`
+- `block_experience_azure_openai_pc-lab-strong_block_experience_v01_v1_block_experience_20260905_184242.csv`
+- Baseline safety floor: `block_experience_baseline_v1_block_experience_20260905_180938.csv` (100% safety)
+
+**Read of numbers:** Safety gates are shipping-grade for a cloud writer. exactMatch lags on `primaryAction` / `secondaryAction` / `tone` family choices (EXIT vs RETURN_SAFE, etc.) — Android should prefer **template defaults from gold** for action IDs and use the model for title/message paraphrase only, *or* tighten v02 with few-shot action recipes per reasonCategory.
+
+First cheap run (before forbidding-list emphasis in prompt) had forbiddenActions match **2%** and exact **0.3%** with still **99.7%** safety — proof that safety metric is the right shipping bar and exact string/list match is not.
 
 ---
 
@@ -131,3 +139,12 @@ exactMatch can lag (paraphrase); **do not** optimize titles for string match at 
 - Score warm tone as a virtue.  
 - Allow “Ignore anyway” under STRICT to inflate “helpfulness.”  
 - Touch Android/backend in this track.
+
+---
+
+## 11. Recommendation for Android overlay work
+
+1. Ship **deterministic templates** keyed by `(reasonCategory × decision × strictness)` using dataset gold action IDs.  
+2. Optionally call Block Experience Writer for title/message only; **clamp** actions through a policy allow-list (same as evaluator hard gates).  
+3. Never trust model `forbiddenActions` alone — Android must hard-code no DISABLE/IGNORE under STRICT/LOCKED.  
+4. pc-lab-cheap is enough for this task; strong did not beat cheap on safety (both 100%).

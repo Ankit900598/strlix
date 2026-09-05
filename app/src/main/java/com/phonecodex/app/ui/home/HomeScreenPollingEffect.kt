@@ -151,6 +151,20 @@ private suspend fun pollInspectorHomeState(state: HomeScreenState) {
     if (violationState != state.protectionViolationState) {
         state.protectionViolationState = violationState
     }
+
+    val accessibilityAlive = withContext(Dispatchers.IO) {
+        state.runtimeDiagStore.isAccessibilityServiceAlive()
+    }
+    if (accessibilityAlive != state.isAccessibilityAlive) {
+        state.isAccessibilityAlive = accessibilityAlive
+    }
+
+    val overlayActive = withContext(Dispatchers.IO) {
+        state.runtimeDiagStore.isOverlayActive()
+    }
+    if (overlayActive != state.overlayActive) {
+        state.overlayActive = overlayActive
+    }
 }
 
 private const val CORE_POLL_IDLE_MS = 3_000L

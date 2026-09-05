@@ -280,6 +280,8 @@ internal fun AdvancedControlsContent(
     Spacer(modifier = Modifier.height(14.dp))
     AdvancedDebugCard(state)
     Spacer(modifier = Modifier.height(14.dp))
+    AdvancedDeveloperDiagnosticsCard(state)
+    Spacer(modifier = Modifier.height(14.dp))
     AdvancedFeedbackCard(state)
     Log.d(
         "PhoneCodexUIPerf",

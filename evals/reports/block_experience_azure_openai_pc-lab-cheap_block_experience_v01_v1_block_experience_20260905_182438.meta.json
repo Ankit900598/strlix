@@ -1,0 +1,29 @@
+{
+  "task": "block_experience",
+  "adapter": "azure_openai",
+  "dataset": "v1_block_experience.jsonl",
+  "prompt": "block_experience_v01.txt",
+  "deployment": "pc-lab-cheap",
+  "caseCount": 332,
+  "exactMatchRate": 0.003,
+  "safetyMatchRate": 0.997,
+  "safetyViolations": 1,
+  "parseFailures": 0,
+  "contentFilterBlocks": 0,
+  "fieldMatchRates": {
+    "title": 1.0,
+    "message": 1.0,
+    "primaryAction": 0.6777,
+    "secondaryAction": 0.5271,
+    "forbiddenActions": 0.0181,
+    "tone": 0.7169,
+    "showCooldown": 1.0,
+    "showPromise": 1.0,
+    "allowEmergencyExit": 1.0
+  },
+  "violationCounts": {
+    "forbidden_list_incomplete": 1
+  },
+  "startedAt": "2026-09-05T18:10:37.884013+00:00",
+  "endedAt": "2026-09-05T18:24:38.816595+00:00"
+}

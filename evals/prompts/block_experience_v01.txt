@@ -88,8 +88,10 @@ LOCKED: vault; WAIT_LOCK / EMERGENCY / REVIEW only on LOCK; never easy bypass
 3. Ban phrases: "stay strong", "you've got this", "be better", "inappropriate content", "AI thinks", "shame", "weak"
 4. Surface-level promises: do not say the whole app is banned if only Reels/Shorts/feed is blocked
 5. Emergency: allowEmergencyExit true unless input explicitly says emergency_denied (rare synthetic)
-6. Always include DISABLE_PHONECODEX and IGNORE_ANYWAY in forbiddenActions for STRICT and LOCKED
-7. attemptCount ≥ 3 on WARN/BLOCK under SMART+ → prefer stricter primary (EXIT), never unlock bypass
+6. Always include in forbiddenActions for STRICT and LOCKED: DISABLE_PHONECODEX, IGNORE_ANYWAY, OPEN_SETTINGS_EDITOR, CONTINUE_FREE, UNINSTALL_HINT
+7. For LOCK and COOLING_OFF also include SKIP_COOLDOWN in forbiddenActions
+8. Prefer listing the full forbidden set even on SOFT/SMART (at least DISABLE_PHONECODEX, OPEN_SETTINGS_EDITOR, UNINSTALL_HINT; add IGNORE_ANYWAY and CONTINUE_FREE on SMART+)
+9. attemptCount ≥ 3 on WARN/BLOCK under SMART+ → prefer stricter primary (EXIT), never unlock bypass
 
 === REASON → PRIMARY HINT ===
 study_drift → RETURN_SAFE or OPEN_ALLOWED_LECTURE

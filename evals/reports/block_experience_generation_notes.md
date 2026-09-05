@@ -54,15 +54,18 @@ See builder stdout / design doc table. Highlights:
 
 ---
 
-## Azure usage plan
+## Azure usage (executed)
 
-| Spend | Purpose |
-|-------|---------|
-| pc-lab-cheap × full 332 | Primary shipping signal for v01 prompt |
-| pc-lab-strong × full or sample | Compare safetyMatch / violation types |
-| Not used | Random infra, resource creation, vision |
+| Run | Deployment | Cases | safetyMatch | exactMatch | violations | parseFail |
+|-----|------------|-------|-------------|------------|------------|-----------|
+| baseline | — | 332 | 100% | 59.6%* | 0 | 0 |
+| v01 first | pc-lab-cheap | 332 | 99.7% | 0.3% | 1 | 0 |
+| v01 + forbidden list rules | pc-lab-strong | 332 | **100%** | 20.5% | 0 | 0 |
+| v01 + forbidden list rules | pc-lab-cheap | 332 | **100%** | **25.6%** | 0 | 0 |
 
-Credits expire **22 Sep 2026** — prefer eval runs that change prompts/Android templates over idle spend.
+\*Baseline exact is structural vs gold templates; safety is the floor metric.
+
+Credits spent on full 332×3 Azure passes (~16–18 min wall each) — useful for prompt iteration, not infra.
 
 ---
 

@@ -17,6 +17,7 @@ import com.phonecodex.app.data.EventLogStore
 import com.phonecodex.app.data.FeedbackStore
 import com.phonecodex.app.data.PermanentGuardrailsStore
 import com.phonecodex.app.data.ProtectionViolationStore
+import com.phonecodex.app.data.RuntimeDiagStore
 import com.phonecodex.app.data.SessionStore
 import com.phonecodex.app.data.SafeAppsStore
 import com.phonecodex.app.data.StudyWorldSettingsStore
@@ -51,6 +52,7 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
     private val sessionStore by lazy { SessionStore(this) }
     private val eventLogStore by lazy { EventLogStore(this) }
     private val debugStateStore by lazy { DebugStateStore(this) }
+    private val runtimeDiagStore by lazy { RuntimeDiagStore(this) }
     private val appRulesStore by lazy { AppRulesStore(this) }
     private val studyWorldSettingsStore by lazy { StudyWorldSettingsStore(this) }
     private val feedbackStore by lazy { FeedbackStore(this) }
@@ -120,6 +122,7 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
+        runtimeDiagStore.setAccessibilityServiceAlive(true)
         handleProtectionViolationConsequences()
     }
 
@@ -150,6 +153,8 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
     override fun onDestroy() {
         hideWarningOverlay()
         hideBlockOverlay()
+        runtimeDiagStore.setAccessibilityServiceAlive(false)
+        runtimeDiagStore.setOverlayActive(false)
         super.onDestroy()
     }
 
@@ -1113,6 +1118,7 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
             activeOverlayTargetPackage = packageName
             lastBlockedPackage = packageName
             clearOverlayAwayTracking()
+            runtimeDiagStore.setOverlayActive(true)
             Log.d(
                 "PhoneCodexOverlay",
                 "Overlay shown kind=${model.kind} target=$packageName"
@@ -1121,6 +1127,7 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
             Log.e("PhoneCodexOverlay", "Failed to show block overlay", err)
             currentOverlay = null
             activeOverlayTargetPackage = null
+            syncOverlayActiveFlag()
         }
     }
 
@@ -1149,6 +1156,7 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
         currentOverlay = null
         activeOverlayTargetPackage = null
         clearOverlayAwayTracking()
+        syncOverlayActiveFlag()
     }
 
     private fun showWarningOverlay(
@@ -1201,12 +1209,14 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
             currentWarningOverlay = layout
             visibleWarningPackageName = packageName
             visibleWarningTextSignature = signature
+            runtimeDiagStore.setOverlayActive(true)
             Log.d("PhoneCodexOverlay", "Warning overlay shown kind=WARN target=$packageName")
         } catch (err: RuntimeException) {
             Log.e("PhoneCodexOverlay", "Failed to show warning overlay", err)
             currentWarningOverlay = null
             visibleWarningPackageName = null
             visibleWarningTextSignature = null
+            syncOverlayActiveFlag()
         }
     }
 
@@ -1220,7 +1230,14 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
         currentWarningOverlay = null
         visibleWarningPackageName = null
         visibleWarningTextSignature = null
+        syncOverlayActiveFlag()
         Log.d("PhoneCodexOverlay", "Warning overlay hidden")
+    }
+
+    private fun syncOverlayActiveFlag() {
+        runtimeDiagStore.setOverlayActive(
+            currentOverlay != null || currentWarningOverlay != null
+        )
     }
 
     private fun hideWarningOverlayUnlessVisibleFor(packageName: String) {

@@ -69,6 +69,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                 val key = info.key as? String
                 key == HomeListItem.AdvancedDebug.id ||
                     key == HomeListItem.AdvancedEvents.id ||
+                    key == HomeListItem.AdvancedDiagnostics.id ||
                     key == HomeListItem.AdvancedFeedback.id
             }
         }
@@ -221,6 +222,11 @@ fun HomeScreen(modifier: Modifier = Modifier) {
 
                 HomeListItem.AdvancedDebug -> {
                     AdvancedDebugCard(state = state)
+                    Spacer(modifier = Modifier.height(14.dp))
+                }
+
+                HomeListItem.AdvancedDiagnostics -> {
+                    AdvancedDeveloperDiagnosticsCard(state = state)
                     Spacer(modifier = Modifier.height(14.dp))
                 }
 
