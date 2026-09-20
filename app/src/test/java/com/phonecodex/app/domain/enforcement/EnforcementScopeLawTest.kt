@@ -60,6 +60,23 @@ class EnforcementScopeLawTest {
     }
 
     @Test
+    fun youtubePlayerAccessibility_chromeWithoutUrl_isYouTubeSurface() {
+        val screen = "Time elapsed 1 secondTime duration 31 minutes, 33 seconds"
+        assertTrue(EnforcementScopeLaw.looksLikeYouTubePlayerAccessibility(screen))
+        assertTrue(
+            EnforcementScopeLaw.isYouTubeSurface(VideoPlatformRegistry.CHROME, screen)
+        )
+        assertTrue(
+            EnforcementScopeLaw.matches(
+                VideoPlatformRegistry.CHROME,
+                screen,
+                emptyList(),
+                youtubeBrands
+            )
+        )
+    }
+
+    @Test
     fun youtubeContentBrand_doesNotMatchGmailOrNews() {
         assertFalse(
             EnforcementScopeLaw.isYouTubeSurface(

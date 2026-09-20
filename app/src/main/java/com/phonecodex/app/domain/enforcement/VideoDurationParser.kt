@@ -131,24 +131,10 @@ object VideoDurationParser {
         }
 
         // 2) Explicit a11y "time duration …" (YouTube / Chrome watch controls).
-        TIME_DURATION_HOUR_REGEX.find(playerZone)?.let { match ->
-            val hours = match.groupValues[1].toIntOrNull() ?: return@let
-            val minutes = match.groupValues.getOrNull(2)?.toIntOrNull() ?: 0
-            return hours * 3600 + minutes * 60
-        }
-        TIME_DURATION_MINUTE_REGEX.find(playerZone)?.let { match ->
-            val minutes = match.groupValues[1].toIntOrNull() ?: return@let
-            return minutes * 60
-        }
-        TIME_DURATION_HOUR_REGEX.find(fullText)?.let { match ->
-            val hours = match.groupValues[1].toIntOrNull() ?: return@let
-            val minutes = match.groupValues.getOrNull(2)?.toIntOrNull() ?: 0
-            return hours * 3600 + minutes * 60
-        }
-        TIME_DURATION_MINUTE_REGEX.find(fullText)?.let { match ->
-            val minutes = match.groupValues[1].toIntOrNull() ?: return@let
-            return minutes * 60
-        }
+        // Nodes often glue: "1 secondTime duration 31 minutes, 33 seconds".
+        // Do not require a word boundary before "time" — \btime misses that.
+        extractSpokenTimeDurationSeconds(playerZone)?.let { return it }
+        extractSpokenTimeDurationSeconds(fullText)?.let { return it }
 
         // 3) Duration adjacent to player chrome / seekbar (not recommendation prose).
         findDurationNearPlayerChrome(playerZone)?.let { return it }
@@ -174,16 +160,7 @@ object VideoDurationParser {
                         match.groupValues[6]
                     )?.let { return it }
                 }
-                TIME_DURATION_HOUR_REGEX.find(window)?.let { match ->
-                    val hours = match.groupValues[1].toIntOrNull()
-                    if (hours != null) {
-                        val minutes = match.groupValues.getOrNull(2)?.toIntOrNull() ?: 0
-                        return hours * 3600 + minutes * 60
-                    }
-                }
-                TIME_DURATION_MINUTE_REGEX.find(window)?.let { match ->
-                    match.groupValues[1].toIntOrNull()?.let { return it * 60 }
-                }
+                extractSpokenTimeDurationSeconds(window)?.let { return it }
                 // Single clock next to controls — treat as total only if not a tiny position.
                 CLOCK_DURATION_REGEX.find(window)?.let { match ->
                     clockToSeconds(
@@ -248,6 +225,20 @@ object VideoDurationParser {
         }
     }
 
+    /**
+     * YouTube / Chrome spoken seekbar: hours, minutes, seconds with optional commas.
+     * "Time duration" is clock B (item length). "Time elapsed" is clock C — ignored.
+     */
+    private fun extractSpokenTimeDurationSeconds(text: String): Int? {
+        val match = TIME_DURATION_SPOKEN_REGEX.find(text) ?: return null
+        val hours = match.groupValues[1].toIntOrNull()
+        val minutes = match.groupValues[2].toIntOrNull()
+        val seconds = match.groupValues[3].toIntOrNull()
+        if (hours == null && minutes == null && seconds == null) return null
+        val total = (hours ?: 0) * 3600 + (minutes ?: 0) * 60 + (seconds ?: 0)
+        return total.takeIf { it > 0 }
+    }
+
     private fun clockToSeconds(firstRaw: String, secondRaw: String, thirdRaw: String?): Int? {
         val first = firstRaw.toIntOrNull() ?: return null
         val second = secondRaw.toIntOrNull() ?: return null
@@ -264,13 +255,17 @@ object VideoDurationParser {
             """\b(\d{1,2}):(\d{2})(?::(\d{2}))?\s*/\s*(\d{1,2}):(\d{2})(?::(\d{2}))?\b"""
         )
 
-    private val TIME_DURATION_HOUR_REGEX =
+    /**
+     * No leading \b: a11y concatenates "1 second" + "Time duration" → "secondTime duration".
+     * Optional commas: "31 minutes, 33 seconds" / "1 hour, 2 minutes, 3 seconds".
+     */
+    private val TIME_DURATION_SPOKEN_REGEX =
         Regex(
-            """\btime\s+duration\s+(\d+)\s*(?:hours?|hrs?)\s*(\d+)?\s*(?:minutes?|mins?)?\b"""
+            """time\s+duration\s+""" +
+                """(?:(\d+)\s*(?:hours?|hrs?)\s*,?\s*)?""" +
+                """(?:(\d+)\s*(?:minutes?|mins?)\s*,?\s*)?""" +
+                """(?:(\d+)\s*(?:seconds?|secs?))?"""
         )
-
-    private val TIME_DURATION_MINUTE_REGEX =
-        Regex("""\btime\s+duration\s+(\d+)\s*(?:minutes?|mins?)\b""")
 
     private val CLOCK_DURATION_REGEX =
         Regex("""\b(\d{1,2}):(\d{2})(?::(\d{2}))?\b""")
@@ -310,6 +305,8 @@ object VideoDurationParser {
         "seekbar",
         "seek bar",
         "playback",
-        "progress bar"
+        "progress bar",
+        "time duration",
+        "time elapsed"
     )
 }

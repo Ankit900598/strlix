@@ -140,6 +140,37 @@ class VideoDurationParserTest {
     }
 
     @Test
+    fun chromeSpokenSeekbar_gluedElapsedAndDuration_isCurrentPlayer() {
+        val screen = "Time elapsed 1 secondTime duration 31 minutes, 33 seconds"
+        val parsed = VideoDurationParser.parse(screen)
+        assertEquals(31 * 60 + 33, parsed.currentPlayerDurationSeconds)
+        assertEquals(DurationSource.CURRENT_PLAYER, parsed.source)
+    }
+
+    @Test
+    fun spokenTimeDuration_hoursMinutesSeconds_withCommas() {
+        val parsed = VideoDurationParser.parse(
+            "Time duration 1 hour, 2 minutes, 3 seconds"
+        )
+        assertEquals(1 * 3600 + 2 * 60 + 3, parsed.currentPlayerDurationSeconds)
+        assertEquals(DurationSource.CURRENT_PLAYER, parsed.source)
+    }
+
+    @Test
+    fun clockPair_0_01_over_31_33_isCurrentPlayerTotal() {
+        val parsed = VideoDurationParser.parse("Play Pause 0:01 / 31:33")
+        assertEquals(31 * 60 + 33, parsed.currentPlayerDurationSeconds)
+        assertEquals(DurationSource.CURRENT_PLAYER, parsed.source)
+    }
+
+    @Test
+    fun timeElapsedAlone_isNotPlayerTotal() {
+        val parsed = VideoDurationParser.parse("Time elapsed 1 second Hide player controls")
+        assertNull(parsed.currentPlayerDurationSeconds)
+        assertNotEquals(DurationSource.CURRENT_PLAYER, parsed.source)
+    }
+
+    @Test
     fun recommendationClock_isNotShortFormItemLength() {
         val parsed = VideoDurationParser.parse(
             "Show player controls More videos 8 minutes 55 seconds"

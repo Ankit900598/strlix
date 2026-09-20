@@ -60,6 +60,7 @@ object EnforcementScopeLaw {
         if (isYouTubeClientPackage(packageName)) return true
         if (AccessibilityUrlExtractor.containsYouTubeUrl(screenText)) return true
         if (YOUTUBE_HOST_INLINE.containsMatchIn(screenText.lowercase())) return true
+        if (looksLikeYouTubePlayerAccessibility(screenText)) return true
         if (
             looksLikeBrowserPackage(packageName) &&
             YOUTUBE_BRAND_TOKEN.containsMatchIn(screenText.lowercase()) &&
@@ -75,6 +76,15 @@ object EnforcementScopeLaw {
         if (VideoPlatformRegistry.isNewPipe(packageName)) return true
         val lower = packageName.lowercase()
         return YOUTUBE_CLIENT_NAME_HINTS.any { hint -> lower.contains(hint) }
+    }
+
+    /**
+     * YouTube watch chrome names nodes "Time elapsed" + "Time duration".
+     * Chrome often dumps those without youtube.com in the same event.
+     */
+    fun looksLikeYouTubePlayerAccessibility(screenText: String): Boolean {
+        val normalized = screenText.lowercase()
+        return normalized.contains("time elapsed") && normalized.contains("time duration")
     }
 
     fun looksLikeBrowserPackage(packageName: String): Boolean {

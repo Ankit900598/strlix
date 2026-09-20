@@ -2,6 +2,7 @@ package com.phonecodex.app.domain.enforcement
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -378,6 +379,77 @@ class MediaLengthEnforcementTest {
                 structuredMaxBlockMinutes = null,
                 structuredMinBlockMinutes = 40,
                 enforcementScopePackages = emptyList(),
+                contentBrands = listOf("youtube")
+            )
+        )
+    }
+
+    private val youtubeMin40 = "allow only YouTube videos longer than 40 minutes"
+    private val chromeSpoken31m33 =
+        "Time elapsed 1 secondTime duration 31 minutes, 33 seconds"
+
+    @Test
+    fun chromeSpokenSeekbar_exactPhoneLog_31m33_blocksUnderMin40() {
+        val parsed = VideoDurationParser.parse(chromeSpoken31m33)
+        assertEquals(31 * 60 + 33, parsed.currentPlayerDurationSeconds)
+        assertEquals(DurationSource.CURRENT_PLAYER, parsed.source)
+
+        val detailed = MediaLengthEnforcement.decideDetailed(
+            packageName = VideoPlatformRegistry.CHROME,
+            goal = youtubeMin40,
+            screenText = chromeSpoken31m33,
+            structuredMaxBlockMinutes = null,
+            structuredMinBlockMinutes = 40,
+            contentBrands = listOf("youtube")
+        )
+        assertEquals(MediaLengthLocalDecision.BLOCK, detailed.decision)
+        assertEquals(DurationSource.CURRENT_PLAYER, detailed.durationSource)
+        assertEquals(31 * 60 + 33, detailed.currentPlayerDurationSeconds)
+        assertNotEquals(MediaLengthLocalDecision.WAIT, detailed.decision)
+    }
+
+    @Test
+    fun chromeSpokenSeekbar_41m_allowsMin40() {
+        val screen = "Time elapsed 1 secondTime duration 41 minutes"
+        val detailed = MediaLengthEnforcement.decideDetailed(
+            packageName = VideoPlatformRegistry.CHROME,
+            goal = youtubeMin40,
+            screenText = screen,
+            structuredMaxBlockMinutes = null,
+            structuredMinBlockMinutes = 40,
+            contentBrands = listOf("youtube")
+        )
+        assertEquals(41 * 60, detailed.currentPlayerDurationSeconds)
+        assertEquals(MediaLengthLocalDecision.ALLOW, detailed.decision)
+        assertEquals(DurationSource.CURRENT_PLAYER, detailed.durationSource)
+    }
+
+    @Test
+    fun chromeSpokenSeekbar_hourCommaForm_isNotWait() {
+        val screen = "Time elapsed 8 secondsTime duration 1 hour, 2 minutes, 3 seconds"
+        val detailed = MediaLengthEnforcement.decideDetailed(
+            packageName = VideoPlatformRegistry.CHROME,
+            goal = youtubeMin40,
+            screenText = screen,
+            structuredMaxBlockMinutes = null,
+            structuredMinBlockMinutes = 40,
+            contentBrands = listOf("youtube")
+        )
+        assertEquals(1 * 3600 + 2 * 60 + 3, detailed.currentPlayerDurationSeconds)
+        assertEquals(MediaLengthLocalDecision.ALLOW, detailed.decision)
+        assertNotEquals(MediaLengthLocalDecision.WAIT, detailed.decision)
+    }
+
+    @Test
+    fun chromeClockPair_0_01_over_31_33_blocksMin40() {
+        assertEquals(
+            MediaLengthLocalDecision.BLOCK,
+            MediaLengthEnforcement.decide(
+                packageName = VideoPlatformRegistry.CHROME,
+                goal = youtubeMin40,
+                screenText = "Hide player controls YouTube 0:01 / 31:33",
+                structuredMaxBlockMinutes = null,
+                structuredMinBlockMinutes = 40,
                 contentBrands = listOf("youtube")
             )
         )
