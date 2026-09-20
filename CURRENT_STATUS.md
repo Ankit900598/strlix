@@ -46,6 +46,8 @@ Every task should improve measured reliability, clarity, or speed.
 
 Home now has a **Protection Reliability Gate**: Protected only if Accessibility is actually bound (alive or fresh heartbeat) **and** there is an active commitment or an enabled life rule. “Installed” is not “protecting.”
 
+Hosted Understand is live on App Service `phonecodex-backend` (HTTPS). POSTs require `STRLIX_BACKEND_APP_SECRET`. Compiler `pc-lab-astra`, classifier `pc-lab-terra`, vision OFF. PolicyEngine is still law.
+
 ## What Is Not Product-Ready
 
 - Full natural-language Promise Compiler enforcement is not fully product-ready.

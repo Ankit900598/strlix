@@ -6,14 +6,30 @@ const OpenAI = require("openai");
 
 const DEFAULT_STRONG_DEPLOYMENT = "pc-lab-strong";
 const DEFAULT_BEST_DEPLOYMENT = "pc-lab-best";
-const DEFAULT_VISION_DEPLOYMENT = "pc-lab-astra";
-const DEFAULT_VISION_FALLBACKS = ["pc-lab-vision", "pc-lab-best", "pc-lab-strong"];
+const DEFAULT_ASTRA_DEPLOYMENT = "pc-lab-astra";
+const DEFAULT_TERRA_DEPLOYMENT = "pc-lab-terra";
+const DEFAULT_LUNA_DEPLOYMENT = "pc-lab-luna";
+const DEFAULT_COMPILER_DEPLOYMENT = DEFAULT_ASTRA_DEPLOYMENT;
+const DEFAULT_COMPILER_FALLBACKS = [DEFAULT_BEST_DEPLOYMENT, DEFAULT_STRONG_DEPLOYMENT];
+const DEFAULT_CLASSIFIER_DEPLOYMENT = DEFAULT_TERRA_DEPLOYMENT;
+const DEFAULT_CLASSIFIER_FALLBACKS = [
+  DEFAULT_LUNA_DEPLOYMENT,
+  DEFAULT_BEST_DEPLOYMENT,
+  DEFAULT_STRONG_DEPLOYMENT,
+];
+const DEFAULT_VISION_DEPLOYMENT = DEFAULT_ASTRA_DEPLOYMENT;
+const DEFAULT_VISION_FALLBACKS = ["pc-lab-vision", DEFAULT_BEST_DEPLOYMENT, DEFAULT_STRONG_DEPLOYMENT];
 const FALLBACK_OPENAI_MODEL = "gpt-4o-mini";
 
 const REASONING_DEPLOYMENTS = new Set([
   DEFAULT_BEST_DEPLOYMENT,
-  "pc-lab-astra",
+  DEFAULT_ASTRA_DEPLOYMENT,
+  DEFAULT_TERRA_DEPLOYMENT,
+  DEFAULT_LUNA_DEPLOYMENT,
   "gpt-5.6-sol",
+  "gpt-5.6-terra",
+  "gpt-5.6-luna",
+  "gpt-6-astra",
   "gpt-5.5",
   "gpt-5.4",
 ]);
@@ -44,12 +60,37 @@ function getBestDeployment() {
   return envOr("AZURE_OPENAI_BEST_DEPLOYMENT", DEFAULT_BEST_DEPLOYMENT);
 }
 
+function parseCsvEnv(name) {
+  return String(process.env[name] || "")
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
 function getCompilerDeployment() {
-  return envOr("AZURE_PROMISE_COMPILER_DEPLOYMENT", getBestDeployment());
+  return envOr("AZURE_PROMISE_COMPILER_DEPLOYMENT", DEFAULT_COMPILER_DEPLOYMENT);
+}
+
+function getCompilerDeploymentChain() {
+  const extras = parseCsvEnv("AZURE_PROMISE_COMPILER_FALLBACKS");
+  return unique([
+    getCompilerDeployment(),
+    ...extras,
+    ...DEFAULT_COMPILER_FALLBACKS,
+  ]);
 }
 
 function getClassifierDeployment() {
-  return envOr("AZURE_CLASSIFIER_DEPLOYMENT", getStrongDeployment());
+  return envOr("AZURE_CLASSIFIER_DEPLOYMENT", DEFAULT_CLASSIFIER_DEPLOYMENT);
+}
+
+function getClassifierDeploymentChain() {
+  const extras = parseCsvEnv("AZURE_CLASSIFIER_FALLBACKS");
+  return unique([
+    getClassifierDeployment(),
+    ...extras,
+    ...DEFAULT_CLASSIFIER_FALLBACKS,
+  ]);
 }
 
 function getVisionDeployment() {
@@ -57,10 +98,7 @@ function getVisionDeployment() {
 }
 
 function getVisionDeploymentChain() {
-  const extras = String(process.env.AZURE_VISION_FALLBACKS || "")
-    .split(",")
-    .map((part) => part.trim())
-    .filter(Boolean);
+  const extras = parseCsvEnv("AZURE_VISION_FALLBACKS");
   return unique([
     getVisionDeployment(),
     ...extras,
@@ -225,6 +263,11 @@ async function completeJsonChatWithFallback({
 module.exports = {
   DEFAULT_STRONG_DEPLOYMENT,
   DEFAULT_BEST_DEPLOYMENT,
+  DEFAULT_ASTRA_DEPLOYMENT,
+  DEFAULT_TERRA_DEPLOYMENT,
+  DEFAULT_LUNA_DEPLOYMENT,
+  DEFAULT_COMPILER_DEPLOYMENT,
+  DEFAULT_CLASSIFIER_DEPLOYMENT,
   DEFAULT_VISION_DEPLOYMENT,
   DEFAULT_VISION_FALLBACKS,
   FALLBACK_OPENAI_MODEL,
@@ -232,7 +275,9 @@ module.exports = {
   getStrongDeployment,
   getBestDeployment,
   getCompilerDeployment,
+  getCompilerDeploymentChain,
   getClassifierDeployment,
+  getClassifierDeploymentChain,
   getVisionDeployment,
   getVisionDeploymentChain,
   isReasoningDeployment,

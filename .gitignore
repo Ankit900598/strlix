@@ -24,6 +24,7 @@ local.properties
 .android-cloud-phone-creds.txt
 .android-cloud-phone/
 .tmp-phone-debug/
+.tmp-azure-deploy/
 
 __pycache__/
 *.pyc

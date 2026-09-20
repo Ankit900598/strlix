@@ -6,13 +6,12 @@ const {
   redactForLog,
 } = require("./classifierService");
 const {
-  getCompilerDeployment,
-  getBestDeployment,
-  getStrongDeployment,
+  getCompilerDeploymentChain,
   completeJsonChatWithFallback,
 } = require("./azureModelRouting");
+const { resolvePromptsDir } = require("./promptPaths");
 
-const PROMPTS_DIR = path.join(__dirname, "..", "evals", "prompts");
+const PROMPTS_DIR = resolvePromptsDir();
 const ALLOWED_PROMPT_VERSIONS = new Set([
   "promise_compiler_v06",
   "promise_compiler_v07",
@@ -2844,11 +2843,7 @@ async function compilePromise(rawPromise, options = {}) {
   try {
     const compiled = await completeJsonChatWithFallback({
       provider,
-      deployments: [
-        getCompilerDeployment(),
-        getBestDeployment(),
-        getStrongDeployment(),
-      ],
+      deployments: getCompilerDeploymentChain(),
       maxTokens: 4000,
       messages: [
         { role: "system", content: loadPromiseCompilerPrompt() },

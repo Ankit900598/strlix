@@ -62,4 +62,14 @@ requireAppSecret({ get: () => "" }, fakeRes(), () => {
 });
 assert.strictEqual(nextCalled, true, "empty env is local-open");
 
+process.env.WEBSITE_HOSTNAME = "phonecodex-backend.azurewebsites.net";
+const hostedDenied = fakeRes();
+nextCalled = false;
+requireAppSecret({ get: () => "" }, hostedDenied, () => {
+  nextCalled = true;
+});
+assert.strictEqual(hostedDenied.statusCode, 503);
+assert.strictEqual(nextCalled, false, "hosted empty secret must not next");
+delete process.env.WEBSITE_HOSTNAME;
+
 console.log("ASSERTIONS_PASSED=app_auth");

@@ -12,9 +12,9 @@ Use this file to choose the next small task for a fresh chat.
 
 | Day | Ship |
 |---|---|
-| Now | Hosted URL + `STRLIX_BACKEND_APP_SECRET` plumbing (no open `/compile-promise` on the internet) |
-| Next | Host Node on existing `phonecodex-dev` (HTTPS). You must say **host it** before any new Azure compute. |
-| Then | 5 demo promises on a stranger's phone: shorts quota, compound A/B/C, no-porn-rest-normal, min-30, Accessibility setup |
+| Now | Hosted backend live: https://phonecodex-backend.azurewebsites.net (secret required on POST). Runbook: `docs/azure-hosted-backend.md` |
+| Next | Sideload APK with `local.properties` URL+secret. 5 demo promises on a stranger's phone: shorts quota, compound A/B/C, no-porn-rest-normal, min-30, Accessibility setup |
+| Then | Watch Azure spend during the 4-day credit window; do not add a new OpenAI account |
 | Forbidden | chat-thread UI, GPT-as-cop, new OpenAI resource, NSG 0.0.0.0/0, per-app firefighter lists |
 
 Phone-verified already: 20-shorts; `upto 20 shots`; compound `allow only X, allow only Y`.

@@ -1,6 +1,8 @@
 # PhoneCodex — Current State
 
-**Updated:** 2026-09-20 (Protection Reliability Gate — Home preflight)  
+**Updated:** 2026-09-20 (hosted backend + Protection Reliability Gate)
+
+**Hosted backend:** https://phonecodex-backend.azurewebsites.net in `phonecodex-dev`. POST routes require `X-Strlix-App-Secret`. Ladder: compiler `pc-lab-astra` (gpt-6-astra), classifier `pc-lab-terra` (gpt-5.6-terra) → luna/sol/strong. Vision env OFF. Localhost `:8787` still works when secret is empty. Runbook: `docs/azure-hosted-backend.md`. AI does not enforce.  
 **Audience:** Future Cursor / Codex sessions  
 **Rule:** Read this before shipping features. Prefer this file over chat memory.
 

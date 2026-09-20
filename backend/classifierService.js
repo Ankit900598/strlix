@@ -10,18 +10,14 @@ const {
   getVisionDeploymentChain,
   getBestDeployment,
   getClassifierDeployment,
+  getClassifierDeploymentChain,
   createClassifierClient,
   completeJsonChatWithFallback,
 } = require("./azureModelRouting");
+const { resolvePromptsDir } = require("./promptPaths");
 
 const PROMPT_VERSION = "v04";
-const PROMPT_PATH = path.join(
-  __dirname,
-  "..",
-  "evals",
-  "prompts",
-  "classifier_v04.txt"
-);
+const PROMPT_PATH = path.join(resolvePromptsDir(), "classifier_v04.txt");
 const ESCALATION_CONFIDENCE_THRESHOLD = 0.75;
 const VISION_ADVISORY_CATEGORIES = new Set([
   "likely_short_form",
@@ -201,7 +197,7 @@ async function classifyActivity(body) {
   let imageRejected = false;
   let userContent = JSON.stringify(buildClassifierUserPayload(body));
   let systemContent = loadClassifierPrompt();
-  let deployments = [getClassifierDeployment(), getBestDeployment()];
+  let deployments = getClassifierDeploymentChain();
 
   if (image) {
     if (!isVisionExperimentEnabled()) {
@@ -265,7 +261,7 @@ async function classifyActivity(body) {
       imageRejected = true;
       const textPass = await completeJsonChatWithFallback({
         provider,
-        deployments: [getClassifierDeployment(), getBestDeployment()],
+        deployments: getClassifierDeploymentChain(),
         maxTokens: 300,
         messages: [
           { role: "system", content: loadClassifierPrompt() },

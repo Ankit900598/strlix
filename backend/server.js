@@ -21,7 +21,13 @@ const {
 } = require("./speechTranscriptionService");
 const { researchApp } = require("./appDossierService");
 
-const { appAuthMiddleware } = require("./appAuth");
+const {
+  appAuthMiddleware,
+  assertHostedAppSecretConfigured,
+  isHostedRuntime,
+} = require("./appAuth");
+
+assertHostedAppSecretConfigured();
 
 const PORT = Number(process.env.PORT) || 8787;
 const app = express();
@@ -104,6 +110,9 @@ app.get("/health", (_req, res) => {
       vision: getVisionDeployment(),
       speech: getSpeechHealth().model,
     },
+    hosted: isHostedRuntime(),
+    appSecretRequired: isHostedRuntime() || Boolean(process.env.STRLIX_BACKEND_APP_SECRET),
+    visionDefault: "off",
     appDossier: true,
   });
 });

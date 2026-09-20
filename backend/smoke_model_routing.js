@@ -15,6 +15,8 @@ const {
   getVisionDeploymentChain,
   getBestDeployment,
   getStrongDeployment,
+  getCompilerDeploymentChain,
+  getClassifierDeploymentChain,
   isReasoningDeployment,
 } = require("./azureModelRouting");
 const {
@@ -29,17 +31,22 @@ function assert(cond, label) {
 
 assert(getStrongDeployment() === "pc-lab-strong", "strong default");
 assert(getBestDeployment() === "pc-lab-best", "best default");
-assert(getClassifierProvider().deployment === "pc-lab-strong", "classify ignores cheap");
+assert(getClassifierProvider().deployment === "pc-lab-terra", "classify uses terra");
 assert(
-  getPromiseCompilerProvider().deployment === "pc-lab-best",
-  "compiler uses best"
+  getPromiseCompilerProvider().deployment === "pc-lab-astra",
+  "compiler uses astra"
 );
 assert(getVisionDeployment() === "pc-lab-astra", "vision uses astra");
 assert(
   getVisionDeploymentChain()[0] === "pc-lab-astra",
   "vision chain starts at astra"
 );
+assert(getCompilerDeploymentChain()[0] === "pc-lab-astra", "compiler chain starts astra");
+assert(getCompilerDeploymentChain().includes("pc-lab-best"), "compiler falls back to sol");
+assert(getClassifierDeploymentChain()[0] === "pc-lab-terra", "classifier chain starts terra");
+assert(getClassifierDeploymentChain().includes("pc-lab-luna"), "classifier falls back to luna");
 assert(isReasoningDeployment("pc-lab-best"), "best is reasoning-style");
+assert(isReasoningDeployment("pc-lab-terra"), "terra is reasoning-style");
 assert(!isReasoningDeployment("pc-lab-cheap"), "cheap is not reasoning");
 
 const parsed = parseFastTranscriptionResult({
