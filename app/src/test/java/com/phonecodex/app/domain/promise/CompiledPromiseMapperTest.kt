@@ -1,5 +1,7 @@
 package com.phonecodex.app.domain.promise
 
+import com.phonecodex.app.domain.diagnostics.BackendHealthProbe
+
 import com.phonecodex.app.domain.model.ContentRuleAction
 import com.phonecodex.app.domain.model.StrictnessLevel
 import com.phonecodex.app.ui.home.UnderstandingSource
@@ -251,7 +253,7 @@ class CompiledPromiseMapperTest {
         )
         assertTrue(ui.cautions.any { it.contains("Basic offline preview", ignoreCase = true) })
         assertEquals("Basic offline preview", ui.statusLabel)
-        assertTrue(ui.statusDetail.contains("adb reverse tcp:8787 tcp:8787", ignoreCase = true))
+        assertTrue(ui.statusDetail.contains(BackendHealthProbe.reachabilityHint(), ignoreCase = true))
     }
 
     @Test
@@ -480,3 +482,4 @@ class CompiledPromiseMapperTest {
         assertEquals(true, draft.canStartCommitment)
     }
 }
+

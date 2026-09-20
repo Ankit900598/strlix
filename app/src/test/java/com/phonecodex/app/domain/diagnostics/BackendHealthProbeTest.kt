@@ -87,7 +87,7 @@ class BackendHealthProbeTest {
         assertFalse(result.reachable)
         assertEquals(BackendProbeKind.BRIDGE_MISSING, result.kind)
         assertEquals(BackendHealthProbe.STATUS_BRIDGE_MISSING, result.statusLine)
-        assertTrue(result.detail!!.contains("adb reverse tcp:8787 tcp:8787"))
+        assertTrue(result.detail!!.contains(BackendHealthProbe.reachabilityHint()))
     }
 
     @Test
@@ -139,7 +139,7 @@ class BackendHealthProbeTest {
         )
         assertEquals(BackendProbeKind.BRIDGE_MISSING, display.kind)
         assertFalse(display.reachable)
-        assertTrue(display.detail!!.contains("adb reverse"))
+        assertTrue(display.detail!!.contains(BackendHealthProbe.reachabilityHint()))
     }
 
     @Test

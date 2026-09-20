@@ -1,5 +1,7 @@
 package com.phonecodex.app.ui.home
 
+import com.phonecodex.app.domain.diagnostics.BackendHealthProbe
+
 import com.phonecodex.app.domain.model.AppRule
 import com.phonecodex.app.domain.model.AppRuleBehavior
 import com.phonecodex.app.domain.model.ContentRule
@@ -218,7 +220,7 @@ class PromiseUnderstandingTest {
         )
         assertTrue(ui.cautions.any { it.contains("Basic offline preview", ignoreCase = true) })
         assertEquals("Basic offline preview", ui.statusLabel)
-        assertTrue(ui.statusDetail.contains("adb reverse tcp:8787 tcp:8787", ignoreCase = true))
+        assertTrue(ui.statusDetail.contains(BackendHealthProbe.reachabilityHint(), ignoreCase = true))
     }
 
     @Test
@@ -734,3 +736,4 @@ class PromiseUnderstandingTest {
         assertEquals("Needs one clarification", ui.statusLabel)
     }
 }
+

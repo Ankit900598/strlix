@@ -112,7 +112,7 @@ class DeveloperDiagnosticsUiModelTest {
         assertEquals(BackendHealthProbe.STATUS_BRIDGE_MISSING, model.statusLine)
         assertEquals("no (bridge?)", model.backendReachableLabel)
         assertEquals(BackendProbeKind.BRIDGE_MISSING, model.probeKind)
-        assertTrue(model.probeDetail!!.contains("adb reverse tcp:8787 tcp:8787"))
+        assertTrue(model.probeDetail!!.contains(BackendHealthProbe.reachabilityHint()))
     }
 
     @Test
