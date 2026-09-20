@@ -10,11 +10,24 @@ object SessionLockLaw {
     fun shouldKeepLockingPackage(
         packageName: String,
         screenText: String = "",
-        goal: String = ""
+        goal: String = "",
+        enforcementScopePackages: Collection<String> = emptyList(),
+        contentBrands: Collection<String> = emptyList()
     ): Boolean {
         if (packageName.isBlank()) return false
         if (EntertainmentClassDetector.isMonkExemptPackage(packageName)) return false
         if (PromiseCategoryLaw.shouldBlock(packageName, screenText, goal)) return true
+        if (
+            EnforcementScopeLaw.matches(
+                packageName = packageName,
+                screenText = screenText,
+                scopePackages = enforcementScopePackages,
+                contentBrands = contentBrands
+            ) &&
+            SurfaceDetector.detect(packageName, screenText).isActivePlayer
+        ) {
+            return true
+        }
         if (goal.isNotBlank()) return false
         return VideoPlatformRegistry.enforcesMediaSurfaces(packageName) ||
             VideoPlatformRegistry.isVideoOrStreamingPackage(packageName) ||
@@ -27,8 +40,16 @@ object SessionLockLaw {
     fun mayUseAppWhileLocked(
         packageName: String,
         screenText: String = "",
-        goal: String = ""
-    ): Boolean = !shouldKeepLockingPackage(packageName, screenText, goal)
+        goal: String = "",
+        enforcementScopePackages: Collection<String> = emptyList(),
+        contentBrands: Collection<String> = emptyList()
+    ): Boolean = !shouldKeepLockingPackage(
+        packageName = packageName,
+        screenText = screenText,
+        goal = goal,
+        enforcementScopePackages = enforcementScopePackages,
+        contentBrands = contentBrands
+    )
 
     fun isContactsPhoneOrMessaging(packageName: String): Boolean {
         val tokens = packageName.lowercase().split('.', '_', '-')

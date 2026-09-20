@@ -104,6 +104,40 @@ class SessionLockLawTest {
     }
 
     @Test
+    fun locked_youtubeContentPromise_keepsChromeShortsBlocked() {
+        val screen = "m.youtube.com/shorts Back Search Like Share The Blueprint for Success #motivation"
+        assertTrue(
+            SessionLockLaw.shouldKeepLockingPackage(
+                packageName = VideoPlatformRegistry.CHROME,
+                screenText = screen,
+                goal = "for 1 hour allow only YouTube video longer than 40 minutes",
+                contentBrands = listOf("youtube")
+            )
+        )
+        assertFalse(
+            SessionLockLaw.mayUseAppWhileLocked(
+                packageName = VideoPlatformRegistry.CHROME,
+                screenText = screen,
+                goal = "for 1 hour allow only YouTube video longer than 40 minutes",
+                contentBrands = listOf("youtube")
+            )
+        )
+    }
+
+    @Test
+    fun locked_youtubeContentPromise_allowsNormalChromePage() {
+        val screen = "Google Search weather tomorrow"
+        assertTrue(
+            SessionLockLaw.mayUseAppWhileLocked(
+                packageName = VideoPlatformRegistry.CHROME,
+                screenText = screen,
+                goal = "for 1 hour allow only YouTube video longer than 40 minutes",
+                contentBrands = listOf("youtube")
+            )
+        )
+    }
+
+    @Test
     fun active_unknownChatGptIsNotLock() {
         val decision = engine.evaluate(
             world,

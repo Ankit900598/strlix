@@ -442,11 +442,14 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
 
         lastNoSessionLoggedPackage = null
 
+        val lockScopeSettings = studyWorldSettingsStore.getSettings()
         if (storedSession.status == SessionStatus.LOCKED &&
             SessionLockLaw.mayUseAppWhileLocked(
-                packageName,
-                screenText,
-                storedSession.goal.orEmpty()
+                packageName = packageName,
+                screenText = screenText,
+                goal = storedSession.goal.orEmpty(),
+                enforcementScopePackages = lockScopeSettings.enforcementScopePackages,
+                contentBrands = lockScopeSettings.enforcementContentBrands
             )
         ) {
             hideWarningOverlay()
@@ -472,7 +475,7 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
         logEvalPrelude(packageName, storedSession.goal.orEmpty(), screenText)
         maybeResearchApp(packageName, screenText, storedSession.goal.orEmpty())
 
-        val scopedSettings = studyWorldSettingsStore.getSettings()
+        val scopedSettings = lockScopeSettings
         val scopedAppRule = appRulesStore.getBehaviorForPackage(packageName)
         if (
             !EntertainmentBanGate.mustEvaluate(
