@@ -21,6 +21,9 @@ local.properties
 .env
 .env.*
 !.env.example
+.android-cloud-phone-creds.txt
+.android-cloud-phone/
+.tmp-phone-debug/
 
 __pycache__/
 *.pyc

@@ -66,4 +66,15 @@ class AccessibilityTamperGuardTest {
         assertNotNull(match)
         assertTrue(match!!.matchedSignals.contains("phone codex"))
     }
+
+    @Test
+    fun evaluatePhoneCodexAccessibilityControls_matchesMiuiSettingsPackage() {
+        val match = guard.evaluatePhoneCodexAccessibilityControls(
+            packageName = "com.xiaomi.misettings",
+            screenText = "PhoneCodex accessibility turn off"
+        )
+
+        assertNotNull(match)
+        assertTrue(match!!.matchedSignals.contains("phonecodex"))
+    }
 }

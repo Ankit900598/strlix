@@ -12,6 +12,8 @@ class SafeAppsCatalogTest {
         assertTrue(SafeAppsCatalog.isDefaultPackage("com.phonecodex.app"))
         assertTrue(SafeAppsCatalog.isDefaultPackage("com.google.android.dialer"))
         assertTrue(SafeAppsCatalog.isDefaultPackage("com.whatsapp"))
+        assertTrue(SafeAppsCatalog.isDefaultPackage("com.android.contacts"))
+        assertTrue(SafeAppsCatalog.isDefaultPackage("com.openai.chatgpt"))
     }
 
     @Test

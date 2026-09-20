@@ -1,0 +1,108 @@
+{
+  "name": "strlix_ai_lab_model_comparison",
+  "version": "2026-09-07",
+  "description": "Cheap default / strong escalation / vision-on-OCR-failure ladder for Strlix AI Lab.",
+  "account": "ay186mnc-1561-resource",
+  "region": "westus3",
+  "knownDeployments": {
+    "pc-lab-cheap": {
+      "modelFamily": "gpt-4.1-mini",
+      "role": "default_lab_and_advisor",
+      "useFor": [
+        "primary_promise_compiler_evals",
+        "primary_classifier_evals",
+        "candidate_generation",
+        "regression_pins"
+      ]
+    },
+    "pc-lab-strong": {
+      "modelFamily": "gpt-4.1",
+      "role": "escalation_probe",
+      "useFor": [
+        "hard_subset_disagreement",
+        "safety_miss_recheck",
+        "clock_confusion_recheck",
+        "parse_failure_recheck"
+      ],
+      "doNotUseFor": [
+        "full_corpus_sweeps",
+        "bulk_candidate_generation"
+      ]
+    },
+    "pc-lab-vision": {
+      "modelFamily": "gpt-4o",
+      "role": "ocr_failure_only",
+      "useFor": [
+        "screenshot_fixtures_when_text_ambiguous"
+      ],
+      "doNotUseFor": [
+        "default_text_classifier_path",
+        "promise_compiler_primary"
+      ]
+    }
+  },
+  "escalationRules": [
+    {
+      "id": "safety_violation",
+      "when": "promise_or_classifier_safety_violation",
+      "then": "rerun_pc-lab-strong"
+    },
+    {
+      "id": "clock_confusion",
+      "when": "temporal_clock_confusion_or_media_length_missing",
+      "then": "rerun_pc-lab-strong_on_case"
+    },
+    {
+      "id": "parse_or_filter",
+      "when": "parse_failure_or_content_filter",
+      "then": "rerun_pc-lab-strong_then_review_prompt"
+    },
+    {
+      "id": "ocr_insufficient",
+      "when": "classifier_ambiguous_and_screenshot_available",
+      "then": "run_pc-lab-vision"
+    }
+  ],
+  "hardSubsets": [
+    {
+      "id": "temporal_clocks",
+      "dataset": "evals/datasets/v4_temporal_clocks.jsonl",
+      "prompt": "evals/prompts/promise_compiler_v05.txt",
+      "deployments": ["pc-lab-cheap", "pc-lab-strong"],
+      "primaryMetric": "temporalClockOkRate"
+    },
+    {
+      "id": "ai_lab_seed",
+      "dataset": "evals/datasets/v5_ai_lab_seed.jsonl",
+      "prompt": "evals/prompts/promise_compiler_v05.txt",
+      "deployments": ["pc-lab-cheap"],
+      "primaryMetric": "safetyMatchRate"
+    },
+    {
+      "id": "messy_global_quality",
+      "dataset": "evals/datasets/v3_commitment_messy_global.jsonl",
+      "prompt": "evals/prompts/promise_compiler_v05.txt",
+      "deployments": ["pc-lab-cheap"],
+      "note": "Full strong sweep deferred; escalate only failing clusters",
+      "primaryMetric": "safetyMatchRate"
+    },
+    {
+      "id": "classifier_edge",
+      "dataset": "evals/datasets/v1_edge_cases.jsonl",
+      "prompt": "evals/prompts/classifier_v04.txt",
+      "deployments": ["pc-lab-cheap"],
+      "primaryMetric": "falseAllows"
+    }
+  ],
+  "costDiscipline": {
+    "preferDeployment": "pc-lab-cheap",
+    "maxStrongShareOfCalls": 0.15,
+    "maxVisionShareOfCalls": 0.05,
+    "forbid": [
+      "fine_tune_before_2k_reviewed_gold",
+      "ptu",
+      "idle_gpu_vm",
+      "full_corpus_on_strong"
+    ]
+  }
+}

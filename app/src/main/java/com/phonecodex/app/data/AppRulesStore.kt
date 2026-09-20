@@ -168,9 +168,29 @@ class AppRulesStore(context: Context) {
                 behavior = AppRuleBehavior.AI_DECIDE
             ),
             AppRule(
+                packageName = "org.schabi.newpipe",
+                label = "NewPipe",
+                behavior = AppRuleBehavior.AI_DECIDE
+            ),
+            AppRule(
                 packageName = "com.instagram.android",
                 label = "Instagram",
                 // Default AI_DECIDE — hard BLOCK only when the promise asks for it.
+                behavior = AppRuleBehavior.AI_DECIDE
+            ),
+            AppRule(
+                packageName = "com.facebook.katana",
+                label = "Facebook",
+                behavior = AppRuleBehavior.AI_DECIDE
+            ),
+            AppRule(
+                packageName = "com.zhiliaoapp.musically",
+                label = "TikTok",
+                behavior = AppRuleBehavior.AI_DECIDE
+            ),
+            AppRule(
+                packageName = "com.snapchat.android",
+                label = "Snapchat",
                 behavior = AppRuleBehavior.AI_DECIDE
             )
         )

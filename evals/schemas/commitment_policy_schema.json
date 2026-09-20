@@ -167,6 +167,103 @@
       "type": "number",
       "minimum": 0,
       "maximum": 1
+    },
+    "userFacingConfirmation": {
+      "description": "v07/v08: string summary OR structured confirm object (no package IDs). v08 prefers understood/allowed/blocked/time/appliesTo/checkThis/safetyNotes; v07 aliases still accepted.",
+      "oneOf": [
+        { "type": "null" },
+        { "type": "string" },
+        {
+          "type": "object",
+          "additionalProperties": true
+        }
+      ]
+    },
+    "interpretationNotes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Promise Semantics v1: expansions such as shorts→all short-form surfaces."
+    },
+    "cleanedPromiseText": { "type": "string" },
+    "recommendedInterpretation": { "type": ["string", "null"] },
+    "interpretationConfidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "ambiguityLevel": {
+      "type": "string",
+      "enum": ["none", "low", "medium", "high"]
+    },
+    "clarificationRequired": { "type": "boolean" },
+    "clarificationOptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "string" },
+          "description": { "type": "string" },
+          "recommended": { "type": "boolean" },
+          "policyPreview": { "type": ["string", "null"], "description": "v08 preferred" },
+          "resultingPolicyPreview": { "type": ["string", "null"], "description": "v07 alias" }
+        }
+      }
+    },
+    "detectedLanguage": {
+      "type": "string",
+      "description": "v08: detected language code or hinglish"
+    },
+    "transcriptConfidence": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 1,
+      "description": "v08: voice transcript confidence; null for typed"
+    },
+    "userIntentSummary": {
+      "type": "string",
+      "description": "v08: one-sentence intent summary (no package IDs)"
+    },
+    "alternativeInterpretations": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "v08: other plausible readings (no package IDs)"
+    },
+    "internalPolicy": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "v08: technical enforcement draft; packages allowed here",
+      "properties": {
+        "timeWindow": { "type": "object" },
+        "surfaceRules": { "type": "array" },
+        "contentRules": { "type": "array" },
+        "appRules": { "type": "array" },
+        "quotaRules": { "type": "array" },
+        "recoveryRules": { "type": "object" },
+        "guardrails": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "riskReview": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "v08: false-allow / false-block / safety risk review",
+      "properties": {
+        "falseAllowRisk": {
+          "type": "string",
+          "enum": ["none", "low", "medium", "high"]
+        },
+        "falseBlockRisk": {
+          "type": "string",
+          "enum": ["none", "low", "medium", "high"]
+        },
+        "safetyRisk": {
+          "type": "string",
+          "enum": ["none", "low", "medium", "high"]
+        },
+        "requiresHumanConfirmation": { "type": "boolean" }
+      }
+    },
+    "hiddenInternalScope": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "v08: internal-only notes; may include package IDs"
     }
   },
   "$defs": {
@@ -215,15 +312,24 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["metric", "limit", "period"],
+      "description": "Usage budgets use entertainment_minutes/social_minutes/shorts/reels. Per-item media length uses max_item_minutes (block longer) or min_item_minutes (require at least this long). Never use entertainment_minutes for video-length thresholds.",
       "properties": {
         "metric": {
           "type": "string",
-          "enum": ["shorts", "reels", "entertainment_minutes", "social_minutes"]
+          "enum": [
+            "shorts",
+            "reels",
+            "entertainment_minutes",
+            "social_minutes",
+            "max_item_minutes",
+            "min_item_minutes"
+          ]
         },
         "limit": { "type": "integer", "minimum": 0 },
         "period": {
           "type": "string",
-          "enum": ["session", "day", "week"]
+          "enum": ["session", "day", "week", "item"],
+          "description": "Use period=item for max_item_minutes / min_item_minutes thresholds."
         }
       }
     },

@@ -12,6 +12,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.phonecodex.app.accessibility.AccessibilityHealthChecker
+import com.phonecodex.app.data.AccessibilityHeartbeat
 import com.phonecodex.app.data.AppRulesStore
 import com.phonecodex.app.data.DebugState
 import com.phonecodex.app.data.DebugStateStore
@@ -26,6 +27,7 @@ import com.phonecodex.app.data.SafeAppsStore
 import com.phonecodex.app.data.SessionStore
 import com.phonecodex.app.data.StudyWorldSettingsStore
 import com.phonecodex.app.domain.diagnostics.BackendHealthProbe
+import com.phonecodex.app.domain.diagnostics.BackendProbeKind
 import com.phonecodex.app.domain.diagnostics.BackendProbeResult
 import com.phonecodex.app.domain.model.AppRule
 import com.phonecodex.app.domain.model.AppRuleBehavior
@@ -39,11 +41,21 @@ import com.phonecodex.app.domain.model.SafeApp
 import com.phonecodex.app.domain.model.SessionStatus
 import com.phonecodex.app.domain.model.StudyWorldSettings
 import com.phonecodex.app.domain.policy.PolicyEngine
+import com.phonecodex.app.domain.protection.ProtectionReliabilityGate
+import com.phonecodex.app.domain.protection.ProtectionReliabilityInput
+import com.phonecodex.app.domain.protection.ProtectionReliabilityUiModel
+import com.phonecodex.app.domain.promise.CompiledPromiseMapper
+import com.phonecodex.app.domain.promise.ConfirmedPromiseBinder
 import com.phonecodex.app.domain.promise.FocusPromiseParser
+import com.phonecodex.app.domain.promise.PromiseCompilerClient
+import com.phonecodex.app.domain.promise.PromiseUnderstandingRequestGate
+import com.phonecodex.app.domain.enforcement.VideoPlatformRegistry
+import com.phonecodex.app.domain.promise.PromiseUnderstandingResolver
 import com.phonecodex.app.domain.session.SessionManager
 import com.phonecodex.app.protection.ProtectionHeartbeatController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -68,13 +80,18 @@ internal class HomeScreenState(
     val installedAppsReader: InstalledAppsReader,
     val policyEngine: PolicyEngine,
     val focusPromiseParser: FocusPromiseParser,
+    val promiseCompilerClient: PromiseCompilerClient = PromiseCompilerClient(),
     val studyWorld: FocusWorld,
     val createdAtElapsedMs: Long = SystemClock.elapsedRealtime()
 ) {
     var promiseText by mutableStateOf("")
     var promiseUnderstanding by mutableStateOf<PromiseUnderstanding?>(null)
     var promiseDraft by mutableStateOf<FocusPromise?>(null)
+    var selectedClarificationOptionId by mutableStateOf<String?>(null)
+    var strongerConfirmAcknowledged by mutableStateOf(false)
     var startBlockedMessage by mutableStateOf<String?>(null)
+    var understandingInProgress by mutableStateOf(false)
+    var voiceInputStatus by mutableStateOf<String?>(null)
 
     var goal by mutableStateOf("")
     var session by mutableStateOf<FocusSession?>(null)
@@ -97,14 +114,24 @@ internal class HomeScreenState(
     var safeAppsSearch by mutableStateOf("")
     var isAccessibilityEnabled by mutableStateOf(false)
     var isAccessibilityAlive by mutableStateOf(false)
+    var lastHeartbeatMillis by mutableStateOf(0L)
+    var lastHeartbeatPackage by mutableStateOf("")
+    var lastHeartbeatReason by mutableStateOf("")
+    var lastProtectionCheckSummary by mutableStateOf<String?>(null)
+    var protectionCheckInProgress by mutableStateOf(false)
     var overlayActive by mutableStateOf(false)
     var backendProbeResult by mutableStateOf(BackendProbeResult.idle())
     var backendTestInProgress by mutableStateOf(false)
+    /** ElapsedRealtime of last successful /health probe — used for sticky status. */
+    private var lastBackendSuccessElapsedMs: Long? = null
+    private var lastProbeAttemptElapsedMs: Long = 0L
+    private var backendAutoProbeStarted: Boolean = false
     var showAdvancedControls by mutableStateOf(false)
     var showAdvancedEngineering by mutableStateOf(false)
     var isBootstrapped by mutableStateOf(false)
     private var bootstrapStarted: Boolean = false
     private var diagnosticsScope: CoroutineScope? = null
+    private val understandingRequestGate = PromiseUnderstandingRequestGate()
 
     val isSessionActive: Boolean
         get() = session?.status == SessionStatus.ACTIVE
@@ -121,6 +148,23 @@ internal class HomeScreenState(
     val enabledGuardrails: List<PermanentGuardrail>
         get() = permanentGuardrails.filter { it.enabled }
 
+    val protectionReliability: ProtectionReliabilityUiModel
+        get() = ProtectionReliabilityGate.evaluate(protectionReliabilityInput())
+
+    fun protectionReliabilityInput(): ProtectionReliabilityInput =
+        ProtectionReliabilityInput(
+            accessibilityEnabled = isAccessibilityEnabled,
+            accessibilityAlive = isAccessibilityAlive,
+            lastEventMillis = lastHeartbeatMillis,
+            lastEventPackage = lastHeartbeatPackage.ifBlank { null },
+            lastEventReason = lastHeartbeatReason.ifBlank { null },
+            hasActiveCommitment = hasStoredSession,
+            permanentGuardrailOn = enabledGuardrailCount > 0,
+            backendKind = backendProbeResult.kind,
+            backendLoopback = ProtectionReliabilityGate.backendLoopback(),
+            nowMillis = nowMillis
+        )
+
     val developerDiagnostics: DeveloperDiagnosticsUiModel
         get() = buildDeveloperDiagnosticsUiModel(
             isAccessibilityEnabled = isAccessibilityEnabled,
@@ -129,11 +173,16 @@ internal class HomeScreenState(
             overlayActive = overlayActive,
             debugState = debugState,
             probeResult = backendProbeResult,
-            testInProgress = backendTestInProgress
+            testInProgress = backendTestInProgress,
+            visionExperimentEnabled = studyWorldSettings.visionExperimentEnabled,
+            nowEpochMs = nowMillis
         )
 
     fun attachDiagnosticsScope(scope: CoroutineScope) {
         diagnosticsScope = scope
+        if (isBootstrapped) {
+            scheduleBackendAutoProbe()
+        }
     }
 
     fun openAccessibilitySettings() {
@@ -149,6 +198,7 @@ internal class HomeScreenState(
         bootstrapStarted = true
         val started = SystemClock.elapsedRealtime()
         val snapshot = withContext(Dispatchers.IO) {
+            val heartbeat = runtimeDiagStore.getHeartbeat()
             BootstrapSnapshot(
                 session = sessionStore.getStoredSession(),
                 accessibilityEnabled =
@@ -156,7 +206,11 @@ internal class HomeScreenState(
                 studyWorldSettings = studyWorldSettingsStore.getSettings(),
                 appRules = appRulesStore.getRules(),
                 guardrails = permanentGuardrailsStore.getGuardrails(),
-                safeApps = safeAppsStore.getSafeApps()
+                safeApps = safeAppsStore.getSafeApps(),
+                accessibilityAlive = heartbeat.serviceAlive,
+                lastHeartbeatMillis = heartbeat.lastEventMillis,
+                lastHeartbeatPackage = heartbeat.packageName,
+                lastHeartbeatReason = heartbeat.reason
             )
         }
         session = snapshot.session
@@ -165,11 +219,30 @@ internal class HomeScreenState(
         appRules = snapshot.appRules
         permanentGuardrails = snapshot.guardrails
         safeApps = snapshot.safeApps
+        isAccessibilityAlive = snapshot.accessibilityAlive
+        lastHeartbeatMillis = snapshot.lastHeartbeatMillis
+        lastHeartbeatPackage = snapshot.lastHeartbeatPackage
+        lastHeartbeatReason = snapshot.lastHeartbeatReason
         isBootstrapped = true
         Log.d(
             "PhoneCodexUIPerf",
             "bootstrap=${SystemClock.elapsedRealtime() - started}ms"
         )
+        scheduleBackendAutoProbe()
+    }
+
+    /**
+     * One quiet health check after first paint so diagnostics are truthful without
+     * requiring a manual tap. Debounced + sticky — never flashes offline on a blip.
+     */
+    private fun scheduleBackendAutoProbe() {
+        if (backendAutoProbeStarted) return
+        val scope = diagnosticsScope ?: return
+        backendAutoProbeStarted = true
+        scope.launch {
+            delay(400)
+            testBackend(force = false, allowRetry = true)
+        }
     }
 
     fun loadInstalledApps(coroutineScope: CoroutineScope) {
@@ -196,32 +269,207 @@ internal class HomeScreenState(
 
     fun updatePromiseText(text: String) {
         promiseText = text
-        if (promiseUnderstanding != null) {
+        voiceInputStatus = null
+        if (promiseUnderstanding != null || understandingInProgress) {
             clearUnderstanding()
         }
     }
 
-    fun understandPromise() {
+    fun applyVoiceTranscript(transcript: String) {
+        val cleanTranscript = transcript.trim()
+        if (cleanTranscript.isEmpty()) {
+            voiceInputStatus = "I did not hear a promise. Try again or type it."
+            return
+        }
+        promiseText = cleanTranscript
+        // Voice fills text only — never auto-starts commitment.
+        voiceInputStatus = "Voice captured. Edit if needed, then tap the arrow to understand."
+        clearUnderstanding()
+    }
+
+    fun beginVoiceCapture() {
+        voiceInputStatus = "Listening…"
+    }
+
+    fun markVoiceInputUnavailable(message: String) {
+        voiceInputStatus = message
+    }
+
+    fun understandPromise(selectedOptionId: String? = null) {
         val text = promiseText.trim()
         if (text.isEmpty()) return
 
-        val draft = focusPromiseParser.parse(text)
-        promiseDraft = draft
-        promiseUnderstanding = buildPromiseUnderstanding(
-            draft = draft,
-            alwaysBlockedLabels = enabledGuardrails.map(::guardrailBlockedLabel)
-        )
-        startBlockedMessage = null
-    }
+        val scope = diagnosticsScope
+        if (scope == null) {
+            Log.w(TAG_UNDERSTAND, "compile skipped — no coroutine scope; using local fallback")
+            applyLocalUnderstanding(text)
+            return
+        }
 
-    fun clearUnderstanding() {
+        if (understandingInProgress) return
+        val requestVersion = understandingRequestGate.begin()
+        understandingInProgress = true
         promiseUnderstanding = null
         promiseDraft = null
         startBlockedMessage = null
+        if (selectedOptionId == null) {
+            selectedClarificationOptionId = null
+            strongerConfirmAcknowledged = false
+        }
+        Log.i(
+            TAG_UNDERSTAND,
+            "compile request started v=$requestVersion len=${text.length} " +
+                "selected=${selectedOptionId ?: "none"}"
+        )
+
+        scope.launch {
+            try {
+                val compiledResult = withContext(Dispatchers.IO) {
+                    runCatching {
+                        promiseCompilerClient.compile(
+                            promise = text,
+                            selectedClarificationOptionId = selectedOptionId
+                        )
+                    }
+                }
+                if (!understandingRequestGate.isCurrent(requestVersion)) {
+                    Log.i(TAG_UNDERSTAND, "compile result discarded — stale v=$requestVersion")
+                    return@launch
+                }
+
+                compiledResult.fold(
+                    onSuccess = {
+                        Log.i(
+                            TAG_UNDERSTAND,
+                            "compile success v=$requestVersion clarificationRequired=${it.clarificationRequired} " +
+                                "canStart=${it.canStartCommitment} options=${it.clarificationOptions.size}"
+                        )
+                    },
+                    onFailure = { err ->
+                        Log.w(
+                            TAG_UNDERSTAND,
+                            "compile failure v=$requestVersion — fallback used: ${err.message}"
+                        )
+                    }
+                )
+
+                val resolved = PromiseUnderstandingResolver.resolve(
+                    text = text,
+                    compiledResult = compiledResult,
+                    parser = focusPromiseParser,
+                    selectedClarificationOptionId = selectedOptionId,
+                    namedPackageHint = namedPackageHint()
+                )
+
+                if (!understandingRequestGate.isCurrent(requestVersion)) {
+                    Log.i(TAG_UNDERSTAND, "resolved result discarded — stale v=$requestVersion")
+                    return@launch
+                }
+
+                promiseDraft = resolved.draft
+                selectedClarificationOptionId = selectedOptionId
+                promiseUnderstanding = buildPromiseUnderstanding(
+                    draft = resolved.draft,
+                    alwaysBlockedLabels = enabledGuardrails.map(::guardrailBlockedLabel),
+                    source = if (resolved.fromCompiler) {
+                        UnderstandingSource.PROMISE_COMPILER
+                    } else {
+                        UnderstandingSource.LOCAL_PREVIEW
+                    },
+                    selectedClarificationOptionId = selectedOptionId,
+                    strongerConfirmAcknowledged = strongerConfirmAcknowledged
+                )
+                Log.i(
+                    TAG_UNDERSTAND,
+                    "preview ready source=${if (resolved.fromCompiler) "AI" else "local"} " +
+                        "canStart=${promiseUnderstanding?.canStart} " +
+                        "clarificationRequired=${resolved.draft.needsClarification}"
+                )
+            } finally {
+                if (understandingRequestGate.isCurrent(requestVersion)) {
+                    understandingInProgress = false
+                }
+            }
+        }
+    }
+
+    fun selectClarificationOption(optionId: String) {
+        if (optionId.isBlank()) return
+        selectedClarificationOptionId = optionId
+        strongerConfirmAcknowledged = false
+        understandPromise(selectedOptionId = optionId)
+    }
+
+    fun updateStrongerConfirmAcknowledged(acknowledged: Boolean) {
+        strongerConfirmAcknowledged = acknowledged
+        val draft = promiseDraft ?: return
+        promiseUnderstanding = buildPromiseUnderstanding(
+            draft = draft,
+            alwaysBlockedLabels = enabledGuardrails.map(::guardrailBlockedLabel),
+            source = promiseUnderstanding?.source ?: UnderstandingSource.PROMISE_COMPILER,
+            selectedClarificationOptionId = selectedClarificationOptionId,
+            strongerConfirmAcknowledged = acknowledged
+        )
+    }
+
+    private fun applyLocalUnderstanding(text: String) {
+        val resolved = PromiseUnderstandingResolver.resolve(
+            text = text,
+            compiledResult = Result.failure(IllegalStateException("no coroutine scope")),
+            parser = focusPromiseParser,
+            namedPackageHint = namedPackageHint()
+        )
+        promiseDraft = resolved.draft
+        promiseUnderstanding = buildPromiseUnderstanding(
+            draft = resolved.draft,
+            alwaysBlockedLabels = enabledGuardrails.map(::guardrailBlockedLabel),
+            source = UnderstandingSource.LOCAL_PREVIEW,
+            selectedClarificationOptionId = null,
+            strongerConfirmAcknowledged = false
+        )
+        startBlockedMessage = null
+        selectedClarificationOptionId = null
+        strongerConfirmAcknowledged = false
+        Log.i(
+            TAG_UNDERSTAND,
+            "local-only preview canStart=${!resolved.draft.needsClarification} " +
+                "clarificationRequired=${resolved.draft.needsClarification}"
+        )
+    }
+
+    private fun namedPackageHint(): String? {
+        val last = debugState.lastPackageName?.trim().orEmpty()
+        if (last.isEmpty()) return null
+        return last.takeIf { VideoPlatformRegistry.isVideoOrStreamingPackage(it) }
+    }
+
+    fun clearUnderstanding() {
+        understandingRequestGate.invalidate()
+        promiseUnderstanding = null
+        promiseDraft = null
+        selectedClarificationOptionId = null
+        strongerConfirmAcknowledged = false
+        startBlockedMessage = null
+        understandingInProgress = false
     }
 
     fun startCommitment() {
         val draft = promiseDraft ?: return
+        val understanding = promiseUnderstanding
+
+        if (understanding != null && !understanding.canStart) {
+            startBlockedMessage = when {
+                understanding.clarificationOptions.isNotEmpty() &&
+                    understanding.selectedClarificationOptionId.isNullOrBlank() ->
+                    "Pick one of the clarification options before starting."
+                understanding.requiresStrongerConfirmation &&
+                    !understanding.strongerConfirmAcknowledged ->
+                    "Confirm how long this commitment lasts before starting."
+                else ->
+                    "I still need a clearer promise before I can protect it. Edit and tap Understand again."
+            }
+            return
+        }
 
         if (draft.needsClarification) {
             startBlockedMessage =
@@ -237,19 +485,19 @@ internal class HomeScreenState(
 
         startBlockedMessage = null
 
-        applyFocusPromiseDraft(
+        val bound = applyFocusPromiseDraft(
             draft = draft,
             studyWorldSettingsStore = studyWorldSettingsStore
         )
         appRulesStore.applyCommitmentSuggestions(draft.suggestedAppRules)
         appRules = appRulesStore.getRules()
-        studyWorldSettings = studyWorldSettingsStore.getSettings()
+        studyWorldSettings = bound
 
         goal = draft.rawText.ifEmpty { "Focus" }
         val started = sessionManager.startSession(
             world = studyWorld,
             goal = goal,
-            durationMillis = studyWorldSettings.durationMinutes * 60 * 1000L,
+            durationMillis = ConfirmedPromiseBinder.sessionDurationMillis(bound),
             nowMillis = System.currentTimeMillis()
         )
         sessionStore.saveActiveSession(started)
@@ -295,6 +543,11 @@ internal class HomeScreenState(
 
     fun setBlockAttemptCooldownMinutes(minutes: Int) {
         studyWorldSettingsStore.setBlockAttemptCooldownMinutes(minutes)
+        studyWorldSettings = studyWorldSettingsStore.getSettings()
+    }
+
+    fun setVisionExperimentEnabled(enabled: Boolean) {
+        studyWorldSettingsStore.setVisionExperimentEnabled(enabled)
         studyWorldSettings = studyWorldSettingsStore.getSettings()
     }
 
@@ -366,22 +619,116 @@ internal class HomeScreenState(
 
     fun refreshDeveloperDiagnostics() {
         debugState = debugStateStore.getDebugState()
-        isAccessibilityAlive = runtimeDiagStore.isAccessibilityServiceAlive()
+        val heartbeat = runtimeDiagStore.getHeartbeat()
+        isAccessibilityAlive = heartbeat.serviceAlive
+        lastHeartbeatMillis = heartbeat.lastEventMillis
+        lastHeartbeatPackage = heartbeat.packageName
+        lastHeartbeatReason = heartbeat.reason
         overlayActive = runtimeDiagStore.isOverlayActive()
         isAccessibilityEnabled =
             AccessibilityHealthChecker.isPhoneCodexAccessibilityEnabled(context)
         session = sessionStore.getStoredSession()
+        nowMillis = System.currentTimeMillis()
     }
 
-    fun testBackend() {
+    /**
+     * Proves the enforcement loop without starting a promise.
+     * Refreshes Accessibility heartbeat, backend, session, and guardrail, then writes UI + log.
+     */
+    fun runProtectionCheck() {
+        if (protectionCheckInProgress) return
+        val scope = diagnosticsScope ?: return
+        protectionCheckInProgress = true
+        lastProtectionCheckSummary = "Checking protection…"
+        scope.launch {
+            try {
+                val snapshot = withContext(Dispatchers.IO) {
+                    ProtectionCheckSnapshot(
+                        accessibilityEnabled =
+                            AccessibilityHealthChecker.isPhoneCodexAccessibilityEnabled(context),
+                        heartbeat = runtimeDiagStore.getHeartbeat(),
+                        session = sessionStore.getStoredSession(),
+                        guardrails = permanentGuardrailsStore.getGuardrails(),
+                        nowMillis = System.currentTimeMillis(),
+                        probe = BackendHealthProbe.probe()
+                    )
+                }
+                isAccessibilityEnabled = snapshot.accessibilityEnabled
+                isAccessibilityAlive = snapshot.heartbeat.serviceAlive
+                lastHeartbeatMillis = snapshot.heartbeat.lastEventMillis
+                lastHeartbeatPackage = snapshot.heartbeat.packageName
+                lastHeartbeatReason = snapshot.heartbeat.reason
+                session = snapshot.session
+                permanentGuardrails = snapshot.guardrails
+                nowMillis = snapshot.nowMillis
+                if (snapshot.probe.kind == BackendProbeKind.REACHABLE) {
+                    lastBackendSuccessElapsedMs = snapshot.probe.probedAtElapsedMs
+                        ?: SystemClock.elapsedRealtime()
+                }
+                lastProbeAttemptElapsedMs = SystemClock.elapsedRealtime()
+                backendProbeResult = BackendHealthProbe.resolveDisplayResult(
+                    raw = snapshot.probe,
+                    checking = false,
+                    lastSuccessElapsedMs = lastBackendSuccessElapsedMs
+                )
+                val model = protectionReliability
+                lastProtectionCheckSummary = model.checkLogLine
+                withContext(Dispatchers.IO) {
+                    eventLogStore.addEvent("Protection check: ${model.checkLogLine}")
+                }
+                if (showAdvancedControls) {
+                    recentEvents = eventLogStore.getRecentEvents()
+                }
+                Log.i(TAG_PROTECTION_CHECK, model.checkLogLine)
+            } finally {
+                protectionCheckInProgress = false
+            }
+        }
+    }
+
+    fun testBackend(force: Boolean = true, allowRetry: Boolean = true) {
         if (backendTestInProgress) return
         val scope = diagnosticsScope ?: return
+        val now = SystemClock.elapsedRealtime()
+        if (!force &&
+            lastProbeAttemptElapsedMs > 0L &&
+            now - lastProbeAttemptElapsedMs < BackendHealthProbe.MIN_PROBE_INTERVAL_MS
+        ) {
+            return
+        }
+
         backendTestInProgress = true
+        backendProbeResult = BackendHealthProbe.resolveDisplayResult(
+            raw = backendProbeResult,
+            checking = true,
+            lastSuccessElapsedMs = lastBackendSuccessElapsedMs,
+            nowElapsedMs = now
+        )
+        lastProbeAttemptElapsedMs = now
+
         scope.launch {
-            val result = withContext(Dispatchers.IO) {
+            var raw = withContext(Dispatchers.IO) {
                 BackendHealthProbe.probe()
             }
-            backendProbeResult = result
+            // One quiet retry on first failure — USB reverse often races with app open.
+            if (allowRetry &&
+                raw.kind != BackendProbeKind.REACHABLE &&
+                raw.kind != BackendProbeKind.IDLE
+            ) {
+                delay(700)
+                raw = withContext(Dispatchers.IO) {
+                    BackendHealthProbe.probe()
+                }
+            }
+            if (raw.kind == BackendProbeKind.REACHABLE) {
+                lastBackendSuccessElapsedMs = raw.probedAtElapsedMs
+                    ?: SystemClock.elapsedRealtime()
+            }
+            backendProbeResult = BackendHealthProbe.resolveDisplayResult(
+                raw = raw,
+                checking = false,
+                lastSuccessElapsedMs = lastBackendSuccessElapsedMs
+            )
             backendTestInProgress = false
             refreshDeveloperDiagnostics()
         }
@@ -454,7 +801,20 @@ private data class BootstrapSnapshot(
     val studyWorldSettings: StudyWorldSettings,
     val appRules: List<AppRule>,
     val guardrails: List<PermanentGuardrail>,
-    val safeApps: List<SafeApp>
+    val safeApps: List<SafeApp>,
+    val accessibilityAlive: Boolean,
+    val lastHeartbeatMillis: Long,
+    val lastHeartbeatPackage: String,
+    val lastHeartbeatReason: String
+)
+
+private data class ProtectionCheckSnapshot(
+    val accessibilityEnabled: Boolean,
+    val heartbeat: AccessibilityHeartbeat,
+    val session: FocusSession?,
+    val guardrails: List<PermanentGuardrail>,
+    val nowMillis: Long,
+    val probe: BackendProbeResult
 )
 
 private data class AdvancedSnapshot(
@@ -494,6 +854,9 @@ private val DEFAULT_STUDY_SETTINGS = StudyWorldSettings(
     lockAttemptThreshold = StudyWorldSettingsStore.DEFAULT_LOCK_ATTEMPT_THRESHOLD,
     blockAttemptCooldownMinutes = StudyWorldSettingsStore.DEFAULT_BLOCK_ATTEMPT_COOLDOWN_MINUTES
 )
+
+private const val TAG_UNDERSTAND = "PromiseUnderstand"
+private const val TAG_PROTECTION_CHECK = "PhoneCodexProtect"
 
 @Composable
 internal fun rememberHomeScreenState(): HomeScreenState {

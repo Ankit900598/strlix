@@ -24,6 +24,32 @@ class ProtectionViolationStore(context: Context) {
         )
     }
 
+    /**
+     * Track how long Settings reports PhoneCodex Accessibility as off.
+     * Returns continuous-off duration in ms (0 if currently on).
+     */
+    fun markAccessibilityObserved(
+        accessibilityEnabled: Boolean,
+        nowMillis: Long = System.currentTimeMillis()
+    ): Long {
+        if (accessibilityEnabled) {
+            prefs.edit().putLong(KEY_A11Y_DISABLED_SINCE, 0L).apply()
+            return 0L
+        }
+        val existing = prefs.getLong(KEY_A11Y_DISABLED_SINCE, 0L)
+        val since = if (existing > 0L) existing else nowMillis
+        if (existing <= 0L) {
+            prefs.edit().putLong(KEY_A11Y_DISABLED_SINCE, nowMillis).apply()
+        }
+        return nowMillis - since
+    }
+
+    fun disabledContinuouslyMillis(nowMillis: Long = System.currentTimeMillis()): Long {
+        val since = prefs.getLong(KEY_A11Y_DISABLED_SINCE, 0L)
+        if (since <= 0L) return 0L
+        return (nowMillis - since).coerceAtLeast(0L)
+    }
+
     fun recordViolation(reason: String, nowMillis: Long = System.currentTimeMillis()): Boolean {
         val lastViolationMillis = prefs.getLong(KEY_LAST_VIOLATION_MILLIS, 0L)
         if (!ProtectionViolationPolicy.shouldRecordViolation(lastViolationMillis, nowMillis)) {
@@ -60,6 +86,7 @@ class ProtectionViolationStore(context: Context) {
         private const val KEY_VIOLATION_COUNT = "violationCount"
         private const val KEY_LAST_REASON = "lastReason"
         private const val KEY_PENDING_CONSEQUENCES = "pendingConsequences"
+        private const val KEY_A11Y_DISABLED_SINCE = "a11yDisabledSinceMillis"
 
         const val REASON_ACCESSIBILITY_DISABLED_DURING_COMMITMENT =
             "Accessibility protection disabled during active commitment"

@@ -29,6 +29,15 @@ class ContentSignalDetectorTest {
     }
 
     @Test
+    fun youtubeShortsUrl_setsYouTubeShortsBlock() {
+        val signals = detector.detect(
+            packageName = YOUTUBE_PACKAGE,
+            screenText = "Share https://www.youtube.com/shorts/abcXYZ12 Copy link"
+        )
+        assertTrue(signals.isYouTubeShorts)
+    }
+
+    @Test
     fun youtubeShortsPlayerUseThisSound_setsYouTubeShortsBlock() {
         val signals = detector.detect(
             packageName = YOUTUBE_PACKAGE,
@@ -46,6 +55,44 @@ class ContentSignalDetectorTest {
         )
 
         assertFalse(signals.isYouTubeShorts)
+        assertTrue(signals.isLikelySearchOrLecture)
+    }
+
+    @Test
+    fun youtubeSearchAlone_doesNotCountAsStudyLike() {
+        val signals = detector.detect(
+            packageName = YOUTUBE_PACKAGE,
+            screenText = "Search What to watch Home Shorts"
+        )
+
+        assertFalse(signals.isLikelySearchOrLecture)
+    }
+
+    @Test
+    fun chromeNewsHeadline_sexEducation_isNotAdult() {
+        val signals = detector.detect(
+            packageName = "com.android.chrome",
+            screenText = "BBC News Sex education curriculum debate for adult learners"
+        )
+        assertFalse(signals.isChromeAdultOrPorn)
+    }
+
+    @Test
+    fun chromePornhub_isAdult() {
+        val signals = detector.detect(
+            packageName = "com.android.chrome",
+            screenText = "Pornhub video xxx nsfw"
+        )
+        assertTrue(signals.isChromeAdultOrPorn)
+    }
+
+    @Test
+    fun chromeShamaniShort_isNotAdultFromVideoIdOrTitle() {
+        val signals = detector.detect(
+            packageName = "com.android.chrome",
+            screenText = "Raj Shamani Shorts m.youtube.com/watch?v=abPornXy12Q 646K views"
+        )
+        assertFalse(signals.isChromeAdultOrPorn)
     }
 
     companion object {

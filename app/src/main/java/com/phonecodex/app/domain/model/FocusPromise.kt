@@ -18,18 +18,39 @@ data class FocusPromise(
     val strictness: StrictnessLevel,
     val suggestedAppRules: List<AppRule>,
     val contentRules: List<ContentRule> = emptyList(),
+    /**
+     * Internal enforcement scope (package IDs). Never show raw in user-facing copy.
+     * Empty = legacy / unrestricted platform set for clocks that already apply.
+     */
+    val scopePackages: List<String> = emptyList(),
     val clarificationQuestion: String? = null,
     val warnings: List<String> = emptyList(),
     val allowedSummaries: List<String> = emptyList(),
     val blockedSummaries: List<String> = emptyList(),
-    val conditionalSummaries: List<String> = emptyList()
+    val conditionalSummaries: List<String> = emptyList(),
+    val clarificationOptions: List<ClarificationOption> = emptyList(),
+    val clarificationRequired: Boolean = false,
+    /** Server gate when present; null for local offline preview. */
+    val canStartCommitment: Boolean? = null,
+    val requiresStrongerConfirmation: Boolean = false,
+    val isPermanentCommitment: Boolean = false,
+    val understoodSummary: String? = null,
+    val userFacingTime: String? = null,
+    val userFacingAppliesTo: String? = null,
+    val checkThisNotes: List<String> = emptyList(),
+    val safetyNotes: List<String> = emptyList()
 ) {
     /** Alias used by older call sites that meant session duration. */
     val durationMinutes: Int
         get() = sessionDurationMinutes
 
     val needsClarification: Boolean
-        get() = !clarificationQuestion.isNullOrBlank()
+        get() = when {
+            clarificationRequired -> true
+            clarificationOptions.isNotEmpty() && canStartCommitment != true -> true
+            !clarificationQuestion.isNullOrBlank() && clarificationOptions.isEmpty() -> true
+            else -> false
+        }
 
     /** Product alias for warnings shown on the confirmation card. */
     val cautionMessages: List<String>
@@ -39,3 +60,12 @@ data class FocusPromise(
     val contentDurationRules: List<ContentRule>
         get() = contentRules
 }
+
+/** A/B/C clarification choice from Promise Compiler v07+. */
+data class ClarificationOption(
+    val id: String,
+    val label: String,
+    val description: String,
+    val recommended: Boolean = false,
+    val policyPreview: String? = null
+)

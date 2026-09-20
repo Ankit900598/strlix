@@ -1,0 +1,155 @@
+package com.phonecodex.app.domain.enforcement
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class VideoDurationParserTest {
+
+    private val minLengthPromise =
+        "do not allow videos shorter than 30 minutes for next 1 hour"
+
+    @Test
+    fun liveChromeWatch_recommendationsOnly_ignoresRecDurations() {
+        val screen =
+            "youtube.com/watch?v=chip " +
+                "Chip design from the bottom up – Reiner Pope " +
+                "Show player controls " +
+                "More videos " +
+                "Can This Vibe Coder... by SomeChannel 1.2M views 2 days ago 8 minutes 55 seconds " +
+                "Andrew Tate... by Other 4 minutes 48 seconds " +
+                "Introducing GPT-6 Astra... by Lab 2 minutes 43 seconds"
+
+        val parsed = VideoDurationParser.parse(screen)
+        assertNull(parsed.currentPlayerDurationSeconds)
+        assertEquals(DurationSource.RECOMMENDATION_IGNORED, parsed.source)
+        assertTrue(parsed.recommendationDurationsSeconds.isNotEmpty())
+        assertTrue(parsed.recommendationDurationsSeconds.any { it in 500..540 }) // ~8m55s
+
+        val decision = MediaLengthEnforcement.decideDetailed(
+            packageName = VideoPlatformRegistry.CHROME,
+            goal = minLengthPromise,
+            screenText = screen,
+            structuredMaxBlockMinutes = null,
+            structuredMinBlockMinutes = 30
+        )
+        assertNotEquals(MediaLengthLocalDecision.BLOCK, decision.decision)
+        assertEquals(MediaLengthLocalDecision.WAIT, decision.decision)
+        assertEquals(DurationSource.RECOMMENDATION_IGNORED, decision.durationSource)
+    }
+
+    @Test
+    fun currentPlayer_shortClock_blocksMin30() {
+        val screen = "Show player controls Play Pause 00:15 / 00:59 Related"
+        val parsed = VideoDurationParser.parse(screen)
+        assertEquals(59, parsed.currentPlayerDurationSeconds)
+        assertEquals(DurationSource.CURRENT_PLAYER, parsed.source)
+
+        assertEquals(
+            MediaLengthLocalDecision.BLOCK,
+            MediaLengthEnforcement.decide(
+                packageName = VideoPlatformRegistry.NEWPIPE,
+                goal = minLengthPromise,
+                screenText = screen,
+                structuredMaxBlockMinutes = null,
+                structuredMinBlockMinutes = 30
+            )
+        )
+    }
+
+    @Test
+    fun currentPlayer_longClock_allowsMin30() {
+        val screen = "Show player controls Play Pause 00:10 / 52:00 Related"
+        val parsed = VideoDurationParser.parse(screen)
+        assertEquals(52 * 60, parsed.currentPlayerDurationSeconds)
+        assertEquals(DurationSource.CURRENT_PLAYER, parsed.source)
+
+        assertEquals(
+            MediaLengthLocalDecision.ALLOW,
+            MediaLengthEnforcement.decide(
+                packageName = VideoPlatformRegistry.NEWPIPE,
+                goal = minLengthPromise,
+                screenText = screen,
+                structuredMaxBlockMinutes = null,
+                structuredMinBlockMinutes = 30
+            )
+        )
+    }
+
+    @Test
+    fun timeDurationPrefix_isCurrentPlayer_notRecommendationMax() {
+        val screen =
+            "Hide player controls Time duration 1 hour 25 minutes YouTube " +
+                "More videos Can This Vibe Coder 8 minutes 55 seconds Andrew 4 minutes 48 seconds"
+        val parsed = VideoDurationParser.parse(screen)
+        assertEquals(DurationSource.CURRENT_PLAYER, parsed.source)
+        assertEquals(85 * 60, parsed.currentPlayerDurationSeconds)
+        assertTrue(parsed.recommendationDurationsSeconds.any { it in 500..540 })
+    }
+
+    @Test
+    fun extractPrimary_neverReturnsRecommendationOnlyDuration() {
+        val screen =
+            "Chip design from the bottom up – Reiner Pope Show player controls " +
+                "Can This Vibe Coder 8 minutes 55 seconds"
+        assertNull(VideoDurationParser.extractPrimaryDurationSeconds(screen))
+        assertNull(VideoDurationParser.extractPrimaryDurationMinutes(screen))
+    }
+
+    @Test
+    fun clockB_shortTotal_isShortFormItemLength() {
+        val parsed = VideoDurationParser.parse("Play Pause 00:15 / 00:59")
+        assertEquals(59, parsed.currentPlayerDurationSeconds)
+        assertEquals(DurationSource.CURRENT_PLAYER, parsed.source)
+        assertTrue(
+            VideoDurationParser.isShortFormItemLength(
+                parsed,
+                SurfaceDetector.SHORT_FORM_MAX_SECONDS
+            )
+        )
+    }
+
+    @Test
+    fun clockB_lectureTotal_38_25_isNotShortForm() {
+        val parsed = VideoDurationParser.parse("Play Pause 00:15 / 38:25 lecture")
+        assertEquals(2305, parsed.currentPlayerDurationSeconds)
+        assertEquals(DurationSource.CURRENT_PLAYER, parsed.source)
+        assertFalse(
+            VideoDurationParser.isShortFormItemLength(
+                parsed,
+                SurfaceDetector.SHORT_FORM_MAX_SECONDS
+            )
+        )
+    }
+
+    @Test
+    fun clockC_watchTime2305_isNotPlayerTotal() {
+        val parsed = VideoDurationParser.parse(
+            "Hide player controls Playback Settings watched 2305 seconds"
+        )
+        assertNull(parsed.currentPlayerDurationSeconds)
+        assertFalse(
+            VideoDurationParser.isShortFormItemLength(
+                parsed,
+                SurfaceDetector.SHORT_FORM_MAX_SECONDS
+            )
+        )
+    }
+
+    @Test
+    fun recommendationClock_isNotShortFormItemLength() {
+        val parsed = VideoDurationParser.parse(
+            "Show player controls More videos 8 minutes 55 seconds"
+        )
+        assertEquals(DurationSource.RECOMMENDATION_IGNORED, parsed.source)
+        assertFalse(
+            VideoDurationParser.isShortFormItemLength(
+                parsed,
+                SurfaceDetector.SHORT_FORM_MAX_SECONDS
+            )
+        )
+    }
+}

@@ -41,7 +41,9 @@ object NetworkAiResponseParser {
                 source = AiConfidenceGate.NETWORK_AI_SOURCE,
                 reasonCategory = json.optString("reasonCategory").ifBlank { null },
                 wouldEscalate = json.optBoolean("would_escalate", false),
-                backendMeta = meta
+                backendMeta = meta,
+                usedImage = json.optBoolean("usedImage", false),
+                whatOnScreen = json.optString("whatOnScreen").ifBlank { null }
             )
         } catch (_: Exception) {
             null

@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phonecodex.app/evals/promise-assistant-response.schema.json",
+  "title": "PromiseAssistantResponseV07",
+  "description": "Assistant-like promise understanding output. User-facing fields must not contain Android package IDs.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "cleanedPromiseText",
+    "ambiguityLevel",
+    "clarificationRequired",
+    "interpretationConfidence",
+    "commitmentType",
+    "duration",
+    "followUpQuestionRequired",
+    "confidence"
+  ],
+  "properties": {
+    "cleanedPromiseText": { "type": "string" },
+    "recommendedInterpretation": { "type": ["string", "null"] },
+    "interpretationConfidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "ambiguityLevel": {
+      "type": "string",
+      "enum": ["none", "low", "medium", "high"]
+    },
+    "clarificationRequired": { "type": "boolean" },
+    "clarificationQuestion": { "type": ["string", "null"] },
+    "clarificationOptions": {
+      "type": "array",
+      "maxItems": 4,
+      "items": { "$ref": "#/$defs/clarificationOption" }
+    },
+    "userFacingConfirmation": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "string" },
+        { "$ref": "#/$defs/userFacingConfirmationObject" }
+      ]
+    },
+    "interpretationNotes": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "clarificationOption": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "description", "recommended"],
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "description": { "type": "string" },
+        "recommended": { "type": "boolean" },
+        "resultingPolicyPreview": { "type": ["string", "null"] }
+      }
+    },
+    "userFacingConfirmationObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "understoodSummary": { "type": "string" },
+        "allowedBullets": { "type": "array", "items": { "type": "string" } },
+        "blockedBullets": { "type": "array", "items": { "type": "string" } },
+        "timeWindowText": { "type": "string" },
+        "appliesToText": { "type": "string" },
+        "safetyNotes": { "type": "array", "items": { "type": "string" } },
+        "hiddenInternalScope": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Internal only — packages/surfaces never shown in primary UI"
+        }
+      }
+    }
+  }
+}

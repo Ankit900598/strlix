@@ -50,6 +50,9 @@ class PromiseCase:
     expected_policy: dict[str, Any]
     cluster: str
     notes: str
+    clock_class: str = ""
+    dimensions: dict[str, Any] | None = None
+    provenance: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -64,7 +67,11 @@ def repo_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
-def load_promise_jsonl(path: Path) -> list[PromiseCase]:
+def load_promise_jsonl(path: Path, *, require_policy: bool = True) -> list[PromiseCase]:
+    """Load promise eval cases.
+
+    Candidates may set expectedPolicy=null; pass require_policy=False to load them.
+    """
     cases: list[PromiseCase] = []
     with path.open(encoding="utf-8") as handle:
         for line in handle:
@@ -72,13 +79,35 @@ def load_promise_jsonl(path: Path) -> list[PromiseCase]:
             if not line:
                 continue
             raw = json.loads(line)
+            clock = str(raw.get("clockClass") or "")
+            if not clock:
+                m = re.search(r"\[clock:([a-z_]+)\]", raw.get("notes", ""))
+                if m:
+                    clock = m.group(1)
+            dims = raw.get("dimensions")
+            if not isinstance(dims, dict):
+                dims = None
+            prov = raw.get("provenance")
+            if not isinstance(prov, dict):
+                prov = None
+            policy = raw.get("expectedPolicy")
+            if require_policy and not isinstance(policy, dict):
+                raise ValueError(
+                    f"Case {raw.get('id')!r} missing expectedPolicy "
+                    "(candidate rows need require_policy=False or human review first)"
+                )
+            if not isinstance(policy, dict):
+                policy = {}
             cases.append(
                 PromiseCase(
                     id=raw["id"],
                     user_promise=raw["userPromise"],
-                    expected_policy=raw["expectedPolicy"],
+                    expected_policy=policy,
                     cluster=raw.get("cluster", "unknown"),
                     notes=raw.get("notes", ""),
+                    clock_class=clock,
+                    dimensions=dims,
+                    provenance=prov,
                 )
             )
     if not cases:
@@ -416,3 +445,230 @@ def safety_violation(expected: dict[str, Any], predicted: dict[str, Any] | None)
         return "missed_follow_up_required"
 
     return None
+
+
+ITEM_LENGTH_METRICS = frozenset({"max_item_minutes", "min_item_minutes"})
+USAGE_BUDGET_METRICS = frozenset(
+    {"entertainment_minutes", "social_minutes", "shorts", "reels"}
+)
+
+
+def _quota_metrics(policy: dict[str, Any] | None) -> set[str]:
+    if not policy:
+        return set()
+    rows = policy.get("quotas") or []
+    return {str(r.get("metric", "")) for r in rows if isinstance(r, dict)}
+
+
+def _quota_by_metric(policy: dict[str, Any] | None) -> dict[str, list[dict[str, Any]]]:
+    out: dict[str, list[dict[str, Any]]] = {}
+    if not policy:
+        return out
+    for row in policy.get("quotas") or []:
+        if isinstance(row, dict) and row.get("metric"):
+            out.setdefault(str(row["metric"]), []).append(row)
+    return out
+
+
+def score_temporal_clocks(
+    expected: dict[str, Any],
+    predicted: dict[str, Any] | None,
+    clock_class: str = "",
+) -> dict[str, Any]:
+    """Measure whether session / media-length / usage-quota / lock clocks were kept distinct.
+
+    Returns keys: clock_ok, confusion, detail, session_ok, media_ok, usage_ok, lock_ok, followup_ok
+    """
+    exp = normalize_policy(expected)
+    pred = normalize_policy(predicted)
+    result: dict[str, Any] = {
+        "clock_ok": False,
+        "confusion": False,
+        "detail": "",
+        "session_ok": False,
+        "media_ok": False,
+        "usage_ok": False,
+        "lock_ok": False,
+        "followup_ok": False,
+        "clock_class": clock_class,
+    }
+    if pred is None or exp is None:
+        result["detail"] = "parse_failure"
+        return result
+
+    exp_q = _quota_metrics(exp)
+    pred_q = _quota_metrics(pred)
+    exp_has_media = bool(exp_q & ITEM_LENGTH_METRICS)
+    pred_has_media = bool(pred_q & ITEM_LENGTH_METRICS)
+    exp_has_usage = bool(exp_q & USAGE_BUDGET_METRICS)
+    pred_has_usage = bool(pred_q & USAGE_BUDGET_METRICS)
+
+    result["session_ok"] = field_equal(exp.get("duration"), pred.get("duration"), "duration")
+    result["lock_ok"] = field_equal(exp.get("lockPolicy"), pred.get("lockPolicy"), "lockPolicy")
+    result["followup_ok"] = bool(exp.get("followUpQuestionRequired")) == bool(
+        pred.get("followUpQuestionRequired")
+    )
+
+    # Media length: expected metrics must appear; must not be replaced by usage budget alone
+    if exp_has_media:
+        result["media_ok"] = exp_q & ITEM_LENGTH_METRICS <= pred_q
+        # Classic product bug: max_item collapsed into entertainment_minutes
+        if not result["media_ok"] and pred_has_usage and not pred_has_media:
+            result["confusion"] = True
+            result["detail"] = "media_length_as_usage_budget"
+        elif not result["media_ok"] and not pred_has_media:
+            # Intent may sit in blockedContent prose — PolicyEngine cannot enforce a number
+            result["detail"] = result["detail"] or "media_length_missing_or_prose_only"
+    else:
+        result["media_ok"] = not pred_has_media or clock_class in (
+            "mixed",
+            "session_and_media",
+            "session_and_usage",
+        )
+
+    if exp_has_usage:
+        result["usage_ok"] = exp_q & USAGE_BUDGET_METRICS <= pred_q
+        if not result["usage_ok"] and pred_has_media and not pred_has_usage:
+            result["confusion"] = True
+            result["detail"] = result["detail"] or "usage_budget_as_media_length"
+    else:
+        # If gold has no usage budget, predicting entertainment_minutes for a media-length
+        # case is confusion (already flagged). Otherwise OK if no spurious usage.
+        if clock_class in ("media_max", "media_min") and pred_has_usage and not exp_has_usage:
+            result["usage_ok"] = False
+            result["confusion"] = True
+            result["detail"] = result["detail"] or "media_length_as_usage_budget"
+        else:
+            result["usage_ok"] = True
+
+    # Per clock_class overall
+    cc = clock_class
+    if cc == "ambiguous":
+        result["clock_ok"] = result["followup_ok"] and not (
+            pred.get("duration", {}).get("kind") not in ("none", None)
+            and not exp.get("followUpQuestionRequired")
+        )
+        if exp.get("followUpQuestionRequired"):
+            result["clock_ok"] = bool(pred.get("followUpQuestionRequired"))
+            if not result["clock_ok"]:
+                result["detail"] = "missed_ambiguous_followup"
+    elif cc == "session":
+        result["clock_ok"] = result["session_ok"] and not pred_has_media
+    elif cc in ("media_max", "media_min"):
+        result["clock_ok"] = result["media_ok"] and not result["confusion"]
+    elif cc in ("usage_quota", "shorts_quota"):
+        result["clock_ok"] = result["usage_ok"] and not result["confusion"]
+    elif cc == "lock":
+        result["clock_ok"] = result["lock_ok"]
+        # lock minutes must not become session duration
+        if exp.get("lockPolicy", {}).get("enabled"):
+            lock_min = exp.get("lockPolicy", {}).get("durationMinutes")
+            dur = pred.get("duration") or {}
+            if (
+                lock_min
+                and dur.get("kind") == "fixed"
+                and dur.get("unit") == "minutes"
+                and abs(float(dur.get("value") or 0) - float(lock_min)) < 0.1
+                and (exp.get("duration") or {}).get("kind") in ("none", None)
+            ):
+                result["clock_ok"] = False
+                result["confusion"] = True
+                result["detail"] = "lock_duration_as_session"
+    elif cc == "permanent":
+        result["clock_ok"] = result["session_ok"]  # duration kind indefinite/fixed years
+    elif cc in ("mixed", "session_and_media", "session_and_usage"):
+        result["clock_ok"] = (
+            result["session_ok"]
+            and result["media_ok"]
+            and result["usage_ok"]
+            and not result["confusion"]
+        )
+    else:
+        # Generic: no media↔usage swap
+        result["clock_ok"] = not result["confusion"] and result["followup_ok"]
+
+    return result
+
+
+_PACKAGE_LEAK_RE = re.compile(r"\b(?:com|org|net|io)\.[a-zA-Z0-9_.]+\b")
+
+
+def _collect_user_facing_strings(policy: dict[str, Any] | None) -> list[str]:
+    if not policy:
+        return []
+    out: list[str] = []
+    for key in (
+        "cleanedPromiseText",
+        "recommendedInterpretation",
+        "clarificationQuestion",
+        "followUpQuestion",
+        "userFacingConfirmation",
+    ):
+        val = policy.get(key)
+        if isinstance(val, str):
+            out.append(val)
+        elif isinstance(val, dict):
+            for sub in ("understoodSummary", "timeWindowText", "appliesToText"):
+                if isinstance(val.get(sub), str):
+                    out.append(val[sub])
+            for list_key in ("allowedBullets", "blockedBullets", "safetyNotes"):
+                for item in val.get(list_key) or []:
+                    if isinstance(item, str):
+                        out.append(item)
+    for opt in policy.get("clarificationOptions") or []:
+        if not isinstance(opt, dict):
+            continue
+        for sub in ("label", "description", "resultingPolicyPreview"):
+            if isinstance(opt.get(sub), str):
+                out.append(opt[sub])
+    for note in policy.get("interpretationNotes") or []:
+        if isinstance(note, str):
+            out.append(note)
+    return out
+
+
+def score_assistant_ux(
+    expected: dict[str, Any],
+    predicted: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """v07 assistant metrics: clarification, options, package leaks, unsafe auto-start proxy."""
+    exp = expected or {}
+    pred = predicted or {}
+    result: dict[str, Any] = {
+        "clarification_required_ok": False,
+        "option_quality_ok": False,
+        "package_leak": False,
+        "unsafe_auto_start": False,
+        "ambiguity_ok": False,
+    }
+    if predicted is None:
+        return result
+
+    exp_need = bool(exp.get("clarificationRequired") or exp.get("followUpQuestionRequired"))
+    pred_opts = pred.get("clarificationOptions") or []
+    pred_need = bool(
+        pred.get("clarificationRequired")
+        or pred.get("followUpQuestionRequired")
+        or (isinstance(pred_opts, list) and len(pred_opts) >= 2)
+    )
+    result["clarification_required_ok"] = exp_need == pred_need
+
+    if exp_need:
+        result["option_quality_ok"] = isinstance(pred_opts, list) and len(pred_opts) >= 2
+        conf = float(pred.get("confidence") or pred.get("interpretationConfidence") or 1.0)
+        result["unsafe_auto_start"] = (not pred_need) or conf >= 0.85
+    else:
+        result["option_quality_ok"] = True
+        result["unsafe_auto_start"] = False
+
+    blob = "\n".join(_collect_user_facing_strings(pred))
+    result["package_leak"] = bool(_PACKAGE_LEAK_RE.search(blob))
+
+    exp_amb = str(exp.get("ambiguityLevel") or "")
+    pred_amb = str(pred.get("ambiguityLevel") or "")
+    if exp_amb and pred_amb:
+        result["ambiguity_ok"] = exp_amb == pred_amb
+    else:
+        result["ambiguity_ok"] = result["clarification_required_ok"]
+
+    return result

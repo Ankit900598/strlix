@@ -3,14 +3,18 @@ package com.phonecodex.app.accessibility
 import android.accessibilityservice.AccessibilityService
 import android.content.Intent
 import android.graphics.PixelFormat
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.view.Display
 import android.view.View
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import java.util.concurrent.Executors
+import com.phonecodex.app.data.AppDossierStore
+import com.phonecodex.app.data.ShortFormQuotaStore
 import com.phonecodex.app.data.AppRulesStore
 import com.phonecodex.app.data.DebugStateStore
 import com.phonecodex.app.data.EventLogStore
@@ -37,6 +41,40 @@ import com.phonecodex.app.domain.model.SessionStatus
 import com.phonecodex.app.domain.model.StrictnessLevel
 import com.phonecodex.app.domain.model.WorldMode
 import com.phonecodex.app.domain.policy.PolicyEngine
+import com.phonecodex.app.domain.enforcement.BlankVideoTreeAction
+import com.phonecodex.app.domain.enforcement.BlankVideoTreeGate
+import com.phonecodex.app.domain.enforcement.DurationSource
+import com.phonecodex.app.domain.enforcement.EnforcementContext
+import com.phonecodex.app.domain.enforcement.EnforcementDecisionLog
+import com.phonecodex.app.domain.enforcement.EnforcementEventGate
+import com.phonecodex.app.domain.enforcement.EnforcementReasonCodes
+import com.phonecodex.app.domain.enforcement.AppClass
+import com.phonecodex.app.domain.enforcement.AppClassResolver
+import com.phonecodex.app.domain.enforcement.AppDossierClient
+import com.phonecodex.app.domain.enforcement.AppDossierMergeLaw
+import com.phonecodex.app.domain.enforcement.EntertainmentBanAction
+import com.phonecodex.app.domain.enforcement.EntertainmentClassDetector
+import com.phonecodex.app.domain.enforcement.EntertainmentBanGate
+import com.phonecodex.app.domain.enforcement.PlayListingCategoryParser
+import com.phonecodex.app.domain.enforcement.MediaLengthEnforcement
+import com.phonecodex.app.domain.enforcement.MediaLengthLocalDecision
+import com.phonecodex.app.domain.enforcement.OverlayLifecycleGate
+import com.phonecodex.app.domain.enforcement.PromiseEnforcementCoordinator
+import com.phonecodex.app.domain.enforcement.PromiseEvalInput
+import com.phonecodex.app.domain.enforcement.SessionEnforcementCopy
+import com.phonecodex.app.domain.enforcement.SessionLockLaw
+import com.phonecodex.app.domain.enforcement.ShortFormQuotaAction
+import com.phonecodex.app.domain.enforcement.ShortFormQuotaGate
+import com.phonecodex.app.domain.enforcement.SurfaceDetectionResult
+import com.phonecodex.app.domain.enforcement.SurfaceDetector
+import com.phonecodex.app.domain.enforcement.SurfaceEnforcementGate
+import com.phonecodex.app.domain.enforcement.VideoDurationParser
+import com.phonecodex.app.domain.enforcement.VideoPlatformRegistry
+import com.phonecodex.app.domain.enforcement.VisionCaptureGate
+import com.phonecodex.app.domain.protection.AccessibilityHeartbeatLaw
+import com.phonecodex.app.domain.protection.ProtectionHeartbeatLogic
+import com.phonecodex.app.domain.enforcement.VisionCaptureInput
+import com.phonecodex.app.domain.enforcement.VisionCounselMerge
 import com.phonecodex.app.domain.feedback.FeedbackMemory
 import com.phonecodex.app.domain.guardrail.PermanentGuardrailEvaluator
 import com.phonecodex.app.domain.promise.PromiseIntentRules
@@ -48,6 +86,17 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
 
     private val policyEngine = PolicyEngine()
     private val contentSignalDetector = ContentSignalDetector()
+    private val shortFormQuotaStore by lazy { ShortFormQuotaStore(this) }
+    private val shortFormQuotaGate by lazy { ShortFormQuotaGate(ledger = shortFormQuotaStore) }
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var pendingContentPackage: String? = null
+    private val contentChangeDebounceRunnable = Runnable {
+        val packageName = pendingContentPackage ?: return@Runnable
+        pendingContentPackage = null
+        inspectAndEvaluate(packageName)
+    }
+    private var lastDebugPackageWritten: String? = null
+    private var lastDebugPackageWrittenAtMillis: Long = 0L
     private val contentClassifier: ContentClassifier = NetworkAiContentClassifier()
     private val aiConfidenceGate = AiConfidenceGate()
     private val sessionStore by lazy { SessionStore(this) }
@@ -61,6 +110,8 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
     private val permanentGuardrailEvaluator = PermanentGuardrailEvaluator()
     private val permanentGuardrailsStore by lazy { PermanentGuardrailsStore(this) }
     private val safeAppsStore by lazy { SafeAppsStore(this) }
+    private val appDossierStore by lazy { AppDossierStore(this) }
+    private val appDossierClient = AppDossierClient()
     private val accessibilityTamperGuard = AccessibilityTamperGuard()
     private val protectionViolationStore by lazy { ProtectionViolationStore(this) }
     private var currentOverlay: View? = null
@@ -81,8 +132,16 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
     private var dismissedWarningTimeMillis: Long = 0L
     private var overlayAwayCandidatePackage: String? = null
     private var overlayAwaySinceMillis: Long = 0L
-    private val mainHandler = Handler(Looper.getMainLooper())
+    private var lastOverlayDecisionPackage: String? = null
+    private var lastOverlayDecisionName: String? = null
+    private var lastOverlayDecisionAtMillis: Long = 0L
     private val classifierExecutor = Executors.newSingleThreadExecutor()
+    private val quotaReminderAutoDismiss = Runnable {
+        dismissedWarningPackageName = visibleWarningPackageName
+        dismissedWarningTextSignature = visibleWarningTextSignature
+        dismissedWarningTimeMillis = System.currentTimeMillis()
+        hideWarningOverlay()
+    }
 
     private var lastClassifiedPackage: String? = null
     private var lastClassifiedTextSignature: String? = null
@@ -92,6 +151,8 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
     private var lastClassificationRequestPackage: String? = null
     private var classificationInFlight: Boolean = false
     private var lastNoSessionLoggedPackage: String? = null
+    private var lastEvalPreludePackage: String? = null
+    private var lastEvalPreludeSignature: String? = null
     private var lastLoggedA11yTextPackage: String? = null
     private var lastLoggedA11yTextSignature: String? = null
     private var lastCountedBlockPackage: String? = null
@@ -102,6 +163,8 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
     private var lastForegroundLoggedPackage: String? = null
     private var lastForegroundLoggedTimeMillis: Long = 0L
     private var latestExplanation: DecisionExplanation? = null
+    private var lastVisionSkipPackage: String? = null
+    private var lastVisionSkipAtMillis: Long = 0L
 
     private val debugWorld = FocusWorld(
         id = "study",
@@ -132,16 +195,25 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         runtimeDiagStore.setAccessibilityServiceAlive(true)
+        runtimeDiagStore.recordHeartbeat(
+            nowMillis = System.currentTimeMillis(),
+            packageName = packageName,
+            reason = AccessibilityHeartbeatLaw.REASON_SERVICE_CONNECTED
+        )
         handleProtectionViolationConsequences()
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
+        recordProtectionHeartbeat(event)
 
         when (event.eventType) {
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
                 val packageName = event.packageName?.toString() ?: return
                 logForegroundPackageThrottled(packageName)
+                // Immediate evaluate on window switches; cancel pending content debounce.
+                mainHandler.removeCallbacks(contentChangeDebounceRunnable)
+                pendingContentPackage = null
                 inspectAndEvaluate(packageName)
             }
 
@@ -149,7 +221,16 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
                 val packageName = event.packageName?.toString()
                     ?: rootInActiveWindow?.packageName?.toString()
                     ?: return
-                inspectAndEvaluate(packageName)
+                if (!EnforcementEventGate.shouldDebounceContentChanged(true)) {
+                    inspectAndEvaluate(packageName)
+                    return
+                }
+                pendingContentPackage = packageName
+                mainHandler.removeCallbacks(contentChangeDebounceRunnable)
+                mainHandler.postDelayed(
+                    contentChangeDebounceRunnable,
+                    EnforcementEventGate.CONTENT_CHANGED_DEBOUNCE_MS
+                )
             }
 
             else -> return
@@ -159,7 +240,24 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
     override fun onInterrupt() {
     }
 
+    private fun recordProtectionHeartbeat(event: AccessibilityEvent) {
+        val reason = when (event.eventType) {
+            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ->
+                AccessibilityHeartbeatLaw.REASON_WINDOW_CHANGED
+            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED ->
+                AccessibilityHeartbeatLaw.REASON_CONTENT_CHANGED
+            else -> return
+        }
+        runtimeDiagStore.recordHeartbeat(
+            nowMillis = System.currentTimeMillis(),
+            packageName = event.packageName?.toString()
+                ?: rootInActiveWindow?.packageName?.toString(),
+            reason = reason
+        )
+    }
+
     override fun onDestroy() {
+        mainHandler.removeCallbacks(contentChangeDebounceRunnable)
         hideWarningOverlay()
         hideBlockOverlay()
         runtimeDiagStore.setAccessibilityServiceAlive(false)
@@ -183,19 +281,42 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
 
         eventLogStore.addEvent("Protection violation detected during active Study World")
 
-        if (storedSession.status == SessionStatus.ACTIVE) {
+        val disableMs = protectionViolationStore.disabledContinuouslyMillis()
+        val shouldLock = ProtectionHeartbeatLogic.shouldLockForAccessibilityOutage(disableMs)
+        if (storedSession.status == SessionStatus.ACTIVE && shouldLock) {
             sessionStore.lockSession()
             eventLogStore.addEvent("Study World locked because protection was disabled.")
             Log.d(
                 "PhoneCodexDecision",
-                "Study World locked because protection was disabled."
+                "Study World locked because protection was disabled. " +
+                    "offMs=$disableMs"
+            )
+        } else if (storedSession.status == SessionStatus.ACTIVE) {
+            eventLogStore.addEvent(
+                "Accessibility blip ignored — service came back before lock grace."
+            )
+            Log.d(
+                "PhoneCodexDecision",
+                EnforcementDecisionLog.format(
+                    packageName = packageName.orEmpty().ifBlank { OWN_PACKAGE_NAME },
+                    surface = "system",
+                    rule = "Tamper",
+                    decision = "ALLOW",
+                    reasonCode = EnforcementReasonCodes.A11Y_BLIP_NO_LOCK,
+                    reason = "Accessibility bounce under ${ProtectionHeartbeatLogic.A11Y_DISABLE_GRACE_MS}ms"
+                )
             )
         }
     }
 
     private fun endExpiredStudyWorldIfNeeded(storedSession: FocusSession?): FocusSession? {
         val session = storedSession ?: return null
-        if (!SessionExpiryPolicy.isExpired(session, System.currentTimeMillis())) {
+        if (!SessionExpiryPolicy.isExpired(
+                session,
+                System.currentTimeMillis(),
+                studyWorldSettingsStore.getSettings().shortFormDailyQuotaLimit
+            )
+        ) {
             return session
         }
 
@@ -211,7 +332,19 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
         latestPackageName = packageName
 
         val screenText = collectScreenText(packageName)
-        debugStateStore.recordPackageDetected(packageName, screenText)
+        val nowDebug = System.currentTimeMillis()
+        if (
+            EnforcementEventGate.shouldWriteDebugPackageDetection(
+                packageName = packageName,
+                lastWrittenPackage = lastDebugPackageWritten,
+                lastWrittenAtMillis = lastDebugPackageWrittenAtMillis,
+                nowMillis = nowDebug
+            )
+        ) {
+            debugStateStore.recordPackageDetected(packageName, screenText)
+            lastDebugPackageWritten = packageName
+            lastDebugPackageWrittenAtMillis = nowDebug
+        }
 
         var storedSession = endExpiredStudyWorldIfNeeded(sessionStore.getStoredSession())
         if (
@@ -248,7 +381,11 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
                         confidence = 1.0
                     )
                 )
-                Log.d("PhoneCodexDecision", "Safe app allowed: $packageName")
+                Log.d(
+                    "PhoneCodexDecision",
+                    "Safe app allowed: $packageName " +
+                        "code=${EnforcementReasonCodes.EMERGENCY_ALLOW}"
+                )
                 lastSafeAppLoggedPackage = packageName
                 lastSafeAppLoggedTimeMillis = now
             }
@@ -287,7 +424,17 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
             hideWarningOverlay()
             hideBlockOverlay()
             if (packageName != lastNoSessionLoggedPackage) {
-                Log.d("PhoneCodexDecision", "No active session, allowing $packageName")
+                Log.d(
+                    "PhoneCodexDecision",
+                    EnforcementDecisionLog.format(
+                        packageName = packageName,
+                        surface = "none",
+                        rule = "Session",
+                        decision = "ALLOW",
+                        reasonCode = EnforcementReasonCodes.NO_ACTIVE_SESSION_ALLOW,
+                        reason = SessionEnforcementCopy.NO_ACTIVE_COMMITMENT
+                    )
+                )
                 lastNoSessionLoggedPackage = packageName
             }
             return
@@ -295,21 +442,26 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
 
         lastNoSessionLoggedPackage = null
 
-        if (storedSession.status == SessionStatus.LOCKED) {
-            val explanation = DecisionExplanation(
-                decision = DecisionType.LOCK.name,
-                reason = "Session locked",
-                source = "Policy",
-                confidence = 1.0
+        if (storedSession.status == SessionStatus.LOCKED &&
+            SessionLockLaw.mayUseAppWhileLocked(
+                packageName,
+                screenText,
+                storedSession.goal.orEmpty()
             )
-            recordExplanation(packageName, screenText, explanation)
+        ) {
+            hideWarningOverlay()
+            hideBlockOverlay()
             Log.d(
                 "PhoneCodexDecision",
-                "package=$packageName decision=LOCK reason=Session locked"
+                EnforcementDecisionLog.format(
+                    packageName = packageName,
+                    surface = SurfaceDetector.detect(packageName, screenText).surface.name,
+                    rule = "SessionLock",
+                    decision = "ALLOW",
+                    reasonCode = EnforcementReasonCodes.SESSION_LOCK_ALLOW_UNRELATED,
+                    reason = SessionEnforcementCopy.SESSION_LOCK_ALLOW_UNRELATED
+                )
             )
-            if (!isSystemOverlayNoise(packageName) && currentOverlay == null) {
-                showBlockOverlay(packageName, explanation)
-            }
             return
         }
 
@@ -317,7 +469,47 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
 
         if (isSystemOverlayNoise(packageName)) return
 
-        if (applyAppRuleBehavior(packageName, screenText)) {
+        logEvalPrelude(packageName, storedSession.goal.orEmpty(), screenText)
+        maybeResearchApp(packageName, screenText, storedSession.goal.orEmpty())
+
+        val scopedSettings = studyWorldSettingsStore.getSettings()
+        if (
+            !EntertainmentBanGate.mustEvaluate(
+                packageName = packageName,
+                screenText = screenText,
+                goal = storedSession.goal.orEmpty(),
+                enforcementScopePackages = scopedSettings.enforcementScopePackages
+            )
+        ) {
+            hideWarningOverlay()
+            hideBlockOverlay()
+            val surface = SurfaceDetector.detect(packageName, screenText)
+            Log.d(
+                "PhoneCodexDecision",
+                EnforcementDecisionLog.format(
+                    packageName = packageName,
+                    surface = surface.surface.name,
+                    rule = "Scope",
+                    decision = "ALLOW",
+                    reasonCode = EnforcementReasonCodes.ENFORCEMENT_SCOPE_ALLOW,
+                    reason = "Package outside this promise's named-app scope",
+                    activity = surface.activity.name.lowercase()
+                )
+            )
+            return
+        }
+
+        if (applyBlankVideoTreeRules(packageName, screenText, storedSession)) {
+            return
+        }
+
+        // Blank/stale text: do not run content signals or AI (prevents wrong blocks).
+        // Video/movie packages with blank trees are handled above — never silent allow.
+        if (EnforcementEventGate.shouldSkipContentAndAi(screenText)) {
+            Log.d(
+                "PhoneCodexA11yText",
+                "Blank/stale screen text for $packageName — skip content/AI, keep last decision"
+            )
             return
         }
 
@@ -325,7 +517,15 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
             return
         }
 
+        if (applyAppRuleBehavior(packageName, screenText)) {
+            return
+        }
+
         if (applyFeedbackMemoryRules(packageName, screenText)) {
+            return
+        }
+
+        if (applyUnknownVideoCloneWarn(packageName, screenText)) {
             return
         }
 
@@ -333,16 +533,45 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
         val now = System.currentTimeMillis()
 
         if (
-            packageName == lastClassificationRequestPackage &&
-            now - lastClassificationRequestTimeMillis < MIN_CLASSIFICATION_INTERVAL_MS
+            EnforcementEventGate.shouldThrottleClassificationRequest(
+                packageName = packageName,
+                lastRequestPackage = lastClassificationRequestPackage,
+                lastRequestAtMillis = lastClassificationRequestTimeMillis,
+                nowMillis = now,
+                classificationInFlight = classificationInFlight,
+                minIntervalMs = EnforcementEventGate.MIN_CLASSIFICATION_INTERVAL_MS
+            )
         ) {
+            // Do not storm the backend — re-apply last decision for this package if we have one.
+            if (
+                packageName == lastClassifiedPackage &&
+                lastClassification != null
+            ) {
+                applyClassificationOrFallback(
+                    packageName = packageName,
+                    screenText = screenText,
+                    storedSession = storedSession,
+                    classification = lastClassification
+                )
+            } else {
+                Log.d(
+                    "PhoneCodexNetAI",
+                    "Classification throttled for $packageName — waiting for in-flight/interval"
+                )
+            }
             return
         }
 
         if (
-            packageName == lastClassifiedPackage &&
-            signature == lastClassifiedTextSignature &&
-            now - lastClassificationTimeMillis < CLASSIFICATION_CACHE_TTL_MS
+            EnforcementEventGate.shouldUseCachedClassification(
+                packageName = packageName,
+                textSignature = signature,
+                lastPackage = lastClassifiedPackage,
+                lastSignature = lastClassifiedTextSignature,
+                lastClassifiedAtMillis = lastClassificationTimeMillis,
+                nowMillis = now,
+                cacheTtlMs = EnforcementEventGate.CLASSIFICATION_CACHE_TTL_MS
+            )
         ) {
             Log.d("PhoneCodexNetAI", "Using cached classification for $packageName")
             applyClassificationOrFallback(
@@ -351,10 +580,6 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
                 storedSession = storedSession,
                 classification = lastClassification
             )
-            return
-        }
-
-        if (classificationInFlight) {
             return
         }
 
@@ -427,6 +652,103 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
         lastLoggedA11yTextSignature = signature
     }
 
+    private fun logEvalPrelude(packageName: String, goal: String, screenText: String) {
+        val signature = textSignature(screenText)
+        if (
+            packageName == lastEvalPreludePackage &&
+            signature == lastEvalPreludeSignature
+        ) {
+            return
+        }
+        lastEvalPreludePackage = packageName
+        lastEvalPreludeSignature = signature
+        val settings = studyWorldSettingsStore.getSettings()
+        val prelude = PromiseEnforcementCoordinator.evalPrelude(
+            PromiseEvalInput(
+                hasActiveSession = true,
+                goal = goal,
+                settings = settings,
+                appRule = appRulesStore.getBehaviorForPackage(packageName),
+                packageName = packageName,
+                screenText = screenText
+            )
+        )
+        Log.d("PhoneCodexDecision", prelude)
+    }
+
+    private fun applyBlankVideoTreeRules(
+        packageName: String,
+        screenText: String,
+        storedSession: FocusSession
+    ): Boolean {
+        val result = BlankVideoTreeGate.evaluate(
+            hasActiveSession = true,
+            packageName = packageName,
+            screenText = screenText,
+            goal = storedSession.goal.orEmpty(),
+            enforcementScopePackages = studyWorldSettingsStore.getSettings().enforcementScopePackages
+        )
+        if (!result.isHardDecision) return false
+
+        val surface = SurfaceDetector.detect(packageName, screenText)
+        val decisionType = if (result.action == BlankVideoTreeAction.BLOCK) {
+            DecisionType.BLOCK
+        } else {
+            DecisionType.WARN
+        }
+        val explanation = DecisionExplanation(
+            decision = decisionType.name,
+            reason = SessionEnforcementCopy.overlayEvidence(result.reasonCode, result.reason),
+            source = "BlankVideoTree",
+            confidence = 1.0,
+            matchedSignals = listOf(result.reasonCode)
+        )
+        recordExplanation(packageName, screenText, explanation)
+        when (result.action) {
+            BlankVideoTreeAction.BLOCK -> {
+                hideWarningOverlay()
+                handleBlockedApp(
+                    packageName = packageName,
+                    screenText = screenText,
+                    explanation = explanation
+                )
+            }
+            BlankVideoTreeAction.WAIT -> {
+                hideBlockOverlay()
+                val signature = textSignature(screenText)
+                if (!isRecentlyDismissedWarning(packageName, signature)) {
+                    showWarningOverlay(packageName, signature, explanation)
+                }
+            }
+            BlankVideoTreeAction.NONE -> return false
+        }
+        Log.d(
+            "PhoneCodexDecision",
+            EnforcementDecisionLog.format(
+                packageName = packageName,
+                surface = surface.surface.name,
+                rule = "BlankVideoTree",
+                decision = decisionType.name,
+                reasonCode = result.reasonCode,
+                reason = result.reason,
+                evidence = listOf("blank_or_near_blank_tree"),
+                activity = surface.activity.name.lowercase(),
+                durationSource = "none"
+            )
+        )
+        if (result.action == BlankVideoTreeAction.WAIT) {
+            maybeRequestVisionCounsel(
+                packageName = packageName,
+                screenText = screenText,
+                storedSession = storedSession,
+                localReasonCode = result.reasonCode,
+                localDecision = DecisionType.WARN,
+                surfaceIsPass = false
+            )
+        }
+        return true
+    }
+
     private fun applyAccessibilityTamperGuard(packageName: String, screenText: String): Boolean {
         val match = accessibilityTamperGuard.evaluatePhoneCodexAccessibilityControls(
             packageName = packageName,
@@ -461,10 +783,14 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
             guardrails = permanentGuardrailsStore.getEnabledGuardrails()
         ) ?: return false
 
-        val matchedSignals = match.matchedStrongSignals + match.matchedWeakSignals
+        val matchedSignals = listOf(EnforcementReasonCodes.ADULT_BLOCK_GUARDRAIL) +
+            match.matchedStrongSignals + match.matchedWeakSignals
         val explanation = DecisionExplanation(
             decision = match.decision.name,
-            reason = match.reason,
+            reason = SessionEnforcementCopy.overlayEvidence(
+                EnforcementReasonCodes.ADULT_BLOCK_GUARDRAIL,
+                match.reason
+            ),
             source = "Permanent Guardrail",
             confidence = 1.0,
             matchedSignals = matchedSignals
@@ -502,21 +828,38 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
 
         return when (rule.behavior) {
             AppRuleBehavior.ALLOW -> {
-                hideWarningOverlay()
-                hideBlockOverlay()
-                debugStateStore.recordDecision(
-                    packageName = packageName,
-                    screenText = screenText,
-                    decision = DecisionType.ALLOW.name,
-                    reason = "Allowed by app rule for ${rule.label}",
-                    source = "App Rule",
-                    confidence = 1.0
-                )
-                Log.d(
-                    "PhoneCodexDecision",
-                    "App rule ALLOW for $packageName (${rule.label})"
-                )
-                true
+                if (VideoPlatformRegistry.enforcesMediaSurfaces(packageName) ||
+                    VideoPlatformRegistry.looksLikeUnknownStreamingPackage(packageName)
+                ) {
+                    Log.d(
+                        "PhoneCodexDecision",
+                        EnforcementDecisionLog.format(
+                            packageName = packageName,
+                            surface = "video_shell",
+                            rule = "App Rule",
+                            decision = "CONTINUE",
+                            reasonCode = EnforcementReasonCodes.APP_RULE_ALLOW_DEFERRED,
+                            reason = "App rule ALLOW cannot skip promise content gates"
+                        )
+                    )
+                    false
+                } else {
+                    hideWarningOverlay()
+                    hideBlockOverlay()
+                    debugStateStore.recordDecision(
+                        packageName = packageName,
+                        screenText = screenText,
+                        decision = DecisionType.ALLOW.name,
+                        reason = "Allowed by app rule for ${rule.label}",
+                        source = "App Rule",
+                        confidence = 1.0
+                    )
+                    Log.d(
+                        "PhoneCodexDecision",
+                        "App rule ALLOW for $packageName (${rule.label})"
+                    )
+                    true
+                }
             }
             AppRuleBehavior.WARN -> {
                 hideBlockOverlay()
@@ -564,44 +907,200 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
     }
 
     private fun applyContentSignalRules(packageName: String, screenText: String): Boolean {
-        if (packageName != YOUTUBE_PACKAGE && packageName != CHROME_PACKAGE) {
-            return false
-        }
-
         val sessionGoal = sessionStore.getActiveSession()?.goal.orEmpty()
+        val settings = studyWorldSettingsStore.getSettings()
+        val maxVideoBlockMinutes = settings.maxVideoLengthBlockMinutes
+        val minVideoBlockMinutes = settings.minVideoLengthBlockMinutes
+        val surfaceDetection = SurfaceDetector.detect(packageName, screenText)
+        val surface = surfaceDetection.surface
+        // One unified context per snapshot — feeds activity/durationSource into all logs.
+        val enforcementContext = EnforcementContext.fromParts(
+            packageName = packageName,
+            screenText = screenText,
+            detection = surfaceDetection,
+            parsed = VideoDurationParser.parse(screenText)
+        )
         val signals = contentSignalDetector.detect(packageName, screenText)
 
+        // Cross-app daily short-form quota (deterministic, before media-length / AI).
+        // Only counts active short-form players — never home/shelf/recs.
         if (
-            packageName == CHROME_PACKAGE &&
-            PromiseIntentRules.chromeYouTubeVideoExceedsGoalLimit(sessionGoal, screenText)
-        ) {
-            return applySignalDecision(
+            applyShortFormQuotaRules(
                 packageName = packageName,
                 screenText = screenText,
-                decision = DecisionType.BLOCK,
-                reason = "Chrome YouTube video is longer than the promise allows",
-                source = "Duration Rule",
-                matchedSignals = listOf("chrome_youtube_duration_over_limit"),
-                block = true
+                sessionGoal = sessionGoal,
+                settings = settings,
+                surfaceFallback = surface,
+                context = enforcementContext
             )
-        }
-
-        if (
-            packageName == CHROME_PACKAGE &&
-            PromiseIntentRules.needsMoreChromeYouTubeDurationText(sessionGoal, screenText)
         ) {
-            Log.d(
-                "PhoneCodexDecision",
-                "Waiting for Chrome YouTube duration text before classifying"
-            )
             return true
         }
 
+        when (
+            EntertainmentBanGate.evaluate(
+                packageName = packageName,
+                screenText = screenText,
+                goal = sessionGoal,
+                dossier = appDossierStore.merged(packageName, screenText)
+            )
+        ) {
+            EntertainmentBanAction.BLOCK -> {
+                return applySignalDecision(
+                    packageName = packageName,
+                    screenText = screenText,
+                    decision = DecisionType.BLOCK,
+                    reason = SessionEnforcementCopy.MONK_ENTERTAINMENT_BLOCK,
+                    source = "Entertainment Ban",
+                    matchedSignals = listOf("monk_entertainment_ban") + surfaceDetection.evidence,
+                    block = true,
+                    reasonCode = EnforcementReasonCodes.MONK_ENTERTAINMENT_BLOCK,
+                    surface = surface,
+                    context = enforcementContext
+                )
+            }
+            EntertainmentBanAction.ALLOW_STUDY -> {
+                return applySignalDecision(
+                    packageName = packageName,
+                    screenText = screenText,
+                    decision = DecisionType.ALLOW,
+                    reason = "Active study lecture allowed during monk / study-only",
+                    source = "Entertainment Ban",
+                    matchedSignals = signals.matchedSignals,
+                    block = false,
+                    reasonCode = EnforcementReasonCodes.CONTENT_SIGNAL_ALLOW,
+                    surface = surface,
+                    context = enforcementContext
+                )
+            }
+            EntertainmentBanAction.NONE -> Unit
+        }
+
+        // Clock B local law — active player only; passive → PASS (no AI nudge).
+        // Duration must be current_player only — recommendation cards never BLOCK.
+        val mediaLength = MediaLengthEnforcement.decideDetailed(
+            packageName = packageName,
+            goal = sessionGoal,
+            screenText = screenText,
+            structuredMaxBlockMinutes = maxVideoBlockMinutes,
+            structuredMinBlockMinutes = minVideoBlockMinutes,
+            enforcementScopePackages = settings.enforcementScopePackages
+        )
+        when (mediaLength.decision) {
+            MediaLengthLocalDecision.BLOCK -> {
+                val durationSeconds = mediaLength.currentPlayerDurationSeconds ?: 0
+                val blockCode = if (
+                    minVideoBlockMinutes != null &&
+                    durationSeconds < minVideoBlockMinutes * 60
+                ) {
+                    EnforcementReasonCodes.MEDIA_BLOCK_UNDER_MIN
+                } else {
+                    EnforcementReasonCodes.MEDIA_BLOCK_OVER_MAX
+                }
+                return applySignalDecision(
+                    packageName = packageName,
+                    screenText = screenText,
+                    decision = DecisionType.BLOCK,
+                    reason = "Video length conflicts with the promise",
+                    source = "Duration Rule",
+                    matchedSignals = listOf(
+                        "media_length_over_limit",
+                        "duration_source=current_player"
+                    ) + surfaceDetection.evidence,
+                    block = true,
+                    reasonCode = blockCode,
+                    surface = surface,
+                    context = enforcementContext
+                )
+            }
+            MediaLengthLocalDecision.WAIT -> {
+                val sourceLabel = when (mediaLength.durationSource) {
+                    DurationSource.CURRENT_PLAYER -> "current_player"
+                    DurationSource.RECOMMENDATION_IGNORED -> "recommendation_ignored"
+                    DurationSource.NONE -> "none"
+                }
+                val waitCode =
+                    if (BlankVideoTreeGate.isNearBlankAccessibilityTree(screenText) &&
+                        VideoPlatformRegistry.isVideoOrStreamingPackage(packageName)
+                    ) {
+                        EnforcementReasonCodes.VIDEO_APP_DURATION_UNAVAILABLE
+                    } else {
+                        EnforcementReasonCodes.MEDIA_WAIT_NO_PLAYER_CLOCK
+                    }
+                Log.d(
+                    "PhoneCodexDecision",
+                    EnforcementDecisionLog.format(
+                        packageName = packageName,
+                        surface = surface.name,
+                        rule = "Duration Rule",
+                        decision = "WAIT",
+                        reasonCode = waitCode,
+                        reason = "Waiting for current player duration " +
+                            "(duration_source=$sourceLabel)",
+                        evidence = surfaceDetection.evidence +
+                            listOf("duration_source=$sourceLabel"),
+                        activity = surfaceDetection.activity.name.lowercase(),
+                        durationSource = sourceLabel
+                    )
+                )
+                val waitSession = sessionStore.getActiveSession()
+                if (waitSession != null) {
+                    maybeRequestVisionCounsel(
+                        packageName = packageName,
+                        screenText = screenText,
+                        storedSession = waitSession,
+                        localReasonCode = waitCode,
+                        localDecision = DecisionType.ALLOW,
+                        surfaceIsPass = false
+                    )
+                }
+                return true
+            }
+            MediaLengthLocalDecision.PASS -> {
+                return applySignalDecision(
+                    packageName = packageName,
+                    screenText = screenText,
+                    decision = DecisionType.ALLOW,
+                    reason = SurfaceEnforcementGate.PASS_REASON,
+                    source = "Surface Gate",
+                    matchedSignals = listOf("passive_video_surface") + surfaceDetection.evidence,
+                    block = false,
+                    reasonCode = EnforcementReasonCodes.SURFACE_PASS_PASSIVE,
+                    surface = surface,
+                    context = enforcementContext
+                )
+            }
+            MediaLengthLocalDecision.ALLOW -> {
+                return applySignalDecision(
+                    packageName = packageName,
+                    screenText = screenText,
+                    decision = DecisionType.ALLOW,
+                    reason = "Video length is within the promise limit",
+                    source = "Duration Rule",
+                    matchedSignals = listOf(
+                        "media_length_local_allow",
+                        "duration_source=current_player"
+                    ) + surfaceDetection.evidence,
+                    block = false,
+                    reasonCode = EnforcementReasonCodes.MEDIA_ALLOW_WITHIN_LIMIT,
+                    surface = surface,
+                    context = enforcementContext
+                )
+            }
+            MediaLengthLocalDecision.NONE -> Unit
+        }
+
+        val isYouTube = VideoPlatformRegistry.isOfficialYouTube(packageName)
+        val isChrome = VideoPlatformRegistry.isChrome(packageName)
+
+        // Shorts ban: only on active short-form player evidence, never shelf/home.
         if (
-            packageName == YOUTUBE_PACKAGE &&
+            isYouTube &&
+            surfaceDetection.isShortFormPlay &&
             signals.isYouTubeShorts &&
             PromiseIntentRules.blocksShortForm(sessionGoal) &&
-            !PromiseIntentRules.allowsShortForm(sessionGoal)
+            !PromiseIntentRules.allowsShortForm(sessionGoal) &&
+            settings.shortFormDailyQuotaLimit == null
         ) {
             return applySignalDecision(
                 packageName = packageName,
@@ -610,11 +1109,14 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
                 reason = "Short-form video conflicts with this promise",
                 source = "Content Signal",
                 matchedSignals = signals.matchedSignals,
-                block = true
+                block = true,
+                reasonCode = EnforcementReasonCodes.CONTENT_SIGNAL_BLOCK,
+                surface = surface,
+                context = enforcementContext
             )
         }
 
-        if (packageName == YOUTUBE_PACKAGE && signals.isLikelySearchOrLecture) {
+        if (isYouTube && signals.isLikelySearchOrLecture && surfaceDetection.isActivePlayer) {
             return applySignalDecision(
                 packageName = packageName,
                 screenText = screenText,
@@ -622,11 +1124,15 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
                 reason = "Study-like YouTube content detected",
                 source = "Content Signal",
                 matchedSignals = signals.matchedSignals,
-                block = false
+                block = false,
+                reasonCode = EnforcementReasonCodes.CONTENT_SIGNAL_ALLOW,
+                surface = surface,
+                context = enforcementContext
             )
         }
 
-        if (packageName == CHROME_PACKAGE && signals.isChromeAdultOrPorn) {
+        // Adult: still enforce on Chrome pages; keywords tightened to avoid news FPs.
+        if (isChrome && signals.isChromeAdultOrPorn) {
             return applySignalDecision(
                 packageName = packageName,
                 screenText = screenText,
@@ -634,14 +1140,22 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
                 reason = "Adult or porn content detected in Chrome during Study World",
                 source = "Content Signal",
                 matchedSignals = signals.matchedSignals,
-                block = true
+                block = true,
+                reasonCode = EnforcementReasonCodes.ADULT_BLOCK_GUARDRAIL,
+                surface = surface,
+                context = enforcementContext
             )
         }
 
+        val hasMediaLaw = minVideoBlockMinutes != null ||
+            maxVideoBlockMinutes != null ||
+            PromiseIntentRules.hasMediaLengthLimit(sessionGoal)
+        val entertainmentBan = PromiseIntentRules.blocksEntertainmentOrMovies(sessionGoal)
         if (
-            packageName == CHROME_PACKAGE &&
-            (signals.isChromeStudyLike || PromiseIntentRules.allowsBroadChromeUse(sessionGoal)) &&
-            !shouldDeferChromeSurfaceToClassifier(sessionGoal, screenText)
+            isChrome &&
+            !hasMediaLaw &&
+            !entertainmentBan &&
+            (signals.isChromeStudyLike || PromiseIntentRules.allowsBroadChromeUse(sessionGoal))
         ) {
             return applySignalDecision(
                 packageName = packageName,
@@ -650,19 +1164,135 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
                 reason = "Chrome use is allowed by this promise",
                 source = "Content Signal",
                 matchedSignals = signals.matchedSignals,
-                block = false
+                block = false,
+                reasonCode = EnforcementReasonCodes.CONTENT_SIGNAL_ALLOW,
+                surface = surface,
+                context = enforcementContext
+            )
+        }
+
+        // Hard Surface Gate: passive video surfaces never reach backend AI WARN/BLOCK.
+        val gate = SurfaceEnforcementGate.evaluate(
+            packageName = packageName,
+            screenText = screenText,
+            goal = sessionGoal,
+            structuredMaxBlockMinutes = maxVideoBlockMinutes,
+            structuredMinBlockMinutes = minVideoBlockMinutes,
+            shortFormDailyQuotaLimit = settings.shortFormDailyQuotaLimit
+        )
+        if (gate.isPass) {
+            return applySignalDecision(
+                packageName = packageName,
+                screenText = screenText,
+                decision = DecisionType.ALLOW,
+                reason = gate.reason,
+                source = "Surface Gate",
+                matchedSignals = listOf("surface_gate_pass") + gate.detection.evidence,
+                block = false,
+                reasonCode = EnforcementReasonCodes.SURFACE_PASS_PASSIVE,
+                surface = gate.detection.surface,
+                context = enforcementContext
             )
         }
 
         return false
     }
 
-    private fun shouldDeferChromeSurfaceToClassifier(
+    /**
+     * Deterministic short-form quota. Returns true when a hard decision was applied
+     * (AI must not run afterward for that event).
+     */
+    private fun applyShortFormQuotaRules(
+        packageName: String,
+        screenText: String,
         sessionGoal: String,
-        screenText: String
+        settings: com.phonecodex.app.domain.model.StudyWorldSettings,
+        surfaceFallback: SurfaceDetectionResult,
+        context: EnforcementContext? = null
     ): Boolean {
-        return PromiseIntentRules.hasLongYouTubeLimit(sessionGoal) &&
-            PromiseIntentRules.isYouTubeSurfaceInChrome(screenText)
+        val limit = settings.shortFormDailyQuotaLimit
+            ?: ShortFormQuotaGate.parseDailyShortFormLimit(sessionGoal)
+            ?: return false
+
+        val decision = shortFormQuotaGate.evaluate(
+            packageName = packageName,
+            screenText = screenText,
+            limit = limit,
+            allowLongEducational = settings.allowLongEducationalVideos,
+            enforcementScopePackages = settings.enforcementScopePackages
+        )
+        Log.d("PhoneCodexDecision", ShortFormQuotaGate.formatLog(decision, packageName))
+
+        when (decision.action) {
+            ShortFormQuotaAction.ALLOW_AND_COUNT,
+            ShortFormQuotaAction.ALLOW_DUPLICATE -> {
+                return applySignalDecision(
+                    packageName = packageName,
+                    screenText = screenText,
+                    decision = DecisionType.WARN,
+                    reason = SessionEnforcementCopy.shortsRemaining(decision.count, decision.limit),
+                    source = "ShortQuota",
+                    matchedSignals = listOf("short_form_quota"),
+                    block = false,
+                    reasonCode = EnforcementReasonCodes.QUOTA_ALLOW_COUNT,
+                    surface = decision.surface,
+                    count = decision.count,
+                    limit = decision.limit,
+                    context = context
+                )
+            }
+            ShortFormQuotaAction.ALLOW_LONG_EDUCATIONAL -> {
+                return applySignalDecision(
+                    packageName = packageName,
+                    screenText = screenText,
+                    decision = DecisionType.ALLOW,
+                    reason = decision.reason,
+                    source = "ShortQuota",
+                    matchedSignals = listOf("long_educational_exception"),
+                    block = false,
+                    reasonCode = EnforcementReasonCodes.QUOTA_SKIP_NOT_PLAY,
+                    surface = decision.surface,
+                    count = decision.count,
+                    limit = decision.limit,
+                    context = context
+                )
+            }
+            ShortFormQuotaAction.BLOCK_QUOTA_EXCEEDED,
+            ShortFormQuotaAction.BLOCK_ADULT -> {
+                return applySignalDecision(
+                    packageName = packageName,
+                    screenText = screenText,
+                    decision = DecisionType.BLOCK,
+                    reason = decision.reason,
+                    source = "ShortQuota",
+                    matchedSignals = listOf(
+                        if (decision.action == ShortFormQuotaAction.BLOCK_ADULT) {
+                            "adult_short_form"
+                        } else {
+                            "short_form_quota_exceeded"
+                        }
+                    ),
+                    block = true,
+                    reasonCode = if (decision.action == ShortFormQuotaAction.BLOCK_ADULT) {
+                        EnforcementReasonCodes.QUOTA_BLOCK_ADULT
+                    } else {
+                        EnforcementReasonCodes.QUOTA_BLOCK_EXCEEDED
+                    },
+                    surface = decision.surface,
+                    count = decision.count,
+                    limit = decision.limit,
+                    context = context
+                )
+            }
+            ShortFormQuotaAction.SKIP_NOT_SHORT_PLAY,
+            ShortFormQuotaAction.NONE -> {
+                // Non-player / out of scope — continue other rules.
+                if (decision.surface != surfaceFallback) {
+                    // keep log already emitted
+                }
+                return false
+            }
+        }
     }
 
     private fun applyFeedbackMemoryRules(packageName: String, screenText: String): Boolean {
@@ -678,7 +1308,8 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
                 reason = reason,
                 source = "Feedback Memory",
                 matchedSignals = emptyList(),
-                block = false
+                block = false,
+                reasonCode = EnforcementReasonCodes.FEEDBACK_MEMORY_ALLOW
             )
             DecisionType.BLOCK.name -> applySignalDecision(
                 packageName = packageName,
@@ -687,10 +1318,82 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
                 reason = reason,
                 source = "Feedback Memory",
                 matchedSignals = emptyList(),
-                block = true
+                block = true,
+                reasonCode = EnforcementReasonCodes.FEEDBACK_MEMORY_BLOCK
             )
             else -> false
         }
+    }
+
+    private fun maybeResearchApp(packageName: String, screenText: String, goal: String) {
+        if (EntertainmentClassDetector.isMonkExemptPackage(packageName)) return
+        if (VideoPlatformRegistry.isRegistered(packageName)) return
+        if (!appDossierStore.shouldResearch(packageName, System.currentTimeMillis())) return
+        val local = AppClassResolver.resolve(packageName, screenText)
+        val needsResearch =
+            PlayListingCategoryParser.isPlayStorePackage(packageName) ||
+                local == AppClass.UNKNOWN ||
+                local == AppClass.COMMUNICATION ||
+                local == AppClass.DATING
+        if (!needsResearch) return
+        val label = resolveAppLabel(packageName) ?: packageName
+        val claimed = appDossierStore.get(packageName)?.userClaimedClass
+        classifierExecutor.execute {
+            val researched = appDossierClient.research(
+                packageName = packageName,
+                appLabel = label,
+                playListingText = screenText,
+                userClaimedClass = claimed
+            ) ?: return@execute
+            val merged = appDossierStore.merged(packageName, screenText).withCounsel(
+                counselClass = researched.counselClass ?: AppClass.UNKNOWN,
+                confidence = researched.confidence,
+                summary = researched.summary,
+                source = researched.source,
+                nowMillis = researched.researchedAtMillis
+            )
+            appDossierStore.put(merged)
+            Log.d(
+                "PhoneCodexDossier",
+                "researched pkg=$packageName counsel=${merged.counselClass} " +
+                    "effective=${AppDossierMergeLaw.effectiveClass(merged)} " +
+                    "goal=$goal"
+            )
+        }
+    }
+
+    /**
+     * Unknown entertainment video clones must WARN, never silent ALLOW-as-harmless.
+     */
+    private fun applyUnknownVideoCloneWarn(packageName: String, screenText: String): Boolean {
+        if (!VideoPlatformRegistry.isUnknownVideoCloneCandidate(packageName, screenText)) {
+            return false
+        }
+        val explanation = DecisionExplanation(
+            decision = DecisionType.WARN.name,
+            reason = "Unknown video app — treat carefully; not in the short-form platform registry",
+            source = "Surface Gate",
+            confidence = 0.7,
+            matchedSignals = listOf("unknown_video_clone")
+        )
+        recordExplanation(packageName, screenText, explanation)
+        hideBlockOverlay()
+        val signature = textSignature(screenText)
+        if (!isRecentlyDismissedWarning(packageName, signature)) {
+            showWarningOverlay(packageName, signature, explanation)
+        }
+        Log.d(
+            "PhoneCodexDecision",
+            EnforcementDecisionLog.format(
+                packageName = packageName,
+                surface = SurfaceDetector.detect(packageName, screenText).surface.name,
+                rule = "UnknownClone",
+                decision = "WARN",
+                reasonCode = EnforcementReasonCodes.UNKNOWN_CLONE_WARN,
+                reason = explanation.reason
+            )
+        )
+        return true
     }
 
     private fun applySignalDecision(
@@ -700,14 +1403,38 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
         reason: String,
         source: String,
         matchedSignals: List<String>,
-        block: Boolean
+        block: Boolean,
+        reasonCode: String,
+        surface: SurfaceDetectionResult = SurfaceDetectionResult.UNKNOWN,
+        count: Int? = null,
+        limit: Int? = null,
+        context: EnforcementContext? = null
     ): Boolean {
+        val now = System.currentTimeMillis()
+        if (
+            (decision == DecisionType.BLOCK || decision == DecisionType.WARN) &&
+            OverlayLifecycleGate.shouldHoldSameDecision(
+                packageName = packageName,
+                decision = decision.name,
+                lastPackage = lastOverlayDecisionPackage,
+                lastDecision = lastOverlayDecisionName,
+                lastAppliedAtMillis = lastOverlayDecisionAtMillis,
+                nowMillis = now
+            )
+        ) {
+            Log.d(
+                "PhoneCodexOverlay",
+                "Decision hold pkg=$packageName decision=${decision.name} — skip overlay churn"
+            )
+            return true
+        }
+
         val explanation = DecisionExplanation(
             decision = decision.name,
             reason = reason,
             source = source,
             confidence = 1.0,
-            matchedSignals = matchedSignals
+            matchedSignals = listOf(reasonCode) + matchedSignals.filter { it != reasonCode }
         )
         recordExplanation(packageName, screenText, explanation)
 
@@ -718,16 +1445,323 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
                 screenText = screenText,
                 explanation = explanation
             )
+        } else if (decision == DecisionType.WARN) {
+            hideBlockOverlay()
+            val signature = textSignature(screenText)
+            if (!isRecentlyDismissedWarning(packageName, signature)) {
+                showWarningOverlay(packageName, signature, explanation)
+            }
         } else {
-            hideWarningOverlay()
+            if (OverlayLifecycleGate.shouldClearWarningOnAllow()) {
+                hideWarningOverlay()
+            }
             hideBlockOverlay()
         }
 
+        lastOverlayDecisionPackage = packageName
+        lastOverlayDecisionName = decision.name
+        lastOverlayDecisionAtMillis = now
+
         Log.d(
             "PhoneCodexDecision",
-            "$source ${decision.name} for $packageName reason=$reason signals=$matchedSignals"
+            EnforcementDecisionLog.format(
+                packageName = packageName,
+                surface = surface.name,
+                rule = source,
+                decision = decision.name,
+                reasonCode = reasonCode,
+                reason = reason,
+                count = count,
+                limit = limit,
+                evidence = matchedSignals,
+                activity = context?.activityState?.name?.lowercase()
+                    ?: if (surface.isActiveBehaviorSurface) "active" else "passive",
+                durationSource = context?.durationSource?.name?.lowercase()
+            )
         )
         return true
+    }
+
+    private fun maybeRequestVisionCounsel(
+        packageName: String,
+        screenText: String,
+        storedSession: FocusSession,
+        localReasonCode: String,
+        localDecision: DecisionType?,
+        surfaceIsPass: Boolean
+    ) {
+        val settings = studyWorldSettingsStore.getSettings()
+        val parsed = VideoDurationParser.parse(screenText)
+        val verdict = VisionCaptureGate.evaluate(
+            VisionCaptureInput(
+                nowEpochMs = System.currentTimeMillis(),
+                visionExperimentEnabled = settings.visionExperimentEnabled,
+                hasActiveSession = storedSession.status == SessionStatus.ACTIVE ||
+                    storedSession.status == SessionStatus.LOCKED,
+                packageName = packageName,
+                screenText = screenText,
+                localReasonCode = localReasonCode,
+                localDecision = localDecision,
+                surfaceIsPass = surfaceIsPass,
+                hasCurrentPlayerClock = parsed.currentPlayerDurationSeconds != null
+            )
+        )
+        if (!verdict.shouldCapture) {
+            logVisionSkipThrottled(packageName, verdict.detail, localReasonCode)
+            return
+        }
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+            logVisionSkipThrottled(packageName, "api_too_low", localReasonCode)
+            return
+        }
+        val now = System.currentTimeMillis()
+        if (
+            EnforcementEventGate.shouldThrottleClassificationRequest(
+                packageName = packageName,
+                lastRequestPackage = lastClassificationRequestPackage,
+                lastRequestAtMillis = lastClassificationRequestTimeMillis,
+                nowMillis = now,
+                classificationInFlight = classificationInFlight
+            )
+        ) {
+            logVisionSkipThrottled(packageName, "throttled", localReasonCode)
+            return
+        }
+        classificationInFlight = true
+        lastClassificationRequestPackage = packageName
+        lastClassificationRequestTimeMillis = now
+        requestVisionScreenshotThenClassify(
+            packageName = packageName,
+            screenText = screenText,
+            storedSession = storedSession,
+            localReasonCode = localReasonCode,
+            localDecision = localDecision,
+            surfaceIsPass = surfaceIsPass
+        )
+    }
+
+    private fun requestVisionScreenshotThenClassify(
+        packageName: String,
+        screenText: String,
+        storedSession: FocusSession,
+        localReasonCode: String,
+        localDecision: DecisionType?,
+        surfaceIsPass: Boolean
+    ) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+            classificationInFlight = false
+            logVisionSkipThrottled(packageName, "api_too_low", localReasonCode)
+            return
+        }
+        try {
+            takeScreenshot(
+                Display.DEFAULT_DISPLAY,
+                classifierExecutor,
+                object : TakeScreenshotCallback {
+                    override fun onSuccess(screenshot: ScreenshotResult) {
+                        var jpeg: String? = null
+                        try {
+                            jpeg = VisionScreenshotEncoder.encodeDownscaledJpeg(
+                                screenshot.hardwareBuffer,
+                                screenshot.colorSpace
+                            )
+                        } catch (err: Exception) {
+                            Log.d(
+                                "PhoneCodexDecision",
+                                EnforcementDecisionLog.format(
+                                    packageName = packageName,
+                                    surface = "VISION",
+                                    rule = "VisionExperiment",
+                                    decision = "WAIT",
+                                    reasonCode = EnforcementReasonCodes.VISION_EXPERIMENT_SKIPPED,
+                                    reason = "capture_failed"
+                                )
+                            )
+                        } finally {
+                            screenshot.hardwareBuffer.close()
+                        }
+                        if (jpeg.isNullOrBlank()) {
+                            mainHandler.post { classificationInFlight = false }
+                            return
+                        }
+                        runVisionClassify(
+                            packageName = packageName,
+                            screenText = screenText,
+                            storedSession = storedSession,
+                            imageJpegBase64 = jpeg,
+                            localReasonCode = localReasonCode,
+                            localDecision = localDecision,
+                            surfaceIsPass = surfaceIsPass
+                        )
+                    }
+
+                    override fun onFailure(errorCode: Int) {
+                        mainHandler.post { classificationInFlight = false }
+                        logVisionSkipThrottled(packageName, "capture_failed", localReasonCode)
+                    }
+                }
+            )
+        } catch (err: Exception) {
+            classificationInFlight = false
+            logVisionSkipThrottled(packageName, "capture_failed", localReasonCode)
+        }
+    }
+
+    private fun runVisionClassify(
+        packageName: String,
+        screenText: String,
+        storedSession: FocusSession,
+        imageJpegBase64: String,
+        localReasonCode: String,
+        localDecision: DecisionType?,
+        surfaceIsPass: Boolean
+    ) {
+        val request = ClassifyRequestBuilder.build(
+            packageName = packageName,
+            appLabel = resolveAppLabel(packageName),
+            screenText = screenText,
+            session = storedSession,
+            enabledGuardrailIds = permanentGuardrailsStore.getEnabledGuardrails().map { it.id },
+            imageJpegBase64 = imageJpegBase64
+        )
+        val classification = try {
+            contentClassifier.classify(request)
+        } catch (err: Exception) {
+            Log.w("PhoneCodexNetAI", "Vision classify failed for $packageName: ${err.message}")
+            null
+        }
+        mainHandler.post {
+            try {
+                applyVisionCounselResult(
+                    packageName = packageName,
+                    screenText = screenText,
+                    storedSession = storedSession,
+                    classification = classification,
+                    localReasonCode = localReasonCode,
+                    localDecision = localDecision,
+                    surfaceIsPass = surfaceIsPass
+                )
+            } finally {
+                classificationInFlight = false
+            }
+        }
+    }
+
+    private fun applyVisionCounselResult(
+        packageName: String,
+        screenText: String,
+        storedSession: FocusSession,
+        classification: ContentClassification?,
+        localReasonCode: String,
+        localDecision: DecisionType?,
+        surfaceIsPass: Boolean
+    ) {
+        if (classification == null) {
+            logVisionSkipThrottled(packageName, "classify_null", localReasonCode)
+            return
+        }
+        val merge = VisionCounselMerge.merge(
+            localDecision = localDecision,
+            localReasonCode = localReasonCode,
+            surfaceIsPass = surfaceIsPass,
+            vision = classification,
+            backendUsedImage = classification.usedImage
+        )
+        Log.d(
+            "PhoneCodexDecision",
+            EnforcementDecisionLog.format(
+                packageName = packageName,
+                surface = SurfaceDetector.detect(packageName, screenText).surface.name,
+                rule = "VisionExperiment",
+                decision = if (merge.applyToOverlay) {
+                    merge.classification?.decision?.name ?: "WAIT"
+                } else {
+                    "WAIT"
+                },
+                reasonCode = merge.reasonCode,
+                reason = listOfNotNull(
+                    merge.detail,
+                    classification.whatOnScreen?.takeIf { it.isNotBlank() }?.let { "seen=$it" }
+                ).joinToString(" ")
+            )
+        )
+        if (!merge.applyToOverlay) return
+        val gated = merge.classification ?: return
+        // Re-check surface PASS on the latest tree so a Home swipe cannot be blocked by counsel.
+        val settings = studyWorldSettingsStore.getSettings()
+        val surfaceGate = SurfaceEnforcementGate.evaluate(
+            packageName = packageName,
+            screenText = screenText,
+            goal = storedSession.goal,
+            structuredMaxBlockMinutes = settings.maxVideoLengthBlockMinutes,
+            structuredMinBlockMinutes = settings.minVideoLengthBlockMinutes,
+            shortFormDailyQuotaLimit = settings.shortFormDailyQuotaLimit
+        )
+        if (surfaceGate.isPass) {
+            logVisionSkipThrottled(packageName, "surface_pass", localReasonCode)
+            return
+        }
+        when (gated.decision) {
+            DecisionType.BLOCK, DecisionType.LOCK -> {
+                hideWarningOverlay()
+                handleBlockedApp(
+                    packageName = packageName,
+                    screenText = screenText,
+                    explanation = DecisionExplanation(
+                        decision = gated.decision.name,
+                        reason = gated.reason,
+                        source = gated.source,
+                        confidence = gated.confidence,
+                        matchedSignals = listOf(EnforcementReasonCodes.VISION_COUNSEL)
+                    )
+                )
+            }
+            DecisionType.WARN, DecisionType.ASK -> {
+                hideBlockOverlay()
+                val signature = textSignature(screenText)
+                if (!isRecentlyDismissedWarning(packageName, signature)) {
+                    showWarningOverlay(
+                        packageName,
+                        signature,
+                        DecisionExplanation(
+                            decision = gated.decision.name,
+                            reason = gated.reason,
+                            source = gated.source,
+                            confidence = gated.confidence,
+                            matchedSignals = listOf(EnforcementReasonCodes.VISION_COUNSEL)
+                        )
+                    )
+                }
+            }
+            else -> Unit
+        }
+    }
+
+    private fun logVisionSkipThrottled(
+        packageName: String,
+        detail: String,
+        localReasonCode: String
+    ) {
+        val now = System.currentTimeMillis()
+        if (
+            packageName == lastVisionSkipPackage &&
+            now - lastVisionSkipAtMillis < EnforcementEventGate.MIN_CLASSIFICATION_INTERVAL_MS
+        ) {
+            return
+        }
+        lastVisionSkipPackage = packageName
+        lastVisionSkipAtMillis = now
+        Log.d(
+            "PhoneCodexDecision",
+            EnforcementDecisionLog.format(
+                packageName = packageName,
+                surface = "VISION",
+                rule = "VisionExperiment",
+                decision = "WAIT",
+                reasonCode = EnforcementReasonCodes.VISION_EXPERIMENT_SKIPPED,
+                reason = "$detail local=$localReasonCode"
+            )
+        )
     }
 
     private fun isInstallSurface(packageName: String, screenText: String): Boolean {
@@ -754,6 +1788,37 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
         storedSession: FocusSession,
         classification: ContentClassification?
     ) {
+        val settings = studyWorldSettingsStore.getSettings()
+        val surfaceGate = SurfaceEnforcementGate.evaluate(
+            packageName = packageName,
+            screenText = screenText,
+            goal = storedSession.goal,
+            structuredMaxBlockMinutes = settings.maxVideoLengthBlockMinutes,
+            structuredMinBlockMinutes = settings.minVideoLengthBlockMinutes,
+            shortFormDailyQuotaLimit = settings.shortFormDailyQuotaLimit
+        )
+        // Backend AI must not WARN/BLOCK after Surface Gate PASS (active→passive clear).
+        if (surfaceGate.isPass) {
+            if (OverlayLifecycleGate.shouldClearWarningOnAllow()) {
+                hideWarningOverlay()
+            }
+            hideBlockOverlay()
+            Log.d(
+                "PhoneCodexDecision",
+                EnforcementDecisionLog.format(
+                    packageName = packageName,
+                    surface = surfaceGate.detection.surface.name,
+                    rule = "Surface Gate",
+                    decision = "ALLOW",
+                    reasonCode = EnforcementReasonCodes.AI_SUPPRESSED_BY_SURFACE_GATE,
+                    reason = surfaceGate.reason,
+                    evidence = surfaceGate.detection.evidence,
+                    activity = "passive"
+                )
+            )
+            return
+        }
+
         val gatedClassification = classification?.let { aiConfidenceGate.apply(it) }
 
         if (gatedClassification != null) {
@@ -762,13 +1827,21 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
 
         when (gatedClassification?.decision) {
             DecisionType.ALLOW -> {
-                hideWarningOverlayUnlessVisibleFor(packageName)
+                if (OverlayLifecycleGate.shouldClearWarningOnAllow()) {
+                    hideWarningOverlay()
+                }
                 hideBlockOverlay()
                 Log.d(
                     "PhoneCodexDecision",
-                    "final ALLOW pkg=$packageName source=${gatedClassification.source} " +
-                        "confidence=${gatedClassification.confidence} " +
-                        "reasonCategory=${gatedClassification.reasonCategory ?: "—"}"
+                    EnforcementDecisionLog.format(
+                        packageName = packageName,
+                        surface = SurfaceDetector.detect(packageName, screenText).surface.name,
+                        rule = gatedClassification.source,
+                        decision = "ALLOW",
+                        reasonCode = EnforcementReasonCodes.AI_ALLOW,
+                        reason = gatedClassification.reason,
+                        activity = "active"
+                    )
                 )
             }
             DecisionType.BLOCK, DecisionType.LOCK -> {
@@ -836,6 +1909,29 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
             url = null
         )
         val decision = policyEngine.evaluate(debugWorld, storedSession, context)
+        val quotaOwnsVideoSurface =
+            ShortFormQuotaGate.parseDailyShortFormLimit(storedSession.goal.orEmpty()) != null &&
+                !PromiseIntentRules.isLifestyleEntertainmentBan(storedSession.goal.orEmpty()) &&
+                VideoPlatformRegistry.participatesInShortFormQuota(packageName)
+        if (
+            quotaOwnsVideoSurface &&
+            (decision.decision == DecisionType.WARN || decision.decision == DecisionType.ASK)
+        ) {
+            hideWarningOverlay()
+            hideBlockOverlay()
+            Log.d(
+                "PhoneCodexDecision",
+                EnforcementDecisionLog.format(
+                    packageName = packageName,
+                    surface = SurfaceDetector.detect(packageName, screenText).surface.name,
+                    rule = "Policy",
+                    decision = "ALLOW",
+                    reasonCode = EnforcementReasonCodes.QUOTA_SKIP_NOT_PLAY,
+                    reason = "Shorts quota owns this surface. Study World unknown-app is not the law."
+                )
+            )
+            return
+        }
         recordDebugPolicy(packageName, screenText, decision)
         Log.d(
             "PhoneCodexDecision",
@@ -935,13 +2031,27 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
         val session = sessionStore.getActiveSession()
         val kind = CommitmentOverlayCopy.overlayKind(explanation.decision)
         val remaining = session?.let { it.deadlineMillis - System.currentTimeMillis() }
+        val reasonCode = explanation.matchedSignals.firstOrNull { signal ->
+            SessionEnforcementCopy.hasDedicatedOverlayCopy(signal)
+        } ?: if (explanation.source.contains("Guardrail", ignoreCase = true)) {
+            EnforcementReasonCodes.ADULT_BLOCK_GUARDRAIL
+        } else {
+            null
+        }
+        val evidence = SessionEnforcementCopy.overlayEvidence(
+            reasonCode,
+            CommitmentOverlayCopy.evidenceLine(explanation.decision, explanation.reason)
+        )
         return CommitmentOverlayModel(
             kind = kind,
-            reason = CommitmentOverlayCopy.evidenceLine(explanation.decision, explanation.reason),
+            reason = evidence,
             promiseGoal = session?.goal?.takeIf { it.isNotBlank() },
             attemptCount = session?.attemptCount,
             remainingMillis = remaining,
-            strictness = session?.strictness
+            strictness = session?.strictness,
+            reasonCode = reasonCode,
+            hidePromiseLine = SessionEnforcementCopy.hidePromiseLine(reasonCode),
+            forceContinue = SessionEnforcementCopy.forceContinue(reasonCode)
         )
     }
 
@@ -1005,6 +2115,18 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
 
         hideWarningOverlay()
         latestExplanation = explanation
+        val alreadyLocked =
+            sessionStore.getStoredSession()?.status == SessionStatus.LOCKED
+        if (alreadyLocked) {
+            showBlockOverlay(
+                packageName,
+                explanation.copy(
+                    decision = DecisionType.LOCK.name,
+                    reason = LOCKED_SESSION_REASON
+                )
+            )
+            return
+        }
         val shouldCountAttempt = shouldCountBlockedAttempt(packageName, screenText)
         val updated = if (shouldCountAttempt) {
             sessionStore.incrementAttempt()
@@ -1090,26 +2212,43 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
         packageName: String,
         target: String
     ): Boolean {
-        if (packageName == OWN_PACKAGE_NAME) {
-            clearOverlayAwayTracking()
-            Log.d(
-                "PhoneCodexOverlay",
-                "Overlay retained for target=$target despite own-package event"
-            )
+        if (OverlayLifecycleGate.shouldRetainForNoise(packageName, target)) {
+            if (packageName == target) {
+                clearOverlayAwayTracking()
+            } else {
+                clearOverlayAwayTracking()
+                Log.d(
+                    "PhoneCodexOverlay",
+                    "Overlay retained for target=$target despite noise package=$packageName"
+                )
+            }
             return true
         }
 
-        if (isSystemUiPackage(packageName)) {
-            return true
-        }
-
-        if (packageName == target) {
-            clearOverlayAwayTracking()
-            return true
-        }
-
-        // Truly allowed / safe app under the overlay → hide and let normal flow continue.
+        // Truly allowed / safe app under the overlay → debounce, do not instant-hide
+        // (Settings/WhatsApp focus blips used to clear YouTube blocks).
         if (safeAppsStore.isSafePackage(packageName)) {
+            val now = System.currentTimeMillis()
+            if (overlayAwayCandidatePackage != packageName) {
+                overlayAwayCandidatePackage = packageName
+                overlayAwaySinceMillis = now
+                Log.d(
+                    "PhoneCodexOverlay",
+                    "Overlay safe-app away debounce candidate=$packageName target=$target"
+                )
+                return true
+            }
+            if (
+                !OverlayLifecycleGate.shouldClearAfterAway(
+                    candidatePackage = packageName,
+                    trackedCandidate = overlayAwayCandidatePackage,
+                    awaySinceMillis = overlayAwaySinceMillis,
+                    nowMillis = now,
+                    debounceMs = OverlayLifecycleGate.AWAY_DEBOUNCE_MS
+                )
+            ) {
+                return true
+            }
             clearOverlayAwayTracking()
             hideBlockOverlayBecauseAllowed(packageName)
             return false
@@ -1127,7 +2266,15 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
             )
             return true
         }
-        if (now - overlayAwaySinceMillis < OVERLAY_AWAY_DEBOUNCE_MS) {
+        if (
+            !OverlayLifecycleGate.shouldClearAfterAway(
+                candidatePackage = packageName,
+                trackedCandidate = overlayAwayCandidatePackage,
+                awaySinceMillis = overlayAwaySinceMillis,
+                nowMillis = now,
+                debounceMs = OverlayLifecycleGate.AWAY_DEBOUNCE_MS
+            )
+        ) {
             return true
         }
 
@@ -1146,14 +2293,13 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
     }
 
     private fun isSystemUiPackage(packageName: String): Boolean {
-        return packageName == "com.android.systemui" ||
-            packageName == "miui.systemui.plugin"
+        return OverlayLifecycleGate.isSystemUi(packageName)
     }
 
     private fun isSystemOverlayNoise(packageName: String): Boolean {
         return isSystemUiPackage(packageName) ||
             ((currentOverlay != null || currentWarningOverlay != null) &&
-                packageName == OWN_PACKAGE_NAME)
+                OverlayLifecycleGate.isOwnPackage(packageName))
     }
 
     private fun showBlockOverlay(packageName: String, explanation: DecisionExplanation) {
@@ -1185,7 +2331,10 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-            0,
+            // NOT_FOCUSABLE prevents the overlay from stealing foreground package
+            // identity (own-package flicker). Touches still reach overlay buttons.
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         )
 
@@ -1277,7 +2426,10 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-            0,
+            // NOT_FOCUSABLE prevents the overlay from stealing foreground package
+            // identity (own-package flicker). Touches still reach overlay buttons.
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         )
 
@@ -1288,6 +2440,10 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
             visibleWarningPackageName = packageName
             visibleWarningTextSignature = signature
             runtimeDiagStore.setOverlayActive(true)
+            if (SessionEnforcementCopy.isQuotaReminder(model.reasonCode)) {
+                mainHandler.removeCallbacks(quotaReminderAutoDismiss)
+                mainHandler.postDelayed(quotaReminderAutoDismiss, QUOTA_REMINDER_DISMISS_MS)
+            }
             Log.d("PhoneCodexOverlay", "Warning overlay shown kind=WARN target=$packageName")
         } catch (err: RuntimeException) {
             Log.e("PhoneCodexOverlay", "Failed to show warning overlay", err)
@@ -1299,6 +2455,7 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
     }
 
     private fun hideWarningOverlay() {
+        mainHandler.removeCallbacks(quotaReminderAutoDismiss)
         val overlay = currentWarningOverlay ?: return
         val windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         try {
@@ -1319,10 +2476,7 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
     }
 
     private fun hideWarningOverlayUnlessVisibleFor(packageName: String) {
-        if (currentWarningOverlay != null && visibleWarningPackageName == packageName) {
-            Log.d("PhoneCodexOverlay", "Warning overlay kept during same-package allow: $packageName")
-            return
-        }
+        // Always clear on ALLOW — same-package home/search used to leave WARN stuck.
         hideWarningOverlay()
     }
 
@@ -1356,6 +2510,7 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
     ) {
         if (depth > MAX_DEPTH) return
         if (out.length >= MAX_TEXT_LENGTH) return
+        if (node.packageName?.toString() == OWN_PACKAGE_NAME) return
 
         if (node.isVisibleToUser) {
             appendText(out, node.text?.toString())
@@ -1390,17 +2545,13 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
     }
 
     companion object {
-        private const val OWN_PACKAGE_NAME = "com.phonecodex.app"
+        private const val OWN_PACKAGE_NAME = OverlayLifecycleGate.OWN_PACKAGE
         private const val MAX_TEXT_LENGTH = 3000
         private const val MAX_DEPTH = 50
-        private const val YOUTUBE_PACKAGE = "com.google.android.youtube"
-        private const val CHROME_PACKAGE = "com.android.chrome"
-        private const val CLASSIFICATION_CACHE_TTL_MS = 5000L
-        private const val MIN_CLASSIFICATION_INTERVAL_MS = 2500L
         private const val WARNING_DISMISS_TTL_MS = 60000L
+        private const val QUOTA_REMINDER_DISMISS_MS = 4_000L
         private const val SAFE_APP_LOG_THROTTLE_MS = 10_000L
         private const val FOREGROUND_LOG_THROTTLE_MS = 3_000L
-        private const val OVERLAY_AWAY_DEBOUNCE_MS = 750L
         private const val LOCKED_SESSION_REASON =
             "Lock is active because of repeated attempts to leave your commitment."
 

@@ -1,6 +1,18 @@
 const fs = require("fs");
 const path = require("path");
-const OpenAI = require("openai");
+const {
+  DEFAULT_VISION_DEPLOYMENT,
+  FALLBACK_OPENAI_MODEL,
+  hasAzureConfig,
+  getClassifierProvider,
+  getPromiseCompilerProvider,
+  getVisionDeployment,
+  getVisionDeploymentChain,
+  getBestDeployment,
+  getClassifierDeployment,
+  createClassifierClient,
+  completeJsonChatWithFallback,
+} = require("./azureModelRouting");
 
 const PROMPT_VERSION = "v04";
 const PROMPT_PATH = path.join(
@@ -11,7 +23,21 @@ const PROMPT_PATH = path.join(
   "classifier_v04.txt"
 );
 const ESCALATION_CONFIDENCE_THRESHOLD = 0.75;
-const FALLBACK_OPENAI_MODEL = "gpt-4o-mini";
+const VISION_ADVISORY_CATEGORIES = new Set([
+  "likely_short_form",
+  "likely_long_form",
+  "likely_movie",
+  "unknown",
+  "adult_signal",
+]);
+const VISION_SYSTEM_ADDENDUM = [
+  "If an image is provided, treat it as advisory counsel only.",
+  "reasonCategory MUST be one of: likely_short_form, likely_long_form, likely_movie, unknown, adult_signal.",
+  "Do not invent a numeric duration. Clock BLOCK/ALLOW is local phone law.",
+  "Do not override emergency, settings, SMS, OTP, or banking screens.",
+  "Blank/unknown OTT players with no readable timer → unknown or likely_movie/likely_short_form from visible UI only.",
+  "Also set whatOnScreen to one short English sentence of what is visibly on screen (title/UI only). Not a duration. Not audio.",
+].join(" ");
 
 let cachedPrompt = null;
 
@@ -23,45 +49,16 @@ function loadClassifierPrompt() {
   return cachedPrompt;
 }
 
-function hasAzureConfig() {
-  return Boolean(
-    process.env.AZURE_OPENAI_ENDPOINT &&
-      process.env.AZURE_OPENAI_API_KEY &&
-      process.env.AZURE_OPENAI_DEPLOYMENT &&
-      process.env.AZURE_OPENAI_API_VERSION
-  );
+function isVisionExperimentEnabled() {
+  return process.env.AZURE_VISION_EXPERIMENT === "1";
 }
 
-function getClassifierProvider() {
-  if (hasAzureConfig()) {
-    return {
-      kind: "azure",
-      deployment: process.env.AZURE_OPENAI_DEPLOYMENT,
-      apiVersion: process.env.AZURE_OPENAI_API_VERSION,
-    };
+function extractImageBase64(body) {
+  const raw = body.imageJpegBase64 || body.imageBase64 || body.image;
+  if (typeof raw !== "string" || !raw.trim()) {
+    return null;
   }
-  if (process.env.OPENAI_API_KEY) {
-    return {
-      kind: "openai",
-      deployment: FALLBACK_OPENAI_MODEL,
-      apiVersion: null,
-    };
-  }
-  return null;
-}
-
-function createClassifierClient(provider) {
-  if (provider.kind === "azure") {
-    const endpoint = process.env.AZURE_OPENAI_ENDPOINT.replace(/\/$/, "");
-    const deployment = process.env.AZURE_OPENAI_DEPLOYMENT;
-    return new OpenAI({
-      apiKey: process.env.AZURE_OPENAI_API_KEY,
-      baseURL: `${endpoint}/openai/deployments/${deployment}`,
-      defaultQuery: { "api-version": process.env.AZURE_OPENAI_API_VERSION },
-    });
-  }
-
-  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  return raw.replace(/^data:image\/\w+;base64,/, "").trim();
 }
 
 function buildClassifierUserPayload(body) {
@@ -125,7 +122,12 @@ function normalizeClassifierResult(parsed) {
       ? parsed.reasonCategory
       : "ambiguous";
 
-  return { decision, confidence, reason, reasonCategory };
+  const whatOnScreen =
+    typeof parsed.whatOnScreen === "string"
+      ? parsed.whatOnScreen.trim().slice(0, 160)
+      : "";
+
+  return { decision, confidence, reason, reasonCategory, whatOnScreen };
 }
 
 function shouldEscalate(decision, confidence, reasonCategory) {
@@ -194,24 +196,88 @@ async function classifyActivity(body) {
     throw err;
   }
 
-  const client = createClassifierClient(provider);
-  const userPayload = buildClassifierUserPayload(body);
-  const model =
-    provider.kind === "azure"
-      ? process.env.AZURE_OPENAI_DEPLOYMENT
-      : FALLBACK_OPENAI_MODEL;
+  const image = extractImageBase64(body);
+  let usedImage = false;
+  let imageRejected = false;
+  let userContent = JSON.stringify(buildClassifierUserPayload(body));
+  let systemContent = loadClassifierPrompt();
+  let deployments = [getClassifierDeployment(), getBestDeployment()];
 
+  if (image) {
+    if (!isVisionExperimentEnabled()) {
+      imageRejected = true;
+      console.log(
+        JSON.stringify({
+          event: "vision_image_rejected",
+          reason: "AZURE_VISION_EXPERIMENT_off",
+          // never log the image
+          imageChars: image.length,
+        })
+      );
+    } else if (provider.kind === "azure") {
+      systemContent = `${loadClassifierPrompt()}\n${VISION_SYSTEM_ADDENDUM}`;
+      userContent = [
+        { type: "text", text: JSON.stringify(buildClassifierUserPayload(body)) },
+        {
+          type: "image_url",
+          image_url: { url: `data:image/jpeg;base64,${image}` },
+        },
+      ];
+      usedImage = true;
+      deployments = getVisionDeploymentChain();
+    } else {
+      imageRejected = true;
+      console.log(
+        JSON.stringify({
+          event: "vision_image_rejected",
+          reason: "provider_not_azure",
+          imageChars: image.length,
+        })
+      );
+    }
+  }
+
+  const userPayload = buildClassifierUserPayload(body);
   const started = Date.now();
-  const completion = await client.chat.completions.create({
-    model,
-    temperature: 0,
-    max_tokens: 300,
-    response_format: { type: "json_object" },
-    messages: [
-      { role: "system", content: loadClassifierPrompt() },
-      { role: "user", content: JSON.stringify(userPayload) },
-    ],
-  });
+  let completion;
+  let deploymentUsed = provider.deployment;
+  try {
+    const first = await completeJsonChatWithFallback({
+      provider,
+      deployments,
+      maxTokens: 800,
+      messages: [
+        { role: "system", content: systemContent },
+        { role: "user", content: userContent },
+      ],
+    });
+    completion = first.completion;
+    deploymentUsed = first.deployment;
+  } catch (visionCallErr) {
+    if (usedImage) {
+      console.log(
+        JSON.stringify({
+          event: "vision_image_failed_closed",
+          message: visionCallErr.message,
+        })
+      );
+      usedImage = false;
+      imageRejected = true;
+      const textPass = await completeJsonChatWithFallback({
+        provider,
+        deployments: [getClassifierDeployment(), getBestDeployment()],
+        maxTokens: 300,
+        messages: [
+          { role: "system", content: loadClassifierPrompt() },
+          { role: "user", content: JSON.stringify(userPayload) },
+        ],
+      });
+      completion = textPass.completion;
+      deploymentUsed = textPass.deployment;
+    } else {
+      throw visionCallErr;
+    }
+  }
   const latencyMs = Date.now() - started;
 
   const raw = completion.choices[0]?.message?.content;
@@ -232,6 +298,9 @@ async function classifyActivity(body) {
   }
 
   const normalized = normalizeClassifierResult(parsed);
+  if (usedImage && !VISION_ADVISORY_CATEGORIES.has(normalized.reasonCategory)) {
+    normalized.reasonCategory = "unknown";
+  }
   const wouldEscalate = shouldEscalate(
     normalized.decision,
     normalized.confidence,
@@ -240,7 +309,7 @@ async function classifyActivity(body) {
 
   logClassifyEvent({
     provider: provider.kind,
-    deployment: provider.deployment,
+    deployment: deploymentUsed,
     latencyMs,
     decision: normalized.decision,
     reasonCategory: normalized.reasonCategory,
@@ -250,20 +319,55 @@ async function classifyActivity(body) {
     goal: body.goal,
     screenText: body.screenText,
   });
-
-  if (wouldEscalate) {
+  if (image) {
     console.log(
       JSON.stringify({
-        event: "classify_escalation_placeholder",
-        would_escalate: true,
-        targetDeployment: "pc-lab-strong",
-        promptVersion: PROMPT_VERSION,
-        reason:
-          normalized.confidence < ESCALATION_CONFIDENCE_THRESHOLD
-            ? "low_confidence"
-            : "ambiguous_block",
+        event: "vision_classify_meta",
+        usedImage,
+        imageRejected,
+        deployment: deploymentUsed,
+        // never log the image
+        imageChars: image.length,
       })
     );
+  }
+
+  if (wouldEscalate && !usedImage && deploymentUsed !== getBestDeployment()) {
+    try {
+      const escalated = await completeJsonChatWithFallback({
+        provider,
+        deployments: [getBestDeployment()],
+        maxTokens: 800,
+        messages: [
+          { role: "system", content: loadClassifierPrompt() },
+          { role: "user", content: JSON.stringify(userPayload) },
+        ],
+      });
+      const escalatedRaw = escalated.completion.choices[0]?.message?.content;
+      const escalatedParsed = parseClassifierJson(escalatedRaw);
+      Object.assign(normalized, normalizeClassifierResult(escalatedParsed));
+      deploymentUsed = escalated.deployment;
+      console.log(
+        JSON.stringify({
+          event: "classify_escalation",
+          from: provider.deployment,
+          to: deploymentUsed,
+          promptVersion: PROMPT_VERSION,
+          reason:
+            normalized.confidence < ESCALATION_CONFIDENCE_THRESHOLD
+              ? "low_confidence"
+              : "ambiguous_block",
+        })
+      );
+    } catch (escalateErr) {
+      console.log(
+        JSON.stringify({
+          event: "classify_escalation_failed",
+          targetDeployment: getBestDeployment(),
+          message: escalateErr.message,
+        })
+      );
+    }
   }
 
   return {
@@ -271,11 +375,14 @@ async function classifyActivity(body) {
     confidence: normalized.confidence,
     reason: normalized.reason,
     reasonCategory: normalized.reasonCategory,
+    whatOnScreen: normalized.whatOnScreen || "",
     would_escalate: wouldEscalate,
+    usedImage,
+    imageRejected,
     meta: {
       provider: provider.kind,
-      deployment: provider.deployment,
-      promptVersion: PROMPT_VERSION,
+      deployment: deploymentUsed,
+      promptVersion: usedImage ? `${PROMPT_VERSION}+vision` : PROMPT_VERSION,
       latencyMs: Math.round(latencyMs),
     },
   };
@@ -285,6 +392,14 @@ module.exports = {
   PROMPT_VERSION,
   PROMPT_PATH,
   ESCALATION_CONFIDENCE_THRESHOLD,
+  DEFAULT_VISION_DEPLOYMENT,
   getClassifierProvider,
+  getPromiseCompilerProvider,
+  createClassifierClient,
   classifyActivity,
+  parseClassifierJson,
+  redactForLog,
+  extractImageBase64,
+  isVisionExperimentEnabled,
+  getVisionDeployment,
 };

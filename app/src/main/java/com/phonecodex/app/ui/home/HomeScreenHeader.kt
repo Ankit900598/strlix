@@ -15,23 +15,27 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.phonecodex.app.domain.enforcement.SessionEnforcementCopy
+import com.phonecodex.app.domain.protection.ProtectionReliabilityLevel
 
 /**
  * App identity plus a calm headline. No numbers, no status noise — that lives in the pills below.
  */
 @Composable
 internal fun HomeScreenHeader(
-    isProtectionOn: Boolean,
-    permanentCommitmentCount: Int
+    protectionLevel: ProtectionReliabilityLevel,
+    permanentCommitmentCount: Int,
+    hasActiveCommitment: Boolean = true
 ) {
     val colors = MaterialTheme.colorScheme
+    val isProtected = protectionLevel == ProtectionReliabilityLevel.PROTECTED
 
     Row(verticalAlignment = Alignment.CenterVertically) {
         Spacer(
             modifier = Modifier
                 .size(8.dp)
                 .background(
-                    color = if (isProtectionOn) colors.primary else colors.outline,
+                    color = if (isProtected) colors.primary else colors.outline,
                     shape = CircleShape
                 )
         )
@@ -52,8 +56,8 @@ internal fun HomeScreenHeader(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         StatusPill(
-            text = if (isProtectionOn) "Protecting" else "Not protecting",
-            tone = if (isProtectionOn) PillTone.POSITIVE else PillTone.ALERT
+            text = protectionStatusPillText(protectionLevel),
+            tone = if (isProtected) PillTone.POSITIVE else PillTone.ALERT
         )
         if (permanentCommitmentCount > 0) {
             StatusPill(
@@ -66,4 +70,19 @@ internal fun HomeScreenHeader(
             )
         }
     }
+
+    if (!hasActiveCommitment) {
+        Spacer(modifier = Modifier.height(12.dp))
+        Text(
+            text = SessionEnforcementCopy.NO_ACTIVE_COMMITMENT,
+            style = MaterialTheme.typography.bodyMedium,
+            color = colors.error
+        )
+    }
+}
+
+internal fun protectionStatusPillText(level: ProtectionReliabilityLevel): String = when (level) {
+    ProtectionReliabilityLevel.PROTECTED -> "Protected"
+    ProtectionReliabilityLevel.NOT_PROTECTING -> "Not protecting"
+    ProtectionReliabilityLevel.NEEDS_SETUP -> "Needs setup"
 }

@@ -1,7 +1,13 @@
 package com.phonecodex.app.ui.home
 
+import android.app.Activity
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.os.SystemClock
+import android.speech.RecognizerIntent
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -35,6 +41,39 @@ fun HomeScreen(modifier: Modifier = Modifier) {
     val recoveryPolicy = remember { RecoveryPolicyDefaults.default() }
     val listState = rememberLazyListState()
     val firstRenderLogged = remember { booleanArrayOf(false) }
+    val speechLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val transcript = result.data
+                ?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+                ?.firstOrNull()
+                .orEmpty()
+            state.applyVoiceTranscript(transcript)
+        } else {
+            state.markVoiceInputUnavailable("Voice cancelled. You can still type the promise.")
+        }
+    }
+
+    fun launchVoicePromiseInput() {
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(
+                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+            )
+            putExtra(
+                RecognizerIntent.EXTRA_LANGUAGE,
+                java.util.Locale.getDefault().toLanguageTag()
+            )
+            putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the promise you want Strlix to protect")
+        }
+        try {
+            state.beginVoiceCapture()
+            speechLauncher.launch(intent)
+        } catch (_: ActivityNotFoundException) {
+            state.markVoiceInputUnavailable("Voice input is not available on this phone.")
+        }
+    }
 
     HomeScreenPollingEffect(state)
 
@@ -50,10 +89,17 @@ fun HomeScreen(modifier: Modifier = Modifier) {
         }
     }
 
+    val chatHome by remember {
+        derivedStateOf {
+            usesChatHome(
+                hasStoredSession = state.hasStoredSession,
+                showAdvancedControls = state.showAdvancedControls
+            )
+        }
+    }
     val listItems by remember {
         derivedStateOf {
             buildHomeListItems(
-                isAccessibilityEnabled = state.isAccessibilityEnabled,
                 hasStoredSession = state.hasStoredSession,
                 hasPromiseUnderstanding = state.promiseUnderstanding != null,
                 showAdvancedControls = state.showAdvancedControls,
@@ -83,6 +129,31 @@ fun HomeScreen(modifier: Modifier = Modifier) {
         inspectorVisible = { inspectorVisibleState.value }
     )
 
+    if (chatHome) {
+        ChatHomeScaffold(
+            modifier = modifier,
+            protection = state.protectionReliability,
+            lastCheckSummary = state.lastProtectionCheckSummary,
+            checkInProgress = state.protectionCheckInProgress,
+            onOpenAccessibilitySettings = state::openAccessibilitySettings,
+            onRunProtectionCheck = state::runProtectionCheck,
+            understanding = state.promiseUnderstanding,
+            startBlockedMessage = state.startBlockedMessage,
+            onStartCommitment = state::startCommitment,
+            onEditPromise = state::clearUnderstanding,
+            onSelectClarificationOption = state::selectClarificationOption,
+            onStrongerConfirmChange = state::updateStrongerConfirmAcknowledged,
+            promiseText = state.promiseText,
+            onPromiseTextChange = state::updatePromiseText,
+            onUnderstandPromise = state::understandPromise,
+            onVoicePromise = ::launchVoicePromiseInput,
+            voiceInputStatus = state.voiceInputStatus,
+            understandingInProgress = state.understandingInProgress,
+            onOpenAdvanced = state::toggleAdvancedControls
+        )
+        return
+    }
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -98,15 +169,31 @@ fun HomeScreen(modifier: Modifier = Modifier) {
             when (item) {
                 HomeListItem.Header -> {
                     HomeScreenHeader(
-                        isProtectionOn = state.isAccessibilityEnabled,
-                        permanentCommitmentCount = state.enabledGuardrailCount
+                        protectionLevel = state.protectionReliability.level,
+                        permanentCommitmentCount = state.enabledGuardrailCount,
+                        hasActiveCommitment = state.hasStoredSession
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+
+                HomeListItem.ProtectionStatus -> {
+                    ProtectionReliabilityCard(
+                        model = state.protectionReliability,
+                        lastCheckSummary = state.lastProtectionCheckSummary,
+                        checkInProgress = state.protectionCheckInProgress,
+                        onOpenAccessibilitySettings = state::openAccessibilitySettings,
+                        onRunProtectionCheck = state::runProtectionCheck
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                 }
 
                 HomeListItem.ProtectionSetup -> {
-                    ProtectionSetupCard(
-                        onOpenAccessibilitySettings = state::openAccessibilitySettings
+                    ProtectionReliabilityCard(
+                        model = state.protectionReliability,
+                        lastCheckSummary = state.lastProtectionCheckSummary,
+                        checkInProgress = state.protectionCheckInProgress,
+                        onOpenAccessibilitySettings = state::openAccessibilitySettings,
+                        onRunProtectionCheck = state::runProtectionCheck
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                 }
@@ -132,7 +219,10 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                         promiseText = state.promiseText,
                         onPromiseTextChange = state::updatePromiseText,
                         onExampleSelected = state::selectExamplePromise,
-                        onUnderstandPromise = state::understandPromise
+                        onUnderstandPromise = state::understandPromise,
+                        onVoicePromise = ::launchVoicePromiseInput,
+                        voiceInputStatus = state.voiceInputStatus,
+                        understandingInProgress = state.understandingInProgress
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                 }
@@ -143,7 +233,9 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                             understanding = understanding,
                             startBlockedMessage = state.startBlockedMessage,
                             onStartCommitment = state::startCommitment,
-                            onEditPromise = state::clearUnderstanding
+                            onEditPromise = state::clearUnderstanding,
+                            onSelectClarificationOption = state::selectClarificationOption,
+                            onStrongerConfirmChange = state::updateStrongerConfirmAcknowledged
                         )
                         Spacer(modifier = Modifier.height(28.dp))
                     }

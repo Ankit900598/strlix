@@ -12,29 +12,51 @@ class PermanentGuardrailEvaluatorTest {
     private val evaluator = PermanentGuardrailEvaluator()
 
     @Test
-    fun oneWeakPornSignal_returnsWarnNotBlock() {
+    fun oneWeakPornSignalOnQuietApp_returnsWarnNotBlock() {
         val match = evaluator.evaluate(
-            packageName = "com.android.chrome",
+            packageName = "com.lonely.notes",
             screenText = "This page mentions adult content warnings",
             guardrails = listOf(pornGuardrail())
         )
 
         assertNotNull(match)
         assertEquals(DecisionType.WARN, match?.decision)
-        assertEquals(listOf("adult"), match?.matchedWeakSignals)
+        assertEquals(listOf("adult content"), match?.matchedWeakSignals)
+    }
+
+    @Test
+    fun oneWeakPornWordOnChrome_isIgnored() {
+        val match = evaluator.evaluate(
+            packageName = "com.android.chrome",
+            screenText = "Raj Shamani Shorts comment mentions porn once",
+            guardrails = listOf(pornGuardrail())
+        )
+
+        assertNull(match)
     }
 
     @Test
     fun twoWeakPornSignals_returnBlock() {
         val match = evaluator.evaluate(
             packageName = "com.android.chrome",
-            screenText = "adult nude scene description",
+            screenText = "nsfw nude scene description",
             guardrails = listOf(pornGuardrail())
         )
 
         assertNotNull(match)
         assertEquals(DecisionType.BLOCK, match?.decision)
-        assertEquals(listOf("nude", "adult"), match?.matchedWeakSignals)
+        assertEquals(listOf("nsfw", "nude"), match?.matchedWeakSignals)
+    }
+
+    @Test
+    fun youtubeVideoIdSubstringPorn_isNotAGuardrailHit() {
+        val match = evaluator.evaluate(
+            packageName = "com.android.chrome",
+            screenText = "Raj Shamani Shorts https://m.youtube.com/watch?v=abPornXy12Q",
+            guardrails = listOf(pornGuardrail())
+        )
+
+        assertNull(match)
     }
 
     @Test

@@ -1,8 +1,24 @@
 # PhoneCodex — Current State
 
-**Updated:** 2026-09-06  
+**Updated:** 2026-09-20 (Protection Reliability Gate — Home preflight)  
 **Audience:** Future Cursor / Codex sessions  
 **Rule:** Read this before shipping features. Prefer this file over chat memory.
+
+**Pipeline map:** `docs/enforcement-reliability-gate.md`
+
+**Invariant (P0):** Before Chrome/YouTube tests, Home must tell the truth about whether enforcement is alive. `ProtectionReliabilityGate` is a preflight (Accessibility heartbeat + session + guardrail + backend). It is not the Surface/media-length gate. **Protected** = Accessibility loop alive AND (active commitment OR enabled life rule). Backend missing does not flip Protected; it only shows Bridge missing + exact `adb reverse tcp:8787 tcp:8787` on loopback. No session and no guardrail → **Not protecting** + `Nothing is enforced.` Run protection check must not Start a promise.
+
+**Invariant (P0):** Passive surfaces (Home/Search/shelf/recs/comments/channel/feed/DM list/tab switcher/shade/launcher/Play Store) must never WARN/BLOCK/COUNT for media-length or short-form law. Only active players (and install/payment/DM thread when those rules apply) may enforce. Log reason: `Surface Gate PASS passive video surface`. Backend AI cannot WARN/BLOCK after PASS.
+
+**Invariant (P0):** Media-length BLOCK is legal only when `EnforcementContext.mayApplyMediaLengthBlock()` is true: active player **and** `durationSource=CURRENT_PLAYER`. Recommendation / ambiguous clocks → WAIT, never BLOCK.
+
+**Invariant (P0):** Every decision log must include `code=` from `EnforcementReasonCodes` plus `surface` / `activity` / `durationSource`.
+
+**Invariant (P0):** User confirmation is category-level. Internal `scopePackages` may be specific; UI must not dump `com.*` / NewPipe unless the user named it.
+
+### Experiment (2026-09-19 → 2026-09-29 IST): vision counsel
+
+Time-boxed opt-in. Home → Advanced Controls → Engineering → Developer diagnostics → **10-day vision experiment**. Debug builds default ON until flipped; kill date **29 Sep 2026 00:00 IST**. Captures at most one downscaled JPEG on WAIT / `VIDEO_APP_DURATION_UNAVAILABLE` (NetMirror / unknown OTT blank player). Never on Surface Gate PASS, never when a `CURRENT_PLAYER` clock already BLOCK/ALLOWs, never dialer/settings/SMS/OTP/banking. Backend needs `AZURE_VISION_EXPERIMENT=1` in local `.env` (not committed) and uses **`pc-lab-astra`** (gpt-6-astra) first, then `pc-lab-vision` / `pc-lab-best`. Not `pc-lab-cheap`. Image is advisory (`likely_short_form` / `likely_long_form` / `likely_movie` / `unknown` / `adult_signal`). Merge cannot invent `MEDIA_BLOCK_OVER_MAX` without a clock and cannot unlock Home PASS. Unused Azure credits are better spent on promise-compiler evals than spraying frames.
 
 Related depth (do not replace this file):
 
@@ -12,9 +28,67 @@ Related depth (do not replace this file):
 - Promise Compiler design: `evals/reports/promise_compiler_v04_design.md`
 - Promise Compiler eval: `evals/reports/promise_compiler_v04_eval.md`
 - Promise Compiler v03 failure analysis: `evals/reports/promise_compiler_v03_failure_analysis.md`
+- Temporal clocks lab: `evals/reports/promise_compiler_temporal_clocks.md`
+- Voice promise input design: `docs/azure-voice-promise-input.md`
+- Android promise semantics: `docs/android-promise-semantics-contract.md`
 
 ---
 
+## Tomorrow morning phone checklist (2026-09-08)
+
+Install already on Redmi (`installDebug` succeeded). Backend: `adb reverse tcp:8787 tcp:8787` + Node `/health`.
+
+1. Start promise: `do not allow videos shorter than 30 minutes for next 1 hour` → confirm → Start.
+2. Chrome → YouTube Home (recs + Shorts shelf, no player). **Expected:** no overlay; Logcat `activity=passive` / `Surface Gate PASS passive video surface`.
+3. Chrome → watch page with related 2m/4m/8m and **no** current total clock. **Expected:** WAIT/no BLOCK; `duration_source=recommendation_ignored`.
+4. Active short `00:15 / 00:59` (NewPipe or YT). **Expected:** BLOCK for min-30 promise.
+5. Long lecture ≥40–52 min with player total. **Expected:** ALLOW for min-30.
+6. Start: `I want to watch at most 10 shorts today, but never adult shorts. Long educational YouTube should still be allowed.` Confirm sheet uses **categories**, not packages.
+7. First NewPipe/YouTube short play. **Expected:** ALLOW `count=1/10`.
+8. After 10 distinct shorts, 11th. **Expected:** BLOCK; Home/Search clears overlay.
+9. Adult short. **Expected:** BLOCK, count unchanged.
+10. Mic fills composer text only — does **not** Start commitment.
+
+**Not production-ready until this phone list is green.**
+
+---
+
+## UX reliability notes (v0)
+
+### Portrait-only MainActivity (v0 choice)
+
+`MainActivity` is locked to **portrait** via `android:screenOrientation="portrait"` in `AndroidManifest.xml`.
+
+**Why:** Commitment composer + overlay debugging must not break on accidental rotation. Landscape responsive UI does not exist yet. This does **not** affect other apps.
+
+**Revisit when:** A real landscape layout for composer / confirmation exists.
+
+### Backend status truth
+
+Probe kinds (`BackendProbeKind`): `REACHABLE` | `UNREACHABLE` | `BRIDGE_MISSING` | `CHECKING` | `STALE_OK` | `IDLE`.
+
+- Loopback `127.0.0.1:8787` connect failures → **ADB/local bridge likely missing** + hint: `adb reverse tcp:8787 tcp:8787`
+- Recent successful probe stays sticky (`STALE_OK`) so a blip does not flash scary “offline”
+- Auto-probe once after home bootstrap; Test Backend debounced + one quiet retry
+- Never invent “Backend offline” when never tested
+
+**Phone verification**
+
+1. Open PhoneCodex → rotate the phone: UI stays portrait.
+2. Start backend on PC (`/health` OK). Without reverse, diagnostics should say bridge missing / unreachable with the `adb reverse` hint — not a vague flash of offline.
+3. Run: `adb reverse tcp:8787 tcp:8787`
+4. Open app / tap **Test Backend** → status becomes **Backend connected**.
+5. Unplug USB (or `adb reverse --remove tcp:8787`) → status explains bridge/local reachability clearly after sticky window expires.
+
+### Active player duration only (media-length)
+
+`VideoDurationParser` separates `currentPlayerDurationSeconds` from `recommendationDurationsSeconds`.
+
+- **BLOCK/ALLOW** only from `duration_source=current_player` (`current/total` clocks, `time duration …`, seekbar near player controls).
+- Recommendation cards (`8 minutes 55 seconds`, related rows) → `recommendation_ignored` → **WAIT**, never BLOCK.
+- Live regression: Chrome watch title + “Show player controls” + recs 2m/4m/8m, no player total → WAIT.
+
+---
 ## 1. North star
 
 **PhoneCodex is a personal commitment OS, not a normal blocker.**
@@ -43,17 +117,22 @@ Android → local backend → Azure OpenAI
   → AiConfidenceGate → merge into PolicyEngine
 
 Promise Compiler (NL → CommitmentPolicy JSON)
-  → research-stage only (eval lab; `promise_compiler_v04.txt`)
-  → NOT app-ready — do not auto-wire into PolicyEngine
+  → lab + backend counsel: **v07** assistant options (`promise_compiler_v07.txt`)
+  → pin v06 via `PROMISE_COMPILER_PROMPT_VERSION` if needed
+  → NOT app-ready for blind PolicyEngine auto-wire — confirm + option cards first
 ```
 
 | Layer | Status |
 |-------|--------|
 | Accessibility detect + evaluate | In app |
 | PolicyEngine + Decision Inspector | In app |
-| Overlay enforcement | In app — **unstable under own-package events** |
-| Backend `/classify` + Azure | Working in lab; default model = `pc-lab-cheap` + `classifier_v04` |
-| Promise Compiler | Lab only (`promise_compiler_v04`; safety 62.5% on 200-case quality set — not product-ready) |
+| Overlay enforcement | In app — own-package retain + away debounce + decision hold; still verify on device |
+| Surface detection | `SurfaceDetector` + `VideoPlatformRegistry` (YT, Chrome, NewPipe, IG, FB, TikTok, Snap) |
+| Media-length (clock B) | Local law on **active player only**; passive Home/Search/shelf/recs → `Surface Gate PASS passive video surface` (no AI WARN/BLOCK) |
+| Short-form daily quota | `ShortFormQuotaGate` — plays 1..N ALLOW across apps; N+1 BLOCK; adult excluded; day key `YYYY-MM-DD:short_form_video` (in-memory; TODO persist) |
+| Surface activity | `SurfaceDetector` + `SurfaceEnforcementGate`: PASSIVE vs ACTIVE; AI cannot WARN/BLOCK after PASS |
+| Backend `/classify` + Azure | Working in lab; classify = `pc-lab-strong` (gpt-4.1), escalate = `pc-lab-best` (gpt-5.6-sol) |
+| Promise Compiler | Lab only — v04 general set + **v05 temporal clocks** (not product-ready) |
 
 ---
 
@@ -78,8 +157,18 @@ Promise Compiler (NL → CommitmentPolicy JSON)
   - `pc-lab-cheap`: exact **41.0%**, safety **62.5%**, violations **7**, parseFailures **0**
   - Clarification recall **82.5%** (vs v03 **62.5%**); `duration_ambiguous` and `session_and_content` improved vs v03
   - Aggregate safetyMatch slightly below v03 (**64.5% → 62.5%**) but load-bearing distinctions improved; remaining violations = missed follow-ups on vague phrases
+- Promise Compiler **temporal clocks** (`v4_temporal_clocks.jsonl`, 87 cases; schema `max_item_minutes` / `min_item_minutes`):
+  - Primary metric: **temporal clock OK** (session vs media length vs usage quota vs lock vs permanent)
+  - `pc-lab-cheap`: **v05 100%** clock OK vs **v04 65.5%** (media_* and session_and_media all fail on v04 — prose-only thresholds, not structured quotas)
+  - Report: `evals/reports/promise_compiler_temporal_clocks.md` — still lab-only; PolicyEngine must implement item-length rules before any ship
   - Verdict: still research-stage / **NOT app-ready** — do not auto-wire into PolicyEngine
   - Design / eval: `evals/reports/promise_compiler_v04_design.md`, `evals/reports/promise_compiler_v04_eval.md`
+- Promise Compiler **Semantics v1** (`promise_compiler_v06.txt` + normalize):
+  - Live failure family: shorts category ≠ YouTube-only; calendar day ≠ 60m session; quota `allow_first_n`; NewPipe in scope; confirmationPreview
+  - Dataset: `evals/datasets/v6_promise_semantics.jsonl` (122)
+  - Smoke: 20 invariants green (`node backend/smoke_promise_compiler_normalize.js`)
+  - Reports: `evals/reports/promise_semantics_v1.md`, `docs/android-promise-semantics-contract.md`
+  - Still **NOT** auto-wire into PolicyEngine
 
 ---
 
@@ -132,15 +221,41 @@ Order:
 
 Run on a real device (Xiaomi / target phone). All must pass.
 
-1. **Backend `/health`** — local Node backend up; health endpoint OK.
-2. **`adb reverse`** — phone can reach host backend (e.g. `adb reverse tcp:3000 tcp:3000` or whatever port the app uses).
-3. **Accessibility alive** — PhoneCodex service On in system Accessibility settings; Logcat shows `PhoneCodexA11y` / decision tags.
-4. **Launch YouTube** (or known blocked package) with Study World active.
-5. **Overlay stays** — block overlay remains visible; no flicker-off within ~5–10s of idle on the blocked app.
-6. **Logs show final decision** — Logcat (`PhoneCodexDecision` / `PhoneCodexOverlay` / Decision Inspector) shows a stable BLOCK (or WARN) with reason; not rapid flip-flop.
-7. **Own package does not hide wrongly** — events for `com.phonecodex.app` while overlay is up must **retain** overlay for the external target; opening the PhoneCodex app intentionally may hide only when the user truly left the blocked app.
+### Core overlay loop
 
-Fail any step → stay on P0. Do not open a new track.
+1. **Backend `/health`** — local Node backend up; health endpoint OK.
+2. **`adb reverse`** — phone can reach host backend: `adb reverse tcp:8787 tcp:8787`.
+3. **Accessibility alive** — PhoneCodex service On; Logcat shows `PhoneCodexA11y` / `PhoneCodexDecision`.
+4. **Launch YouTube** (or known blocked package) with Study World active.
+5. **Overlay stays** — block overlay remains; no flicker-off within ~5–10s idle on the blocked app.
+6. **Logs show final decision** — Logcat filter `PhoneCodexDecision` shows stable lines:
+   `pkg=… surface=… rule=… count=… decision=… reason=…` (not rapid flip-flop).
+7. **Own package does not hide wrongly** — events for `com.phonecodex.app` while overlay is up must **retain** overlay for the external target.
+
+### Surface / false-block checks (P0 reliability)
+
+8. **Chrome Google Search / Videos tab** — with a media-length promise, must **ALLOW/PASS** (not block as “video too long”). Surface log should be `SEARCH` or non-player; reason `Surface Gate PASS passive video surface`.
+9. **YouTube Home / Search / Chrome YouTube Home** — must not be treated as `ACTIVE_VIDEO_PLAYER`; thumbnail clocks (e.g. “52 minutes”) must **not** WARN/BLOCK/COUNT. Min-length promises (“shorter than 30 min”) same rule.
+10. **YouTube player (fullscreen and inline)** — with length promise, long/short violation → BLOCK; within limit → ALLOW; missing duration → WAIT (no AI storm).
+11. **Leave blocked content** — after BLOCK/WARN, navigate to Home or Search: overlay clears (Surface Gate PASS / ALLOW); no stuck WARN.
+12. **NewPipe** (if installed) — open a playing video with clocks like `00:15 / 45:00`; length promise must parse duration and BLOCK/ALLOW correctly; app should appear under AI_DECIDE defaults (not silent bypass).
+13. **Emergency / phone / Settings** — dialer, phone, system settings remain allowed (safe apps).
+14. **Quota (if promise allows N Shorts)** — first N distinct Shorts ALLOW; after limit → BLOCK; duplicates do not double-count. Log shows `count=k/N`.
+15. **Performance** — scrolling YouTube home should not fire AI every tick; Logcat `PhoneCodexNetAI` shows throttle/cache, not request spam.
+
+### Cross-app daily short-form quota (Promise Semantics v1)
+
+16. **Start promise** — “at most 10 shorts today, never adult/sexual shorts; long educational YouTube still allowed.” Confirm sheet / settings: duration ~1440 (calendar day), short-form quota=10.
+17. **Open NewPipe short** — active player with clocks like `00:15 / 00:59`. Logcat:
+    `ShortQuota pkg=org.schabi.newpipe surface=SHORT_FORM_PLAYER count=1/10 counted=true action=ALLOW …`
+18. **Repeat distinct short plays** across NewPipe / YouTube Shorts / IG Reels until count=10. Each new play increments once; rapid a11y thrash must not double-count.
+19. **11th short play** — must **BLOCK** until local day ends. Log shows `count=10/10 action=BLOCK`.
+20. **Adult/sexual short** — BLOCK immediately; count must **not** increase.
+21. **Long educational lecture (1h+)** — ALLOW; must **not** consume short-form quota.
+22. **Chrome Search / YouTube Home Shorts shelf** — must **not** count and must **not** quota-block.
+23. **AI cannot override** — with quota exceeded, backend ALLOW must not clear the BLOCK overlay.
+
+Fail any core step (1–7) → stay on P0. Quota steps (16–23) are the short-form ship gate.
 
 ---
 
@@ -152,7 +267,7 @@ From product memory + CTO strategy — park here until the loop is stable:
 |------|----------|
 | **Guided Study Rail** | Allowed path inside distracting apps (lecture track, not free roam) |
 | **Exact YouTube playlist / channel enforcement** | Promise-scoped allow: only named channel/playlist |
-| **Natural-language Promise Compiler** | Text → CommitmentPolicy (v04 lab done); next UX = confirm-sheet + follow-ups before Start; ship only when safetyMatch is product-grade and wired behind PolicyEngine |
+| **Natural-language Promise Compiler** | Text → CommitmentPolicy (v04 general + v05 temporal clocks lab); confirm-sheet must show five clocks; ship only behind PolicyEngine + item-length enforcement |
 | **Strict mode / tamper protection** | Harder exit, preventDisable, LOCKED — with emergency always open |
 | **Vision classifier** | Screenshot / frame when OCR lies; opt-in; never bank/OTP |
 | **Safe phone operator** | Agentic “do X on phone” — long-term only; Play + liability constrained |
@@ -237,3 +352,30 @@ If a bug appears, do not immediately prompt Cursor. First:
 ```text
 VERIFY → DIAGNOSE → EXPLAIN → THEN PROMPT
 ```
+
+---
+
+## Ways this can still fail on a real phone (overnight sprint honesty)
+
+Unit tests are green; phone verification is still required. Remaining risks:
+
+1. PiP / floating mini-player with weak a11y text may look passive while video plays.
+2. NewPipe history rows with `00:15 / 45:00` **and** a title containing “play” may false-active.
+3. YouTube mobile web may hide total duration until controls expand → prolonged WAIT (good) or user thinks app is “broken.”
+4. Recommendation rows that use `time duration` phrasing (rare) could pollute current-player parse.
+5. Instagram Reels / TikTok without readable clocks may under-count quota or misclassify short vs long.
+6. Short-form quota is **in-memory** — process death resets count mid-day.
+7. Cross-app quota dedupe keys may collide on similar clocks + empty titles.
+8. MIUI battery killers can pause Accessibility → silent non-enforcement.
+9. Overlay TYPE_ACCESSIBILITY may still flicker on some Xiaomi skins despite own-package retain.
+10. System UI / notification shade packages vary by OEM beyond the small allowlist.
+11. Adult keyword list still false-positives news titles; euphemisms still false-negative.
+12. Messaging-thread vs DM-list classification is coarse — message-restrict promises not fully product-wired.
+13. Install/payment flow detection is phrase-based — Play Store browsing vs Install button races.
+14. Azure `/compile-promise` offline → local parser confirmation; category copy may be thinner offline.
+15. Voice path still uses on-device `RecognizerIntent` for fill — Azure `/transcribe-promise` not fully phone-wired.
+16. Browser embeds / WebView players outside Chrome package may miss registry.
+17. Multi-window / split-screen package identity can confuse target tracking.
+18. Rapid swipe Shorts may generate duplicate or skipped counts under debounce.
+19. LOCKED session overlay clear rules need phone proof (unit only covers gate helper).
+20. Confirmation UX sanitizer may over-strip “Chrome” when user meant browser videos — rare, verify with “only Chrome”.

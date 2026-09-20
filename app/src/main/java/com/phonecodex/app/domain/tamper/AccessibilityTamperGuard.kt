@@ -16,7 +16,7 @@ class AccessibilityTamperGuard {
         packageName: String,
         screenText: String
     ): TamperGuardMatch? {
-        if (packageName != SETTINGS_PACKAGE) return null
+        if (packageName !in SETTINGS_PACKAGES) return null
 
         val normalizedText = screenText.lowercase()
         val matchedSignals = PHONECODEX_CONTROL_SIGNALS.filter { signal ->
@@ -29,6 +29,14 @@ class AccessibilityTamperGuard {
 
     companion object {
         const val SETTINGS_PACKAGE = "com.android.settings"
+
+        val SETTINGS_PACKAGES: Set<String> = setOf(
+            SETTINGS_PACKAGE,
+            "com.android.settings.intelligence",
+            "com.xiaomi.misettings",
+            "com.miui.securitycenter",
+            "com.miui.permcenter"
+        )
 
         val PHONECODEX_CONTROL_SIGNALS: List<String> = listOf(
             "phonecodex",

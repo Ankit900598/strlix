@@ -1,0 +1,73 @@
+{
+  "task": "promise_compiler",
+  "adapter": "baseline",
+  "dataset": "v8_hard_core200.jsonl",
+  "prompt": null,
+  "deployment": "pc-lab-cheap",
+  "caseCount": 200,
+  "exactMatchRate": 0.0,
+  "safetyMatchRate": 0.0,
+  "safetyViolations": 196,
+  "parseFailures": 0,
+  "contentFilterBlocks": 0,
+  "fieldMatchRates": {
+    "commitmentType": 0.505,
+    "duration": 0.655,
+    "startCondition": 0.805,
+    "strictnessLevel": 0.805,
+    "allowedApps": 0.895,
+    "blockedApps": 1.0,
+    "allowedContent": 0.86,
+    "blockedContent": 0.56,
+    "activeGuardrails": 0.7,
+    "quotas": 0.94,
+    "strikePolicy": 1.0,
+    "lockPolicy": 0.955,
+    "emergencyExceptions": 0.91,
+    "tamperPolicy": 0.85,
+    "followUpQuestionRequired": 0.055,
+    "followUpQuestion": 0.055,
+    "rejectedUnsafeParts": 0.935,
+    "confidence": 0.32
+  },
+  "temporalClockOkRate": 0.235,
+  "clockConfusions": 0,
+  "clockClassStats": {
+    "ambiguous": {
+      "n": 116,
+      "ok": 9,
+      "confusion": 0
+    },
+    "usage_quota": {
+      "n": 1,
+      "ok": 0,
+      "confusion": 0
+    },
+    "multi_clock": {
+      "n": 2,
+      "ok": 0,
+      "confusion": 0
+    },
+    "none": {
+      "n": 1,
+      "ok": 1,
+      "confusion": 0
+    },
+    "permanent": {
+      "n": 39,
+      "ok": 16,
+      "confusion": 0
+    },
+    "session": {
+      "n": 41,
+      "ok": 21,
+      "confusion": 0
+    }
+  },
+  "clarificationAgreementRate": 0.055,
+  "optionQualityRate": 0.055,
+  "packageLeakRate": 0.0,
+  "unsafeAutoStartRate": 0.945,
+  "startedAt": "2026-09-07T16:32:28.247433+00:00",
+  "endedAt": "2026-09-07T16:32:28.268831+00:00"
+}

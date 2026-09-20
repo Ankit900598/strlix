@@ -3,6 +3,8 @@ package com.phonecodex.app.domain.classifier
 import android.os.StrictMode
 import android.os.SystemClock
 import android.util.Log
+import com.phonecodex.app.domain.diagnostics.BackendConfig
+import com.phonecodex.app.domain.diagnostics.BackendHealthProbe
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.BufferedReader
@@ -33,20 +35,26 @@ class NetworkAiContentClassifier : ContentClassifier {
 
     private fun classifyFromBackend(request: ClassificationRequest): ContentClassification? {
         val startedElapsed = SystemClock.elapsedRealtime()
-        val connection = (URL(CLASSIFY_URL).openConnection() as HttpURLConnection).apply {
+        val connection = (URL(BackendHealthProbe.CLASSIFY_URL).openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"
             connectTimeout = CONNECT_TIMEOUT_MS
-            readTimeout = READ_TIMEOUT_MS
+            readTimeout = if (request.imageJpegBase64.isNullOrBlank()) {
+                READ_TIMEOUT_MS
+            } else {
+                VISION_READ_TIMEOUT_MS
+            }
             doOutput = true
             setRequestProperty("Content-Type", "application/json; charset=utf-8")
             setRequestProperty("Accept", "application/json")
+            BackendConfig.applyAuth(this)
         }
 
         try {
             Log.d(
                 TAG,
                 "POST /classify pkg=${request.packageName} strictness=${request.strictnessLevel} " +
-                    "commitment=${request.commitmentType} guardrails=${request.activeGuardrails.size}"
+                    "commitment=${request.commitmentType} guardrails=${request.activeGuardrails.size} " +
+                    "hasImage=${!request.imageJpegBase64.isNullOrBlank()}"
             )
 
             OutputStreamWriter(connection.outputStream, Charsets.UTF_8).use { writer ->
@@ -106,13 +114,17 @@ class NetworkAiContentClassifier : ContentClassifier {
             body.put("sessionCounters", counterJson)
         }
 
+        request.imageJpegBase64?.takeIf { it.isNotBlank() }?.let { image ->
+            body.put("imageJpegBase64", image)
+        }
+
         return body.toString()
     }
 
     companion object {
         private const val TAG = "PhoneCodexNetAI"
-        private const val CLASSIFY_URL = "http://127.0.0.1:8787/classify"
         private const val CONNECT_TIMEOUT_MS = 2500
         private const val READ_TIMEOUT_MS = 4000
+        private const val VISION_READ_TIMEOUT_MS = 8000
     }
 }

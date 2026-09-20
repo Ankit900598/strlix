@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+import java.util.Properties
+
 android {
     namespace = "com.phonecodex.app"
     compileSdk {
@@ -17,6 +19,32 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        val localProps = Properties()
+        val localFile = rootProject.file("local.properties")
+        if (localFile.exists()) {
+            localFile.inputStream().use { localProps.load(it) }
+        }
+        fun strlixProp(key: String, env: String, fallback: String): String {
+            val raw = localProps.getProperty(key)
+                ?: System.getenv(env)
+                ?: fallback
+            return raw.trim()
+        }
+        val backendUrl = strlixProp(
+            "strlix.backendUrl",
+            "STRLIX_BACKEND_URL",
+            "http://127.0.0.1:8787"
+        ).trimEnd('/')
+        val backendSecret = strlixProp(
+            "strlix.backendSecret",
+            "STRLIX_BACKEND_APP_SECRET",
+            ""
+        )
+        fun quoted(value: String): String =
+            "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""
+        buildConfigField("String", "BACKEND_BASE_URL", quoted(backendUrl))
+        buildConfigField("String", "BACKEND_APP_SECRET", quoted(backendSecret))
     }
 
     buildTypes {
@@ -32,6 +60,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -39,6 +68,8 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
+    implementation("androidx.compose.material:material-icons-core")
+    implementation("androidx.compose.material:material-icons-extended")
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)

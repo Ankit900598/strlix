@@ -11,6 +11,10 @@ class PermanentGuardrailEvaluator {
         screenText: String,
         guardrails: List<PermanentGuardrail>
     ): GuardrailMatch? {
+        if (AdultContentLaw.shouldSkipPackage(packageName)) {
+            return null
+        }
+
         val normalizedText = screenText.lowercase()
 
         guardrails.forEach { guardrail ->
@@ -30,7 +34,7 @@ class PermanentGuardrailEvaluator {
             }
 
             val match = when (guardrail.id) {
-                PORN_GUARDRAIL_ID -> evaluatePornGuardrail(guardrail, normalizedText)
+                PORN_GUARDRAIL_ID -> evaluatePornGuardrail(guardrail, packageName, screenText)
                 else -> evaluateGenericKeywordGuardrail(guardrail, normalizedText)
             }
 
@@ -44,49 +48,23 @@ class PermanentGuardrailEvaluator {
 
     private fun evaluatePornGuardrail(
         guardrail: PermanentGuardrail,
-        normalizedText: String
+        packageName: String,
+        screenText: String
     ): GuardrailMatch? {
-        val strongMatched = PORN_STRONG_SIGNALS.filter { signal ->
-            normalizedText.contains(signal)
+        val verdict = AdultContentLaw.inspect(packageName, screenText)
+        val decision = when (verdict.decision) {
+            AdultContentLaw.Decision.BLOCK -> DecisionType.BLOCK
+            AdultContentLaw.Decision.WARN -> DecisionType.WARN
+            AdultContentLaw.Decision.NONE -> return null
         }
-        val weakMatched = PORN_WEAK_SIGNALS.mapNotNull { signal ->
-            signal.label.takeIf { signal.pattern.containsMatchIn(normalizedText) }
-        }
-
-        if (strongMatched.isNotEmpty()) {
-            return GuardrailMatch(
-                guardrailId = guardrail.id,
-                guardrailName = guardrail.name,
-                decision = DecisionType.BLOCK,
-                matchedStrongSignals = strongMatched,
-                matchedWeakSignals = weakMatched,
-                reason = buildReason(guardrail.name, strongMatched, weakMatched)
-            )
-        }
-
-        if (weakMatched.size >= 2) {
-            return GuardrailMatch(
-                guardrailId = guardrail.id,
-                guardrailName = guardrail.name,
-                decision = DecisionType.BLOCK,
-                matchedStrongSignals = emptyList(),
-                matchedWeakSignals = weakMatched,
-                reason = buildReason(guardrail.name, emptyList(), weakMatched)
-            )
-        }
-
-        if (weakMatched.size == 1) {
-            return GuardrailMatch(
-                guardrailId = guardrail.id,
-                guardrailName = guardrail.name,
-                decision = DecisionType.WARN,
-                matchedStrongSignals = emptyList(),
-                matchedWeakSignals = weakMatched,
-                reason = buildReason(guardrail.name, emptyList(), weakMatched)
-            )
-        }
-
-        return null
+        return GuardrailMatch(
+            guardrailId = guardrail.id,
+            guardrailName = guardrail.name,
+            decision = decision,
+            matchedStrongSignals = verdict.strongSites,
+            matchedWeakSignals = verdict.weakWords,
+            reason = buildReason(guardrail.name, verdict.strongSites, verdict.weakWords)
+        )
     }
 
     private fun evaluateGenericKeywordGuardrail(
@@ -130,27 +108,5 @@ class PermanentGuardrailEvaluator {
 
     companion object {
         private const val PORN_GUARDRAIL_ID = "porn_guardrail"
-
-        private val PORN_STRONG_SIGNALS = listOf(
-            "porn",
-            "xxx",
-            "pornhub",
-            "xvideos",
-            "xhamster",
-            "onlyfans",
-            "redtube",
-            "xnxx"
-        )
-
-        private data class WeakSignal(
-            val label: String,
-            val pattern: Regex
-        )
-
-        private val PORN_WEAK_SIGNALS = listOf(
-            WeakSignal("sex", Regex("\\bsex\\b")),
-            WeakSignal("nude", Regex("\\bnude\\b")),
-            WeakSignal("adult", Regex("\\badult\\b"))
-        )
     }
 }

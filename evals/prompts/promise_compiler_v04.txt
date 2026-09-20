@@ -31,23 +31,32 @@ ONE JSON object only. No markdown.
 
 Enums only. Never invent commitmentType "none". Lists [] not null. Descriptions ≤6 words.
 
-=== CRITICAL — THREE DIFFERENT CLOCKS ===
-Never mix these:
+=== CRITICAL — FOUR DIFFERENT CLOCKS (NEVER COLLAPSE) ===
+Never mix these. Never put media-length thresholds into entertainment_minutes.
 
 A) SESSION / COMMITMENT LENGTH → `duration`
-   "focus session 40 minutes", "study 3 hours", "2 ghante padhai", "1h study block", "till 2am", "exam week", "pomodoro 25m"
-   = how long the world/commitment lasts.
+   "for 1 hour", "focus session 40 minutes", "study 3 hours", "2 ghante padhai", "till 2am", "exam week"
+   = how long the commitment world lasts.
 
-B) CONTENT / MEDIA LENGTH OR MEDIA BUDGET → `quotas` with metric `entertainment_minutes` (+ allowed/blockedContent)
-   "videos up to 40 minutes long", "each lecture max 45 min", "block videos longer than 20 minutes", "sirf 20 minute ka video", "episodes under 50 min"
-   = max media length or media-minute budget — NOT session length.
-   If BOTH stated ("1 hour study session" + "videos longer than 20 min blocked") → populate BOTH `duration` and `quotas`.
+B) INDIVIDUAL MEDIA / VIDEO LENGTH THRESHOLD → `allowedContent` / `blockedContent` ONLY
+   "block videos longer than 40 min", "do not allow any video whose length is greater than 40 min",
+   "videos up to 40 minutes long", "each lecture max 45 min", "episodes under 50 min"
+   = per-video length gate. Put the threshold in `description` with clear compare words
+   (e.g. "videos over 40 min", "videos under 40 min"). Use type long_form_video (or short_form_video).
+   NEVER encode B as quotas.entertainment_minutes.
+   Shorts/Reels are NOT banned by a long-video length rule unless the user also says no Shorts / study-only / monk.
 
-C) LOCK TIMER → `lockPolicy.durationMinutes` only
-   "lock Instagram for 15 min after warnings" — does NOT set commitment `duration`.
+C) USAGE QUOTA / TOTAL WATCH BUDGET → `quotas` with metric `entertainment_minutes` (or shorts/reels counts)
+   "only 40 min entertainment today", "max 25 minutes of YouTube total this session", "allow 40 Shorts then stop"
+   = cumulative budget/count — NOT per-video length, NOT session length.
+   If A+B both stated ("for 1 hour" + "block videos longer than 40 min") → populate `duration` AND blockedContent.
+   If A+C both stated → populate `duration` AND quotas. Never turn B into C.
 
-D) AMBIGUOUS number + app with no role words → MUST ASK
-   Examples: "40 min youtube", "youtube 1 hour", "half hour insta", "tiktok 15 min", "bas 1 hr phone", "oru mani neram youtube", "ஒரு மணி நேரம் யூடியூப்"
+D) LOCK / COOLDOWN TIMER → `lockPolicy.durationMinutes` only
+   "lock me for 20 min after 3 tries" — does NOT set commitment `duration` or media length.
+
+E) AMBIGUOUS number + app with no role words → MUST ASK
+   Examples: "40 min youtube", "youtube 1 hour", "half hour insta", "tiktok 15 min", "bas 1 hr phone"
    Set followUpQuestionRequired=true, confidence<0.45, defaults elsewhere.
    Question MUST distinguish: focus session vs daily quota vs max video length.
    Write the follow-up in the user's language when the promise is clearly non-English (Hinglish/Hindi/Tamil).

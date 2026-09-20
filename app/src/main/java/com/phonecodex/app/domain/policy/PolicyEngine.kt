@@ -1,5 +1,6 @@
 package com.phonecodex.app.domain.policy
 
+import com.phonecodex.app.domain.enforcement.SessionLockLaw
 import com.phonecodex.app.domain.model.ContextSnapshot
 import com.phonecodex.app.domain.model.DecisionSource
 import com.phonecodex.app.domain.model.DecisionType
@@ -25,15 +26,7 @@ class PolicyEngine {
             )
         }
 
-        if (session.status == SessionStatus.LOCKED) {
-            return rule(
-                decision = DecisionType.LOCK,
-                riskLevel = RiskLevel.HIGH,
-                reason = "Session is locked"
-            )
-        }
-
-        if (session.status != SessionStatus.ACTIVE) {
+        if (session.status != SessionStatus.ACTIVE && session.status != SessionStatus.LOCKED) {
             return rule(
                 decision = DecisionType.ALLOW,
                 riskLevel = RiskLevel.LOW,
@@ -41,18 +34,34 @@ class PolicyEngine {
             )
         }
 
-        if (session.attemptCount >= LOCK_ATTEMPT_THRESHOLD &&
-            (session.strictness == StrictnessLevel.STRICT ||
-                session.strictness == StrictnessLevel.LOCKED)
-        ) {
+        val packageName = context.packageName
+        if (session.status == SessionStatus.LOCKED) {
+            if (packageName == null ||
+                SessionLockLaw.mayUseAppWhileLocked(
+                    packageName,
+                    context.screenText.orEmpty(),
+                    session.goal.orEmpty()
+                )
+            ) {
+                return rule(
+                    decision = DecisionType.ALLOW,
+                    riskLevel = RiskLevel.LOW,
+                    reason = "Session locked on entertainment only"
+                )
+            }
+            if (packageName in world.allowedPackages) {
+                return rule(
+                    decision = DecisionType.ALLOW,
+                    riskLevel = RiskLevel.LOW,
+                    reason = "$packageName is allowed in ${world.name}"
+                )
+            }
             return rule(
                 decision = DecisionType.LOCK,
                 riskLevel = RiskLevel.HIGH,
-                reason = "Locked after ${session.attemptCount} distraction attempts under ${session.strictness.name}"
+                reason = "Session locked on this entertainment surface"
             )
         }
-
-        val packageName = context.packageName
         if (packageName == null) {
             return rule(
                 decision = DecisionType.WARN,
@@ -71,7 +80,11 @@ class PolicyEngine {
 
         if (packageName in world.blockedPackages) {
             return rule(
-                decision = DecisionType.BLOCK,
+                decision = if (session.status == SessionStatus.LOCKED) {
+                    DecisionType.LOCK
+                } else {
+                    DecisionType.BLOCK
+                },
                 riskLevel = RiskLevel.MEDIUM,
                 reason = "$packageName is blocked in ${world.name}"
             )
@@ -161,7 +174,4 @@ class PolicyEngine {
         )
     }
 
-    companion object {
-        private const val LOCK_ATTEMPT_THRESHOLD = 10
-    }
 }

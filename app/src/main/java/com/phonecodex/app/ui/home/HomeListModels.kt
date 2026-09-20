@@ -10,6 +10,7 @@ import com.phonecodex.app.domain.model.InstalledApp
 @Immutable
 internal sealed class HomeListItem(val id: String) {
     data object Header : HomeListItem("header")
+    data object ProtectionStatus : HomeListItem("protection_status")
     data object ProtectionSetup : HomeListItem("protection_setup")
     data object ActiveCommitment : HomeListItem("active_commitment")
     data object PromiseComposer : HomeListItem("promise_composer")
@@ -32,12 +33,17 @@ internal sealed class HomeListItem(val id: String) {
     data object BottomSpacer : HomeListItem("bottom_spacer")
 }
 
+/** ChatGPT-style idle/confirm home. Session or Advanced falls back to the settings list. */
+internal fun usesChatHome(
+    hasStoredSession: Boolean,
+    showAdvancedControls: Boolean
+): Boolean = !hasStoredSession && !showAdvancedControls
+
 /**
  * Builds the visible home list from lightweight flags. Pure function — no I/O.
  * Engineering (app rules / debug / events / feedback) stays collapsed until explicitly opened.
  */
 internal fun buildHomeListItems(
-    isAccessibilityEnabled: Boolean,
     hasStoredSession: Boolean,
     hasPromiseUnderstanding: Boolean,
     showAdvancedControls: Boolean,
@@ -45,8 +51,8 @@ internal fun buildHomeListItems(
 ): List<HomeListItem> {
     val items = ArrayList<HomeListItem>(24)
     items += HomeListItem.Header
-    if (!isAccessibilityEnabled) {
-        items += HomeListItem.ProtectionSetup
+    if (!showAdvancedControls) {
+        items += HomeListItem.ProtectionStatus
     }
     if (hasStoredSession) {
         items += HomeListItem.ActiveCommitment

@@ -1,0 +1,276 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phonecodex.app/evals/promise-understanding-v08.schema.json",
+  "title": "PromiseUnderstandingV08",
+  "description": "Full assistant understanding envelope for Promise Compiler v08. RULE: no user-facing field may contain raw Android package IDs (com.*, org.*, net.*, io.*). Packages belong only in internalPolicy.appRules and hiddenInternalScope.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "cleanedPromiseText",
+    "detectedLanguage",
+    "transcriptConfidence",
+    "userIntentSummary",
+    "ambiguityLevel",
+    "clarificationRequired",
+    "clarificationQuestion",
+    "clarificationOptions",
+    "recommendedInterpretation",
+    "alternativeInterpretations",
+    "userFacingConfirmation",
+    "internalPolicy",
+    "riskReview",
+    "hiddenInternalScope"
+  ],
+  "properties": {
+    "cleanedPromiseText": {
+      "type": "string",
+      "description": "User-facing cleaned paraphrase. No package IDs."
+    },
+    "detectedLanguage": {
+      "type": "string",
+      "description": "BCP-47-ish or short code, e.g. en, hi, hinglish"
+    },
+    "transcriptConfidence": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Voice transcript confidence when input is speech; null for typed text"
+    },
+    "userIntentSummary": {
+      "type": "string",
+      "description": "One plain sentence of what the user wants. No package IDs."
+    },
+    "ambiguityLevel": {
+      "type": "string",
+      "enum": ["none", "low", "medium", "high"]
+    },
+    "clarificationRequired": {
+      "type": "boolean",
+      "description": "Must be true when ambiguityLevel is high"
+    },
+    "clarificationQuestion": {
+      "type": ["string", "null"],
+      "description": "ONE focused question. No package IDs."
+    },
+    "clarificationOptions": {
+      "type": "array",
+      "maxItems": 4,
+      "items": { "$ref": "#/$defs/clarificationOption" },
+      "description": "2–3 options when clarifying. Labels/descriptions/policyPreview: no package IDs."
+    },
+    "recommendedInterpretation": {
+      "type": ["string", "null"],
+      "description": "Recommended reading of the promise. No package IDs."
+    },
+    "alternativeInterpretations": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Other plausible readings. No package IDs."
+    },
+    "userFacingConfirmation": {
+      "$ref": "#/$defs/userFacingConfirmation",
+      "description": "Human confirm sheet. No package IDs in any nested string."
+    },
+    "internalPolicy": {
+      "$ref": "#/$defs/internalPolicy",
+      "description": "Technical enforcement draft. Packages OK here."
+    },
+    "riskReview": {
+      "$ref": "#/$defs/riskReview"
+    },
+    "hiddenInternalScope": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Internal-only notes; may include package IDs. Never render in primary UI."
+    },
+    "interpretationNotes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Soft notes (e.g. shorts→all short-form). No package IDs."
+    },
+    "interpretationConfidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "commitmentType": {
+      "type": "string",
+      "description": "Legacy flat CommitmentPolicy field (eval runner may require)"
+    },
+    "duration": { "type": "object" },
+    "followUpQuestionRequired": { "type": "boolean" },
+    "followUpQuestion": { "type": ["string", "null"] },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+  },
+  "$defs": {
+    "clarificationOption": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "description", "recommended"],
+      "properties": {
+        "id": { "type": "string" },
+        "label": {
+          "type": "string",
+          "description": "Short human label. No package IDs."
+        },
+        "description": {
+          "type": "string",
+          "description": "One plain sentence. No package IDs."
+        },
+        "recommended": { "type": "boolean" },
+        "policyPreview": {
+          "type": ["string", "null"],
+          "description": "What will happen if chosen. No package IDs. (Alias: resultingPolicyPreview for v07 compat.)"
+        },
+        "resultingPolicyPreview": {
+          "type": ["string", "null"],
+          "description": "v07 alias for policyPreview"
+        }
+      }
+    },
+    "userFacingConfirmation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "understood",
+        "allowed",
+        "blocked",
+        "time",
+        "appliesTo",
+        "checkThis",
+        "safetyNotes"
+      ],
+      "properties": {
+        "understood": {
+          "type": "string",
+          "description": "I understood: …. No package IDs."
+        },
+        "allowed": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Allow bullets. No package IDs."
+        },
+        "blocked": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Block bullets. No package IDs."
+        },
+        "time": {
+          "type": "string",
+          "description": "Human time window. No package IDs."
+        },
+        "appliesTo": {
+          "type": "string",
+          "description": "Category-level scope. No package IDs."
+        },
+        "checkThis": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Soft interpretation notes / things to double-check. No package IDs."
+        },
+        "safetyNotes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Safety / permanent / emergency notes. No package IDs."
+        },
+        "understoodSummary": {
+          "type": "string",
+          "description": "v07 alias for understood"
+        },
+        "allowedBullets": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "v07 alias for allowed"
+        },
+        "blockedBullets": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "v07 alias for blocked"
+        },
+        "timeWindowText": {
+          "type": "string",
+          "description": "v07 alias for time"
+        },
+        "appliesToText": {
+          "type": "string",
+          "description": "v07 alias for appliesTo"
+        },
+        "hiddenInternalScope": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Deprecated nest; prefer top-level hiddenInternalScope"
+        }
+      }
+    },
+    "internalPolicy": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "timeWindow",
+        "surfaceRules",
+        "contentRules",
+        "appRules",
+        "quotaRules",
+        "recoveryRules",
+        "guardrails"
+      ],
+      "properties": {
+        "timeWindow": {
+          "type": "object",
+          "description": "Session / calendar / permanent window (technical)"
+        },
+        "surfaceRules": {
+          "type": "array",
+          "items": { "type": "object" },
+          "description": "Passive surface vs active behavior rules"
+        },
+        "contentRules": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "appRules": {
+          "type": "array",
+          "items": { "type": "object" },
+          "description": "May include packageName"
+        },
+        "quotaRules": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "recoveryRules": {
+          "type": "object",
+          "description": "How to unlock / recover from permanent or LOCKED commitments"
+        },
+        "guardrails": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "riskReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "falseAllowRisk",
+        "falseBlockRisk",
+        "safetyRisk",
+        "requiresHumanConfirmation"
+      ],
+      "properties": {
+        "falseAllowRisk": {
+          "type": "string",
+          "enum": ["none", "low", "medium", "high"]
+        },
+        "falseBlockRisk": {
+          "type": "string",
+          "enum": ["none", "low", "medium", "high"]
+        },
+        "safetyRisk": {
+          "type": "string",
+          "enum": ["none", "low", "medium", "high"]
+        },
+        "requiresHumanConfirmation": { "type": "boolean" }
+      }
+    }
+  }
+}

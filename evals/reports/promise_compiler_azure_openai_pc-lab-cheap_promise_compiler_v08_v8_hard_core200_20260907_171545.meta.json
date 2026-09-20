@@ -1,0 +1,73 @@
+{
+  "task": "promise_compiler",
+  "adapter": "azure_openai",
+  "dataset": "v8_hard_core200.jsonl",
+  "prompt": "promise_compiler_v08.txt",
+  "deployment": "pc-lab-cheap",
+  "caseCount": 200,
+  "exactMatchRate": 0.0,
+  "safetyMatchRate": 0.02,
+  "safetyViolations": 132,
+  "parseFailures": 9,
+  "contentFilterBlocks": 3,
+  "fieldMatchRates": {
+    "commitmentType": 0.39,
+    "duration": 0.54,
+    "startCondition": 0.765,
+    "strictnessLevel": 0.715,
+    "allowedApps": 0.795,
+    "blockedApps": 0.8,
+    "allowedContent": 0.565,
+    "blockedContent": 0.44,
+    "activeGuardrails": 0.71,
+    "quotas": 0.825,
+    "strikePolicy": 0.845,
+    "lockPolicy": 0.43,
+    "emergencyExceptions": 0.845,
+    "tamperPolicy": 0.68,
+    "followUpQuestionRequired": 0.4,
+    "followUpQuestion": 0.4,
+    "rejectedUnsafeParts": 0.84,
+    "confidence": 0.075
+  },
+  "temporalClockOkRate": 0.63,
+  "clockConfusions": 0,
+  "clockClassStats": {
+    "ambiguous": {
+      "n": 116,
+      "ok": 62,
+      "confusion": 0
+    },
+    "usage_quota": {
+      "n": 1,
+      "ok": 0,
+      "confusion": 0
+    },
+    "multi_clock": {
+      "n": 2,
+      "ok": 2,
+      "confusion": 0
+    },
+    "none": {
+      "n": 1,
+      "ok": 1,
+      "confusion": 0
+    },
+    "permanent": {
+      "n": 39,
+      "ok": 29,
+      "confusion": 0
+    },
+    "session": {
+      "n": 41,
+      "ok": 32,
+      "confusion": 0
+    }
+  },
+  "clarificationAgreementRate": 0.4,
+  "optionQualityRate": 0.425,
+  "packageLeakRate": 0.005,
+  "unsafeAutoStartRate": 0.645,
+  "startedAt": "2026-09-07T16:36:33.181592+00:00",
+  "endedAt": "2026-09-07T17:15:45.556510+00:00"
+}

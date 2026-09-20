@@ -16,6 +16,7 @@ import com.phonecodex.app.accessibility.AccessibilityHealthChecker
 import com.phonecodex.app.data.EventLogStore
 import com.phonecodex.app.data.ProtectionViolationStore
 import com.phonecodex.app.data.SessionStore
+import com.phonecodex.app.data.StudyWorldSettingsStore
 import com.phonecodex.app.domain.model.FocusSession
 import com.phonecodex.app.domain.protection.ProtectionHeartbeatLogic
 import com.phonecodex.app.domain.session.SessionExpiryPolicy
@@ -26,6 +27,7 @@ class ProtectionHeartbeatService : Service() {
     private lateinit var sessionStore: SessionStore
     private lateinit var protectionViolationStore: ProtectionViolationStore
     private lateinit var eventLogStore: EventLogStore
+    private lateinit var studyWorldSettingsStore: StudyWorldSettingsStore
 
     private val heartbeatRunnable = object : Runnable {
         override fun run() {
@@ -42,6 +44,7 @@ class ProtectionHeartbeatService : Service() {
         sessionStore = SessionStore(this)
         protectionViolationStore = ProtectionViolationStore(this)
         eventLogStore = EventLogStore(this)
+        studyWorldSettingsStore = StudyWorldSettingsStore(this)
         createNotificationChannel()
     }
 
@@ -98,10 +101,14 @@ class ProtectionHeartbeatService : Service() {
 
         val accessibilityEnabled =
             AccessibilityHealthChecker.isPhoneCodexAccessibilityEnabled(this)
+        val continuousOff = protectionViolationStore.markAccessibilityObserved(
+            accessibilityEnabled = accessibilityEnabled
+        )
         if (
             ProtectionHeartbeatLogic.shouldRecordAccessibilityViolation(
                 session = session,
-                accessibilityEnabled = accessibilityEnabled
+                accessibilityEnabled = accessibilityEnabled,
+                disabledContinuouslyMillis = continuousOff
             )
         ) {
             protectionViolationStore.recordViolation(
@@ -113,7 +120,11 @@ class ProtectionHeartbeatService : Service() {
 
     private fun isSessionExpired(session: FocusSession?): Boolean {
         return session != null &&
-            SessionExpiryPolicy.isExpired(session, System.currentTimeMillis())
+            SessionExpiryPolicy.isExpired(
+                session,
+                System.currentTimeMillis(),
+                studyWorldSettingsStore.getSettings().shortFormDailyQuotaLimit
+            )
     }
 
     private fun clearExpiredSession() {

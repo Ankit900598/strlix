@@ -123,21 +123,37 @@ internal fun PromiseChip(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    subtle: Boolean = false
 ) {
+    val colors = MaterialTheme.colorScheme
     Surface(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier,
         shape = RoundedCornerShape(100.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        color = if (subtle) {
+            colors.surface.copy(alpha = 0.35f)
+        } else {
+            colors.surfaceVariant
+        },
+        border = BorderStroke(
+            1.dp,
+            if (subtle) colors.outlineVariant.copy(alpha = 0.7f) else colors.outlineVariant
+        )
     ) {
         Text(
             text = text,
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp)
+            color = if (enabled) {
+                colors.onSurfaceVariant
+            } else {
+                colors.outline
+            },
+            modifier = Modifier.padding(
+                horizontal = if (subtle) 12.dp else 14.dp,
+                vertical = if (subtle) 7.dp else 9.dp
+            )
         )
     }
 }

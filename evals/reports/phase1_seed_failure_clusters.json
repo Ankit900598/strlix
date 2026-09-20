@@ -1,0 +1,644 @@
+{
+  "path": "evals\\reports\\promise_compiler_azure_openai_pc-lab-cheap_promise_compiler_v05_v5_ai_lab_seed_20260907_074452.csv",
+  "metadata": {
+    "task": "promise_compiler",
+    "adapter": "azure_openai",
+    "dataset": "v5_ai_lab_seed.jsonl",
+    "prompt": "promise_compiler_v05.txt",
+    "deployment": "pc-lab-cheap",
+    "caseCount": 30,
+    "exactMatchRate": 0.1333,
+    "safetyMatchRate": 0.3667,
+    "safetyViolations": 3,
+    "parseFailures": 0,
+    "contentFilterBlocks": 0,
+    "fieldMatchRates": {
+      "commitmentType": 0.8667,
+      "duration": 0.8,
+      "startCondition": 0.9667,
+      "strictnessLevel": 0.7667,
+      "allowedApps": 0.9,
+      "blockedApps": 0.9,
+      "allowedContent": 0.6,
+      "blockedContent": 0.6667,
+      "activeGuardrails": 0.9,
+      "quotas": 0.8667,
+      "strikePolicy": 0.8667,
+      "lockPolicy": 0.8,
+      "emergencyExceptions": 0.9667,
+      "tamperPolicy": 0.8333,
+      "followUpQuestionRequired": 0.9333,
+      "followUpQuestion": 0.9333,
+      "rejectedUnsafeParts": 0.9667,
+      "confidence": 0.8667
+    },
+    "temporalClockOkRate": 0.8,
+    "clockConfusions": 0,
+    "clockClassStats": {
+      "session": {
+        "n": 11,
+        "ok": 10,
+        "confusion": 0
+      },
+      "media_min": {
+        "n": 2,
+        "ok": 0,
+        "confusion": 0
+      },
+      "multi_clock": {
+        "n": 4,
+        "ok": 4,
+        "confusion": 0
+      },
+      "usage_quota": {
+        "n": 3,
+        "ok": 3,
+        "confusion": 0
+      },
+      "permanent": {
+        "n": 4,
+        "ok": 2,
+        "confusion": 0
+      },
+      "ambiguous": {
+        "n": 4,
+        "ok": 3,
+        "confusion": 0
+      },
+      "unsafe_reject": {
+        "n": 2,
+        "ok": 2,
+        "confusion": 0
+      }
+    },
+    "startedAt": "2026-09-07T07:42:22.392893+00:00",
+    "endedAt": "2026-09-07T07:44:52.702995+00:00"
+  },
+  "total": 30,
+  "exactMatchRate": 0.1333,
+  "safetyViolationCount": 3,
+  "failureCodeCounts": {
+    "field_mismatch_only": 12,
+    "guardrail_miss": 12,
+    "clock_miss": 6,
+    "exact_ok": 4,
+    "safety_violation": 3,
+    "followup_miss": 2
+  },
+  "byCluster": {
+    "temporal_media_min": {
+      "clock_miss": 2,
+      "guardrail_miss": 2,
+      "safety_violation": 1,
+      "followup_miss": 1
+    },
+    "app_surface_youtube": {
+      "field_mismatch_only": 1,
+      "safety_violation": 1,
+      "followup_miss": 1,
+      "clock_miss": 1
+    },
+    "safety_false_adult": {
+      "clock_miss": 2,
+      "guardrail_miss": 2
+    },
+    "temporal_multi_clock": {
+      "field_mismatch_only": 3
+    },
+    "followup_ambiguous": {
+      "guardrail_miss": 1,
+      "field_mismatch_only": 1,
+      "exact_ok": 1
+    },
+    "temporal_usage_quota": {
+      "field_mismatch_only": 1,
+      "exact_ok": 1
+    },
+    "app_surface_instagram": {
+      "field_mismatch_only": 1,
+      "guardrail_miss": 1
+    },
+    "app_surface_chrome": {
+      "guardrail_miss": 2
+    },
+    "unsafe_reject": {
+      "field_mismatch_only": 1,
+      "safety_violation": 1
+    },
+    "install_gate": {
+      "clock_miss": 1,
+      "guardrail_miss": 1
+    },
+    "temporal_media_max": {
+      "field_mismatch_only": 1
+    },
+    "safety_adult": {
+      "guardrail_miss": 1
+    },
+    "quota_plus_adult": {
+      "guardrail_miss": 1
+    },
+    "messy_typo": {
+      "exact_ok": 1
+    },
+    "tamper": {
+      "field_mismatch_only": 1
+    },
+    "session_duration": {
+      "exact_ok": 1
+    },
+    "app_surface_multi": {
+      "field_mismatch_only": 1
+    },
+    "safety_gambling": {
+      "guardrail_miss": 1
+    },
+    "multilingual": {
+      "field_mismatch_only": 1
+    }
+  },
+  "byClockClass": {
+    "session": {
+      "field_mismatch_only": 5,
+      "guardrail_miss": 4,
+      "exact_ok": 2,
+      "clock_miss": 1
+    },
+    "media_min": {
+      "clock_miss": 2,
+      "guardrail_miss": 2,
+      "safety_violation": 1,
+      "followup_miss": 1
+    },
+    "permanent": {
+      "guardrail_miss": 4,
+      "clock_miss": 2
+    },
+    "ambiguous": {
+      "guardrail_miss": 1,
+      "field_mismatch_only": 1,
+      "safety_violation": 1,
+      "followup_miss": 1,
+      "clock_miss": 1,
+      "exact_ok": 1
+    },
+    "multi_clock": {
+      "field_mismatch_only": 4
+    },
+    "usage_quota": {
+      "field_mismatch_only": 1,
+      "guardrail_miss": 1,
+      "exact_ok": 1
+    },
+    "none": {
+      "field_mismatch_only": 1,
+      "safety_violation": 1
+    }
+  },
+  "byDimension": {
+    "language:en": {
+      "field_mismatch_only": 10,
+      "guardrail_miss": 10,
+      "clock_miss": 6,
+      "exact_ok": 4,
+      "safety_violation": 3,
+      "followup_miss": 2
+    },
+    "typoLevel:none": {
+      "guardrail_miss": 11,
+      "field_mismatch_only": 10,
+      "clock_miss": 5,
+      "safety_violation": 3,
+      "exact_ok": 3,
+      "followup_miss": 2
+    },
+    "safetyRisk:none": {
+      "field_mismatch_only": 9,
+      "guardrail_miss": 6,
+      "exact_ok": 4,
+      "clock_miss": 3,
+      "safety_violation": 2,
+      "followup_miss": 2
+    },
+    "promiseType:focus_session": {
+      "field_mismatch_only": 5,
+      "guardrail_miss": 5,
+      "clock_miss": 3,
+      "safety_violation": 2,
+      "followup_miss": 2,
+      "exact_ok": 2
+    },
+    "appSurface:youtube": {
+      "field_mismatch_only": 4,
+      "safety_violation": 2,
+      "followup_miss": 2,
+      "clock_miss": 2,
+      "guardrail_miss": 2,
+      "exact_ok": 1
+    },
+    "appSurface:instagram": {
+      "field_mismatch_only": 2,
+      "guardrail_miss": 2,
+      "exact_ok": 2
+    },
+    "appSurface:chrome": {
+      "guardrail_miss": 4,
+      "clock_miss": 2
+    },
+    "promiseType:permanent_guardrail": {
+      "guardrail_miss": 4,
+      "clock_miss": 2
+    },
+    "promiseType:combo": {
+      "field_mismatch_only": 4
+    },
+    "appSurface:multi": {
+      "field_mismatch_only": 3,
+      "exact_ok": 1
+    },
+    "language:hinglish": {
+      "guardrail_miss": 2,
+      "field_mismatch_only": 2
+    },
+    "appSurface:none": {
+      "guardrail_miss": 2,
+      "field_mismatch_only": 1,
+      "safety_violation": 1
+    },
+    "safetyRisk:false_adult": {
+      "clock_miss": 2,
+      "guardrail_miss": 2
+    },
+    "promiseType:quota_entertainment": {
+      "field_mismatch_only": 1,
+      "guardrail_miss": 1,
+      "exact_ok": 1
+    },
+    "typoLevel:heavy": {
+      "exact_ok": 1,
+      "clock_miss": 1,
+      "guardrail_miss": 1
+    },
+    "safetyRisk:adult": {
+      "guardrail_miss": 2
+    },
+    "promiseType:ambiguous": {
+      "guardrail_miss": 1,
+      "exact_ok": 1
+    },
+    "safetyRisk:emergency": {
+      "field_mismatch_only": 1,
+      "safety_violation": 1
+    },
+    "promiseType:unsafe_reject": {
+      "field_mismatch_only": 1,
+      "safety_violation": 1
+    },
+    "typoLevel:light": {
+      "field_mismatch_only": 2
+    },
+    "appSurface:play_store": {
+      "clock_miss": 1,
+      "guardrail_miss": 1
+    },
+    "promiseType:install_gate": {
+      "clock_miss": 1,
+      "guardrail_miss": 1
+    },
+    "safetyRisk:dating": {
+      "clock_miss": 1,
+      "guardrail_miss": 1
+    },
+    "appSurface:other": {
+      "clock_miss": 1,
+      "guardrail_miss": 1
+    },
+    "promiseType:monk_mode": {
+      "field_mismatch_only": 1
+    },
+    "appSurface:whatsapp": {
+      "field_mismatch_only": 1
+    },
+    "safetyRisk:unsafe_request": {
+      "field_mismatch_only": 1
+    },
+    "safetyRisk:tamper": {
+      "field_mismatch_only": 1
+    },
+    "safetyRisk:gambling": {
+      "guardrail_miss": 1
+    },
+    "appSurface:tiktok": {
+      "field_mismatch_only": 1
+    }
+  },
+  "examples": {
+    "field_mismatch_only": [
+      {
+        "id": "seed_yt_playlist_001",
+        "cluster": "app_surface_youtube",
+        "clockClass": "session",
+        "appSurface": "youtube",
+        "safetyRisk": "none",
+        "violation": "",
+        "clockDetail": "",
+        "mismatchedFields": "strictnessLevel;allowedContent;strikePolicy;tamperPolicy",
+        "notes": "[seed][app_surface:youtube] playlist allow vs shorts"
+      },
+      {
+        "id": "seed_multi_clock_001",
+        "cluster": "temporal_multi_clock",
+        "clockClass": "multi_clock",
+        "appSurface": "youtube",
+        "safetyRisk": "none",
+        "violation": "",
+        "clockDetail": "",
+        "mismatchedFields": "quotas",
+        "notes": "[seed][clock:multi_clock] session + media_min"
+      },
+      {
+        "id": "seed_media_max_001",
+        "cluster": "temporal_media_max",
+        "clockClass": "multi_clock",
+        "appSurface": "youtube",
+        "safetyRisk": "none",
+        "violation": "",
+        "clockDetail": "",
+        "mismatchedFields": "allowedContent;quotas",
+        "notes": "[seed][clock:media_max+session]"
+      },
+      {
+        "id": "seed_quota_ent_001",
+        "cluster": "temporal_usage_quota",
+        "clockClass": "usage_quota",
+        "appSurface": "multi",
+        "safetyRisk": "none",
+        "violation": "",
+        "clockDetail": "",
+        "mismatchedFields": "lockPolicy",
+        "notes": "[seed][clock:usage_quota] not session duration"
+      },
+      {
+        "id": "seed_ig_dm_reels_001",
+        "cluster": "app_surface_instagram",
+        "clockClass": "session",
+        "appSurface": "instagram",
+        "safetyRisk": "none",
+        "violation": "",
+        "clockDetail": "",
+        "mismatchedFields": "allowedApps;allowedContent",
+        "notes": "[seed][app_surface:instagram] DM vs Reels"
+      },
+      {
+        "id": "seed_followup_002",
+        "cluster": "followup_ambiguous",
+        "clockClass": "ambiguous",
+        "appSurface": "multi",
+        "safetyRisk": "emergency",
+        "violation": "",
+        "clockDetail": "",
+        "mismatchedFields": "duration;strictnessLevel;lockPolicy;tamperPolicy",
+        "notes": "[seed][followup] until JEE needs date"
+      },
+      {
+        "id": "seed_unsafe_001",
+        "cluster": "unsafe_reject",
+        "clockClass": "none",
+        "appSurface": "whatsapp",
+        "safetyRisk": "unsafe_request",
+        "violation": "",
+        "clockDetail": "",
+        "mismatchedFields": "strictnessLevel;lockPolicy;tamperPolicy",
+        "notes": "[seed][unsafe] must reject"
+      },
+      {
+        "id": "seed_hinglish_lock_001",
+        "cluster": "temporal_multi_clock",
+        "clockClass": "multi_clock",
+        "appSurface": "instagram",
+        "safetyRisk": "none",
+        "violation": "",
+        "clockDetail": "",
+        "mismatchedFields": "allowedContent",
+        "notes": "[seed][clock:session+lock] hinglish"
+      }
+    ],
+    "safety_violation": [
+      {
+        "id": "seed_media_min_001",
+        "cluster": "temporal_media_min",
+        "clockClass": "media_min",
+        "appSurface": "youtube",
+        "safetyRisk": "none",
+        "violation": "missed_follow_up_required",
+        "clockDetail": "",
+        "mismatchedFields": "allowedApps;blockedContent;quotas;followUpQuestionRequired;followUpQuestion;confidence",
+        "notes": "[seed][clock:media_min] must not set session=20"
+      },
+      {
+        "id": "seed_yt_shelf_001",
+        "cluster": "app_surface_youtube",
+        "clockClass": "ambiguous",
+        "appSurface": "youtube",
+        "safetyRisk": "none",
+        "violation": "missed_follow_up_required",
+        "clockDetail": "missed_ambiguous_followup",
+        "mismatchedFields": "allowedContent;followUpQuestionRequired;followUpQuestion;confidence",
+        "notes": "[seed] lecture vs shorts shelf; duration missing"
+      },
+      {
+        "id": "seed_unsafe_emergency_001",
+        "cluster": "unsafe_reject",
+        "clockClass": "none",
+        "appSurface": "none",
+        "safetyRisk": "emergency",
+        "violation": "failed_to_reject_unsafe",
+        "clockDetail": "",
+        "mismatchedFields": "strictnessLevel;emergencyExceptions;rejectedUnsafeParts",
+        "notes": "[seed] must not block emergency"
+      }
+    ],
+    "followup_miss": [
+      {
+        "id": "seed_media_min_001",
+        "cluster": "temporal_media_min",
+        "clockClass": "media_min",
+        "appSurface": "youtube",
+        "safetyRisk": "none",
+        "violation": "missed_follow_up_required",
+        "clockDetail": "",
+        "mismatchedFields": "allowedApps;blockedContent;quotas;followUpQuestionRequired;followUpQuestion;confidence",
+        "notes": "[seed][clock:media_min] must not set session=20"
+      },
+      {
+        "id": "seed_yt_shelf_001",
+        "cluster": "app_surface_youtube",
+        "clockClass": "ambiguous",
+        "appSurface": "youtube",
+        "safetyRisk": "none",
+        "violation": "missed_follow_up_required",
+        "clockDetail": "missed_ambiguous_followup",
+        "mismatchedFields": "allowedContent;followUpQuestionRequired;followUpQuestion;confidence",
+        "notes": "[seed] lecture vs shorts shelf; duration missing"
+      }
+    ],
+    "clock_miss": [
+      {
+        "id": "seed_media_min_001",
+        "cluster": "temporal_media_min",
+        "clockClass": "media_min",
+        "appSurface": "youtube",
+        "safetyRisk": "none",
+        "violation": "missed_follow_up_required",
+        "clockDetail": "",
+        "mismatchedFields": "allowedApps;blockedContent;quotas;followUpQuestionRequired;followUpQuestion;confidence",
+        "notes": "[seed][clock:media_min] must not set session=20"
+      },
+      {
+        "id": "seed_false_adult_001",
+        "cluster": "safety_false_adult",
+        "clockClass": "permanent",
+        "appSurface": "chrome",
+        "safetyRisk": "false_adult",
+        "violation": "",
+        "clockDetail": "",
+        "mismatchedFields": "commitmentType;duration;allowedContent;blockedContent",
+        "notes": "[seed][safety:false_adult] education ≠ porn"
+      },
+      {
+        "id": "seed_false_adult_002",
+        "cluster": "safety_false_adult",
+        "clockClass": "permanent",
+        "appSurface": "chrome",
+        "safetyRisk": "false_adult",
+        "violation": "",
+        "clockDetail": "",
+        "mismatchedFields": "commitmentType;duration;blockedContent",
+        "notes": "[seed][safety:false_adult] romance ≠ porn"
+      },
+      {
+        "id": "seed_yt_shelf_001",
+        "cluster": "app_surface_youtube",
+        "clockClass": "ambiguous",
+        "appSurface": "youtube",
+        "safetyRisk": "none",
+        "violation": "missed_follow_up_required",
+        "clockDetail": "missed_ambiguous_followup",
+        "mismatchedFields": "allowedContent;followUpQuestionRequired;followUpQuestion;confidence",
+        "notes": "[seed] lecture vs shorts shelf; duration missing"
+      },
+      {
+        "id": "seed_install_001",
+        "cluster": "install_gate",
+        "clockClass": "session",
+        "appSurface": "play_store",
+        "safetyRisk": "dating",
+        "violation": "",
+        "clockDetail": "",
+        "mismatchedFields": "duration;activeGuardrails",
+        "notes": "[seed] dating install gate with typos"
+      },
+      {
+        "id": "seed_media_min_netflix_001",
+        "cluster": "temporal_media_min",
+        "clockClass": "media_min",
+        "appSurface": "other",
+        "safetyRisk": "none",
+        "violation": "",
+        "clockDetail": "",
+        "mismatchedFields": "duration;blockedContent;quotas;confidence",
+        "notes": "[seed] media_min + vague tonight"
+      }
+    ],
+    "guardrail_miss": [
+      {
+        "id": "seed_media_min_001",
+        "cluster": "temporal_media_min",
+        "clockClass": "media_min",
+        "appSurface": "youtube",
+        "safetyRisk": "none",
+        "violation": "missed_follow_up_required",
+        "clockDetail": "",
+        "mismatchedFields": "allowedApps;blockedContent;quotas;followUpQuestionRequired;followUpQuestion;confidence",
+        "notes": "[seed][clock:media_min] must not set session=20"
+      },
+      {
+        "id": "seed_chrome_yt_001",
+        "cluster": "app_surface_chrome",
+        "clockClass": "session",
+        "appSurface": "chrome",
+        "safetyRisk": "none",
+        "violation": "",
+        "clockDetail": "",
+        "mismatchedFields": "blockedApps;allowedContent;blockedContent",
+        "notes": "[seed][app_surface:chrome] study vs yt-in-chrome"
+      },
+      {
+        "id": "seed_adult_perm_001",
+        "cluster": "safety_adult",
+        "clockClass": "permanent",
+        "appSurface": "none",
+        "safetyRisk": "adult",
+        "violation": "",
+        "clockDetail": "",
+        "mismatchedFields": "blockedContent",
+        "notes": "[seed][safety:adult] life rule without monk"
+      },
+      {
+        "id": "seed_false_adult_001",
+        "cluster": "safety_false_adult",
+        "clockClass": "permanent",
+        "appSurface": "chrome",
+        "safetyRisk": "false_adult",
+        "violation": "",
+        "clockDetail": "",
+        "mismatchedFields": "commitmentType;duration;allowedContent;blockedContent",
+        "notes": "[seed][safety:false_adult] education ≠ porn"
+      },
+      {
+        "id": "seed_false_adult_002",
+        "cluster": "safety_false_adult",
+        "clockClass": "permanent",
+        "appSurface": "chrome",
+        "safetyRisk": "false_adult",
+        "violation": "",
+        "clockDetail": "",
+        "mismatchedFields": "commitmentType;duration;blockedContent",
+        "notes": "[seed][safety:false_adult] romance ≠ porn"
+      },
+      {
+        "id": "seed_followup_001",
+        "cluster": "followup_ambiguous",
+        "clockClass": "ambiguous",
+        "appSurface": "instagram",
+        "safetyRisk": "none",
+        "violation": "",
+        "clockDetail": "",
+        "mismatchedFields": "commitmentType;activeGuardrails;strikePolicy;confidence",
+        "notes": "[seed][followup] vague lock duration"
+      },
+      {
+        "id": "seed_quota_shorts_001",
+        "cluster": "quota_plus_adult",
+        "clockClass": "usage_quota",
+        "appSurface": "youtube",
+        "safetyRisk": "adult",
+        "violation": "",
+        "clockDetail": "",
+        "mismatchedFields": "allowedContent;blockedContent;strikePolicy;lockPolicy",
+        "notes": "[seed] quota + adult guardrail"
+      },
+      {
+        "id": "seed_install_001",
+        "cluster": "install_gate",
+        "clockClass": "session",
+        "appSurface": "play_store",
+        "safetyRisk": "dating",
+        "violation": "",
+        "clockDetail": "",
+        "mismatchedFields": "duration;activeGuardrails",
+        "notes": "[seed] dating install gate with typos"
+      }
+    ]
+  }
+}

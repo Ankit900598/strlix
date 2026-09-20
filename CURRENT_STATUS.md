@@ -1,0 +1,74 @@
+# Current Status
+
+Read this after `PROJECT_CONTEXT.md`.
+
+## Current Repo
+
+Path:
+
+```text
+C:\Users\HP\strlix
+```
+
+Current app package:
+
+```text
+com.phonecodex.app
+```
+
+The name may change later. Do not rename packages casually.
+
+## Built So Far
+
+- Android Kotlin app exists and runs on the phone.
+- Accessibility-based foreground detection exists.
+- Overlay-based warn/block experience exists.
+- Local policy models and `PolicyEngine` exist.
+- Session and permanent guardrail concepts exist.
+- Backend classifier exists.
+- Azure OpenAI path exists for AI classification experiments.
+- AI lab has prompt/eval infrastructure for classifier and promise compiler research.
+
+## Active Risk
+
+The most important risk is reliability on the phone:
+
+- overlay flicker
+- false blocks
+- false allows
+- slow UI
+- noisy accessibility text
+- Chrome/YouTube edge cases
+- PiP/floating video escapes
+- tamper by disabling Accessibility
+
+Every task should improve measured reliability, clarity, or speed.
+
+Home now has a **Protection Reliability Gate**: Protected only if Accessibility is actually bound (alive or fresh heartbeat) **and** there is an active commitment or an enabled life rule. “Installed” is not “protecting.”
+
+## What Is Not Product-Ready
+
+- Full natural-language Promise Compiler enforcement is not fully product-ready.
+- Vision classification is future work.
+- Full phone operator AI is long-term.
+- Payments/accountability penalties are future work.
+- Public launch is not ready.
+
+## How To Verify Work
+
+Prefer this loop:
+
+```text
+build -> install/run on phone -> start commitment -> test real app -> inspect logs -> record pass/fail
+```
+
+For Android work, phone verification matters more than desktop-only tests.
+
+For AI work, evals matter more than one impressive example.
+
+## Current Default Work Split
+
+- Android/main app: reliability, UX clarity, speed, policy wiring.
+- AI lab: promise understanding, classifier evals, ambiguity handling.
+- Azure/backend: stable API, cost/latency tracking, model experiments.
+- Product/strategy: keep the whole system aligned with the commitment OS vision.

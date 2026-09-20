@@ -12,5 +12,10 @@ data class ClassificationRequest(
     val activeGuardrails: List<String>,
     val commitmentType: String,
     val sessionCounters: Map<String, Int>?,
-    val limitState: String?
+    val limitState: String?,
+    /**
+     * Optional downscaled JPEG (base64). Never log this field.
+     * Backend treats it as advisory counsel and may reject unless AZURE_VISION_EXPERIMENT=1.
+     */
+    val imageJpegBase64: String? = null
 )

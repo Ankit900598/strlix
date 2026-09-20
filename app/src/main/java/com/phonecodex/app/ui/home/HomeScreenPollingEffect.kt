@@ -7,6 +7,7 @@ import androidx.compose.runtime.LaunchedEffect
 import com.phonecodex.app.accessibility.AccessibilityHealthChecker
 import com.phonecodex.app.data.ProtectionViolationStore
 import com.phonecodex.app.domain.model.SessionStatus
+import com.phonecodex.app.domain.protection.ProtectionHeartbeatLogic
 import com.phonecodex.app.domain.session.SessionExpiryPolicy
 import com.phonecodex.app.protection.ProtectionHeartbeatController
 import kotlinx.coroutines.Dispatchers
@@ -69,21 +70,41 @@ internal fun HomeAdvancedInspectorPollingEffect(
 }
 
 private suspend fun pollCoreHomeState(state: HomeScreenState) {
-    val accessibilityEnabled = withContext(Dispatchers.IO) {
-        AccessibilityHealthChecker.isPhoneCodexAccessibilityEnabled(state.context)
+    val coreSnapshot = withContext(Dispatchers.IO) {
+        Pair(
+            AccessibilityHealthChecker.isPhoneCodexAccessibilityEnabled(state.context),
+            state.runtimeDiagStore.getHeartbeat()
+        )
     }
+    val accessibilityEnabled = coreSnapshot.first
+    val heartbeat = coreSnapshot.second
     if (accessibilityEnabled != state.isAccessibilityEnabled) {
         state.isAccessibilityEnabled = accessibilityEnabled
     }
+    if (heartbeat.serviceAlive != state.isAccessibilityAlive) {
+        state.isAccessibilityAlive = heartbeat.serviceAlive
+    }
+    if (heartbeat.lastEventMillis != state.lastHeartbeatMillis) {
+        state.lastHeartbeatMillis = heartbeat.lastEventMillis
+        state.lastHeartbeatPackage = heartbeat.packageName
+        state.lastHeartbeatReason = heartbeat.reason
+    }
 
     val nowMillis = System.currentTimeMillis()
+    if (state.nowMillis != nowMillis) {
+        state.nowMillis = nowMillis
+    }
     val currentSession = withContext(Dispatchers.IO) {
         state.sessionStore.getStoredSession()
     }
 
     if (
         currentSession != null &&
-        SessionExpiryPolicy.isExpired(currentSession, nowMillis)
+        SessionExpiryPolicy.isExpired(
+            currentSession,
+            nowMillis,
+            state.studyWorldSettingsStore.getSettings().shortFormDailyQuotaLimit
+        )
     ) {
         withContext(Dispatchers.IO) {
             state.sessionStore.clearSession()
@@ -113,11 +134,25 @@ private suspend fun pollCoreHomeState(state: HomeScreenState) {
         state.nowMillis = nowMillis
     }
 
-    if (!accessibilityEnabled && hasActiveOrLockedSession) {
-        withContext(Dispatchers.IO) {
-            state.protectionViolationStore.recordViolation(
-                ProtectionViolationStore.REASON_ACCESSIBILITY_DISABLED_DURING_COMMITMENT
+    if (hasActiveOrLockedSession) {
+        val continuousOff = withContext(Dispatchers.IO) {
+            state.protectionViolationStore.markAccessibilityObserved(
+                accessibilityEnabled = accessibilityEnabled,
+                nowMillis = nowMillis
             )
+        }
+        if (
+            ProtectionHeartbeatLogic.shouldRecordAccessibilityViolation(
+                session = currentSession,
+                accessibilityEnabled = accessibilityEnabled,
+                disabledContinuouslyMillis = continuousOff
+            )
+        ) {
+            withContext(Dispatchers.IO) {
+                state.protectionViolationStore.recordViolation(
+                    ProtectionViolationStore.REASON_ACCESSIBILITY_DISABLED_DURING_COMMITMENT
+                )
+            }
         }
         if (state.showAdvancedControls) {
             val violationState = withContext(Dispatchers.IO) {

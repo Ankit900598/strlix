@@ -43,13 +43,15 @@ from promise_models import (  # noqa: E402
     load_promise_jsonl,
     repo_root,
     safety_violation,
+    score_assistant_ux,
     score_policy,
+    score_temporal_clocks,
 )
 
 
-def run_eval(compiler: Any, cases: list) -> tuple[list[dict[str, Any]], dict[str, float | int]]:
+def run_eval(compiler: Any, cases: list) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    metrics: dict[str, float | int] = {
+    metrics: dict[str, Any] = {
         "total": 0,
         "exact_match": 0,
         "safety_match": 0,
@@ -57,6 +59,15 @@ def run_eval(compiler: Any, cases: list) -> tuple[list[dict[str, Any]], dict[str
         "parse_failures": 0,
         "content_filter_blocks": 0,
         "total_latency_ms": 0.0,
+        "temporal_total": 0,
+        "temporal_ok": 0,
+        "clock_confusion": 0,
+        "clock_class_stats": {},
+        "clarify_ok": 0,
+        "option_ok": 0,
+        "package_leaks": 0,
+        "unsafe_auto_start": 0,
+        "clarify_expected": 0,
     }
     field_match_counts: dict[str, int] = {field: 0 for field in POLICY_FIELDS}
 
@@ -76,9 +87,29 @@ def run_eval(compiler: Any, cases: list) -> tuple[list[dict[str, Any]], dict[str
         violation = safety_violation(case.expected_policy, predicted)
         content_filtered = predicted is None and "content_filter" in (error or "")
         if content_filtered:
-            # Azure blocked the request itself; not a model parse failure,
-            # but still a safety-relevant infra gap (no policy compiled).
             violation = "content_filter_block"
+
+        clock_key = case.clock_class or case.cluster
+        temporal = score_temporal_clocks(case.expected_policy, predicted, clock_key)
+        metrics["temporal_total"] += 1
+        metrics["temporal_ok"] += int(bool(temporal.get("clock_ok")))
+        metrics["clock_confusion"] += int(bool(temporal.get("confusion")))
+        bucket = metrics["clock_class_stats"].setdefault(
+            clock_key, {"n": 0, "ok": 0, "confusion": 0}
+        )
+        bucket["n"] += 1
+        bucket["ok"] += int(bool(temporal.get("clock_ok")))
+        bucket["confusion"] += int(bool(temporal.get("confusion")))
+
+        assistant = score_assistant_ux(case.expected_policy, predicted)
+        if case.expected_policy.get("clarificationRequired") or case.expected_policy.get(
+            "followUpQuestionRequired"
+        ):
+            metrics["clarify_expected"] += 1
+        metrics["clarify_ok"] += int(bool(assistant.get("clarification_required_ok")))
+        metrics["option_ok"] += int(bool(assistant.get("option_quality_ok")))
+        metrics["package_leaks"] += int(bool(assistant.get("package_leak")))
+        metrics["unsafe_auto_start"] += int(bool(assistant.get("unsafe_auto_start")))
 
         metrics["total"] += 1
         metrics["exact_match"] += int(exact)
@@ -93,13 +124,30 @@ def run_eval(compiler: Any, cases: list) -> tuple[list[dict[str, Any]], dict[str
         mismatches = [f for f in POLICY_FIELDS if not field_matches.get(f, False)]
         safety_mismatches = [f for f in SAFETY_CRITICAL_FIELDS if not field_matches.get(f, False)]
 
+        dims = case.dimensions or {}
         rows.append(
             {
                 "id": case.id,
                 "cluster": case.cluster,
+                "clockClass": case.clock_class,
+                "language": str(dims.get("language") or ""),
+                "typoLevel": str(dims.get("typo_level") or ""),
+                "promiseType": str(dims.get("promise_type") or ""),
+                "appSurface": str(dims.get("app_surface") or ""),
+                "timeRole": str(dims.get("time_role") or ""),
+                "safetyRisk": str(dims.get("safety_risk") or ""),
+                "expectedFollowupTag": str(dims.get("expected_followup") if dims else ""),
+                "expectedGuardrailsTag": ",".join(dims.get("expected_guardrails") or []),
                 "adapter": compiler.name,
                 "exactMatch": str(exact),
                 "safetyMatch": str(safety),
+                "clockOk": str(bool(temporal.get("clock_ok"))),
+                "clockConfusion": str(bool(temporal.get("confusion"))),
+                "clockDetail": temporal.get("detail") or "",
+                "clarifyOk": str(bool(assistant.get("clarification_required_ok"))),
+                "optionOk": str(bool(assistant.get("option_quality_ok"))),
+                "packageLeak": str(bool(assistant.get("package_leak"))),
+                "unsafeAutoStart": str(bool(assistant.get("unsafe_auto_start"))),
                 "safetyViolation": violation or "",
                 "parseError": error or "",
                 "mismatchedFields": ";".join(mismatches),
@@ -110,6 +158,12 @@ def run_eval(compiler: Any, cases: list) -> tuple[list[dict[str, Any]], dict[str
                 "predictedGuardrails": ",".join((predicted or {}).get("activeGuardrails", [])),
                 "followUpExpected": str(case.expected_policy.get("followUpQuestionRequired", False)),
                 "followUpPredicted": str((predicted or {}).get("followUpQuestionRequired", "")),
+                "expectedQuotas": json.dumps(
+                    case.expected_policy.get("quotas", []), ensure_ascii=False
+                ),
+                "predictedQuotas": json.dumps(
+                    (predicted or {}).get("quotas", []), ensure_ascii=False
+                ),
                 "latencyMs": f"{latency_ms:.1f}",
                 "predictedPolicy": json.dumps(predicted, ensure_ascii=False) if predicted else "",
                 "notes": case.notes,
@@ -137,7 +191,7 @@ def write_report(rows: list[dict[str, Any]], path: Path, metadata: dict[str, Any
     )
 
 
-def print_summary(metrics: dict[str, float | int], adapter_name: str) -> None:
+def print_summary(metrics: dict[str, Any], adapter_name: str) -> None:
     total = int(metrics["total"])
     exact = int(metrics["exact_match"])
     safety = int(metrics["safety_match"])
@@ -150,6 +204,40 @@ def print_summary(metrics: dict[str, float | int], adapter_name: str) -> None:
     print(f"Content filter blocks: {int(metrics['content_filter_blocks'])}")
     avg = float(metrics["total_latency_ms"]) / total if total else 0.0
     print(f"Avg latency/case: {avg:.0f}ms")
+
+    tt = int(metrics.get("temporal_total") or 0)
+    if tt:
+        tok = int(metrics.get("temporal_ok") or 0)
+        conf = int(metrics.get("clock_confusion") or 0)
+        print(f"Temporal clock OK: {tok / tt:.1%} ({tok}/{tt})")
+        print(f"Clock confusions (media↔budget/lock↔session): {conf}")
+        stats = metrics.get("clock_class_stats") or {}
+        if stats:
+            print("\nPer clockClass:")
+            for cc, b in sorted(stats.items(), key=lambda kv: -kv[1]["n"]):
+                n = b["n"]
+                print(f"  {cc}: clock_ok {b['ok']}/{n} confusion {b['confusion']}")
+
+    print(
+        f"Clarification agreement: {int(metrics.get('clarify_ok') or 0) / total:.1%}"
+        if total
+        else "Clarification agreement: n/a"
+    )
+    print(
+        f"Option quality: {int(metrics.get('option_ok') or 0) / total:.1%}"
+        if total
+        else "Option quality: n/a"
+    )
+    print(
+        f"Package leak rate: {int(metrics.get('package_leaks') or 0) / total:.1%}"
+        if total
+        else "Package leak rate: n/a"
+    )
+    print(
+        f"Unsafe auto-start proxy: {int(metrics.get('unsafe_auto_start') or 0) / total:.1%}"
+        if total
+        else "Unsafe auto-start proxy: n/a"
+    )
 
     rates = metrics.get("field_match_rates")
     if isinstance(rates, dict):
@@ -235,6 +323,25 @@ def main() -> int:
         "parseFailures": int(metrics["parse_failures"]),
         "contentFilterBlocks": int(metrics["content_filter_blocks"]),
         "fieldMatchRates": metrics.get("field_match_rates", {}),
+        "temporalClockOkRate": (
+            round(int(metrics["temporal_ok"]) / int(metrics["temporal_total"]), 4)
+            if int(metrics.get("temporal_total") or 0)
+            else None
+        ),
+        "clockConfusions": int(metrics.get("clock_confusion") or 0),
+        "clockClassStats": metrics.get("clock_class_stats", {}),
+        "clarificationAgreementRate": (
+            round(int(metrics["clarify_ok"]) / total, 4) if total else 0.0
+        ),
+        "optionQualityRate": (
+            round(int(metrics["option_ok"]) / total, 4) if total else 0.0
+        ),
+        "packageLeakRate": (
+            round(int(metrics["package_leaks"]) / total, 4) if total else 0.0
+        ),
+        "unsafeAutoStartRate": (
+            round(int(metrics["unsafe_auto_start"]) / total, 4) if total else 0.0
+        ),
         "startedAt": started_at.isoformat(),
         "endedAt": ended_at.isoformat(),
     }

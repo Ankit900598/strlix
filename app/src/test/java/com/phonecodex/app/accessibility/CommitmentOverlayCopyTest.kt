@@ -1,5 +1,7 @@
 package com.phonecodex.app.accessibility
 
+import com.phonecodex.app.domain.enforcement.EnforcementReasonCodes
+import com.phonecodex.app.domain.enforcement.SessionEnforcementCopy
 import com.phonecodex.app.domain.model.StrictnessLevel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -39,6 +41,27 @@ class CommitmentOverlayCopyTest {
         assertEquals(
             "Repeated attempts or a strict commitment paused this path.",
             CommitmentOverlayCopy.evidenceLine("LOCK", "")
+        )
+    }
+
+    @Test
+    fun evidenceLine_stripsPermanentGuardrailTechDump() {
+        val cleaned = CommitmentOverlayCopy.evidenceLine(
+            "BLOCK",
+            "Permanent guardrail: Block Porn (matched: strong: porn)"
+        )
+        assertFalse(cleaned.contains("Permanent guardrail", ignoreCase = true))
+        assertFalse(cleaned.contains("matched:", ignoreCase = true))
+        assertEquals(
+            "This doesn’t match your current commitment.",
+            cleaned
+        )
+        assertEquals(
+            SessionEnforcementCopy.ADULT_GUARDRAIL_BLOCK,
+            SessionEnforcementCopy.overlayEvidence(
+                EnforcementReasonCodes.ADULT_BLOCK_GUARDRAIL,
+                "Permanent guardrail: Block Porn (matched: strong: porn)"
+            )
         )
     }
 
@@ -102,6 +125,34 @@ class CommitmentOverlayCopyTest {
     }
 
     @Test
+    fun quotaReminder_keepWatchingNotHome() {
+        assertEquals(
+            "9 shorts left of 10.",
+            CommitmentOverlayCopy.headline(
+                OverlayKind.WARN,
+                EnforcementReasonCodes.QUOTA_ALLOW_COUNT,
+                "9 shorts left of 10."
+            )
+        )
+        assertEquals(
+            SessionEnforcementCopy.QUOTA_KEEP_WATCHING,
+            CommitmentOverlayCopy.primaryActionLabel(
+                OverlayKind.WARN,
+                EnforcementReasonCodes.QUOTA_ALLOW_COUNT
+            )
+        )
+        assertEquals(
+            SessionEnforcementCopy.QUOTA_REMINDER_COMPANION,
+            CommitmentOverlayCopy.companionLine(
+                OverlayKind.WARN,
+                EnforcementReasonCodes.QUOTA_ALLOW_COUNT
+            )
+        )
+        assertTrue(SessionEnforcementCopy.isQuotaReminder(EnforcementReasonCodes.QUOTA_ALLOW_COUNT))
+        assertFalse(SessionEnforcementCopy.isQuotaReminder(EnforcementReasonCodes.QUOTA_BLOCK_EXCEEDED))
+    }
+
+    @Test
     fun headline_isContractToneNotShame() {
         assertEquals("Drift from your promise", CommitmentOverlayCopy.headline(OverlayKind.WARN))
         assertEquals("Outside your promise", CommitmentOverlayCopy.headline(OverlayKind.BLOCK))
@@ -123,6 +174,45 @@ class CommitmentOverlayCopyTest {
         assertEquals("STRICT", CommitmentOverlayCopy.strictnessCue(StrictnessLevel.STRICT))
         assertEquals("LOCKED", CommitmentOverlayCopy.strictnessCue(StrictnessLevel.LOCKED))
         assertNull(CommitmentOverlayCopy.strictnessCue(null))
+    }
+
+    @Test
+    fun durationUnavailable_hidesPromiseAndForcesContinue() {
+        assertTrue(
+            SessionEnforcementCopy.hidePromiseLine(
+                EnforcementReasonCodes.VIDEO_APP_DURATION_UNAVAILABLE
+            )
+        )
+        assertTrue(
+            SessionEnforcementCopy.forceContinue(
+                EnforcementReasonCodes.VIDEO_APP_DURATION_UNAVAILABLE
+            )
+        )
+        assertTrue(
+            SessionEnforcementCopy.forceContinue(
+                EnforcementReasonCodes.QUOTA_ALLOW_COUNT
+            )
+        )
+        assertEquals(
+            SessionEnforcementCopy.DURATION_UNAVAILABLE,
+            SessionEnforcementCopy.overlayEvidence(
+                EnforcementReasonCodes.VIDEO_APP_DURATION_UNAVAILABLE,
+                "blocked because greater than 2 hours"
+            )
+        )
+        assertFalse(
+            SessionEnforcementCopy.DURATION_UNAVAILABLE.contains("greater than", ignoreCase = true)
+        )
+        assertFalse(
+            SessionEnforcementCopy.DURATION_UNAVAILABLE.contains("blocked because", ignoreCase = true)
+        )
+        assertTrue(
+            CommitmentOverlayCopy.allowsContinue(
+                OverlayKind.WARN,
+                StrictnessLevel.STRICT,
+                forceContinue = true
+            )
+        )
     }
 
     @Test
@@ -152,7 +242,7 @@ class CommitmentOverlayCopyTest {
     fun primaryActionLabels_matchModeJobs() {
         assertEquals(
             "Return to safe path",
-            CommitmentOverlayCopy.primaryActionLabel(OverlayKind.WARN)
+            CommitmentOverlayCopy.primaryActionLabel(OverlayKind.WARN, null)
         )
         assertEquals(
             "Leave this screen",

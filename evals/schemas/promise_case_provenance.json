@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phonecodex.app/evals/promise-case-provenance.schema.json",
+  "title": "PromiseCaseProvenance",
+  "description": "Provenance for generated or curated promise eval cases.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "sourceModel": {
+      "type": "string",
+      "description": "Deployment or 'hand' / 'template'."
+    },
+    "sourceModelFamily": {
+      "type": "string",
+      "description": "Human-readable family e.g. gpt-4.1-mini."
+    },
+    "promptVersion": {
+      "type": "string",
+      "description": "Generator or compiler prompt stem/version."
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "reviewStatus": {
+      "type": "string",
+      "enum": ["pending", "accepted", "rejected", "needs_rewrite"]
+    },
+    "reviewedBy": {
+      "type": ["string", "null"]
+    },
+    "reviewedAt": {
+      "type": ["string", "null"]
+    },
+    "parentSeedId": {
+      "type": ["string", "null"]
+    },
+    "generationBatch": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "sourceModel",
+    "promptVersion",
+    "generatedAt",
+    "reviewStatus"
+  ]
+}

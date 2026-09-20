@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.phonecodex.app.domain.diagnostics.BackendProbeKind
 import com.phonecodex.app.domain.model.ContextSnapshot
 import com.phonecodex.app.domain.model.RecoveryPolicy
 
@@ -75,6 +76,14 @@ internal fun AdvancedPermanentCommitmentsCard(state: HomeScreenState) {
 
 @Composable
 internal fun AdvancedProtectionHealthCard(state: HomeScreenState) {
+    ProtectionReliabilityCard(
+        model = state.protectionReliability,
+        lastCheckSummary = state.lastProtectionCheckSummary,
+        checkInProgress = state.protectionCheckInProgress,
+        onOpenAccessibilitySettings = state::openAccessibilitySettings,
+        onRunProtectionCheck = state::runProtectionCheck
+    )
+    Spacer(modifier = Modifier.height(14.dp))
     CalmCard {
         ProtectionHealthDetails(
             isAccessibilityEnabled = state.isAccessibilityEnabled,
@@ -205,11 +214,23 @@ internal fun AdvancedDebugCard(state: HomeScreenState) {
     CalmCard {
         val probe = state.backendProbeResult
         val backendStatus = when {
-            state.backendTestInProgress -> "Probing…"
-            probe.statusLine == "Not tested yet" -> "Not probed — use Test Backend in diagnostics"
+            state.backendTestInProgress || probe.kind == BackendProbeKind.CHECKING ->
+                probe.statusLine.ifBlank { "Checking backend…" }
+            probe.kind == BackendProbeKind.IDLE ->
+                "Not probed yet — auto-check runs on open, or use Test Backend"
+            probe.kind == BackendProbeKind.BRIDGE_MISSING ->
+                buildString {
+                    append(probe.statusLine)
+                    probe.detail?.takeIf { it.isNotBlank() }?.let { append(" — $it") }
+                }
             else -> buildString {
                 append(probe.statusLine)
-                if (probe.reachable) append(" (reachable)")
+                when (probe.kind) {
+                    BackendProbeKind.REACHABLE -> append(" (reachable)")
+                    BackendProbeKind.STALE_OK -> append(" (stale OK)")
+                    BackendProbeKind.UNREACHABLE -> append(" (unreachable)")
+                    else -> Unit
+                }
                 probe.detail?.takeIf { it.isNotBlank() }?.let { append(" — $it") }
             }
         }

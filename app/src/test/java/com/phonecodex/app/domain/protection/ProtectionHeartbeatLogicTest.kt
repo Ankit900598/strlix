@@ -45,20 +45,51 @@ class ProtectionHeartbeatLogicTest {
         assertTrue(
             ProtectionHeartbeatLogic.shouldRecordAccessibilityViolation(
                 session = activeSession,
-                accessibilityEnabled = false
+                accessibilityEnabled = false,
+                disabledContinuouslyMillis = ProtectionHeartbeatLogic.A11Y_DISABLE_GRACE_MS
             )
         )
         assertFalse(
             ProtectionHeartbeatLogic.shouldRecordAccessibilityViolation(
                 session = activeSession,
-                accessibilityEnabled = true
+                accessibilityEnabled = true,
+                disabledContinuouslyMillis = ProtectionHeartbeatLogic.A11Y_DISABLE_GRACE_MS
             )
         )
         assertFalse(
             ProtectionHeartbeatLogic.shouldRecordAccessibilityViolation(
                 session = null,
-                accessibilityEnabled = false
+                accessibilityEnabled = false,
+                disabledContinuouslyMillis = ProtectionHeartbeatLogic.A11Y_DISABLE_GRACE_MS
             )
+        )
+    }
+
+    @Test
+    fun xiaomiA11yBounce_underGrace_doesNotRecordOrLock() {
+        assertFalse(
+            ProtectionHeartbeatLogic.shouldRecordAccessibilityViolation(
+                session = activeSession,
+                accessibilityEnabled = false,
+                disabledContinuouslyMillis = 3_000L
+            )
+        )
+        assertFalse(
+            ProtectionHeartbeatLogic.shouldLockForAccessibilityOutage(3_000L)
+        )
+    }
+
+    @Test
+    fun sustainedA11yOff_pastGrace_recordsAndLocks() {
+        assertTrue(
+            ProtectionHeartbeatLogic.shouldRecordAccessibilityViolation(
+                session = activeSession,
+                accessibilityEnabled = false,
+                disabledContinuouslyMillis = 25_000L
+            )
+        )
+        assertTrue(
+            ProtectionHeartbeatLogic.shouldLockForAccessibilityOutage(25_000L)
         )
     }
 }

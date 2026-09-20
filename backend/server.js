@@ -7,12 +7,30 @@ const {
   PROMPT_VERSION,
   getClassifierProvider,
   classifyActivity,
+  getVisionDeployment,
+  isVisionExperimentEnabled,
 } = require("./classifierService");
+const {
+  PROMPT_VERSION: PROMISE_COMPILER_PROMPT_VERSION,
+  getPromiseCompilerProvider,
+  compilePromise,
+} = require("./promiseCompilerService");
+const {
+  getSpeechHealth,
+  transcribePromise,
+} = require("./speechTranscriptionService");
+const { researchApp } = require("./appDossierService");
 
-const PORT = 8787;
+const { appAuthMiddleware } = require("./appAuth");
+
+const PORT = Number(process.env.PORT) || 8787;
 const app = express();
 
+// Voice uploads need a larger JSON body; other routes stay lean via separate parsers.
+app.use("/transcribe-promise", express.json({ limit: "6mb" }));
+app.use("/classify", express.json({ limit: "400kb" }));
 app.use(express.json({ limit: "100kb" }));
+app.use(appAuthMiddleware);
 
 const classifierProvider = getClassifierProvider();
 if (classifierProvider) {
@@ -30,8 +48,35 @@ if (classifierProvider) {
   );
 }
 
+const promiseCompilerProvider = getPromiseCompilerProvider();
+if (promiseCompilerProvider) {
+  console.log(
+    JSON.stringify({
+      event: "promise_compiler_startup",
+      provider: promiseCompilerProvider.kind,
+      deployment: promiseCompilerProvider.deployment,
+      promptVersion: PROMISE_COMPILER_PROMPT_VERSION,
+    })
+  );
+} else {
+  console.warn(
+    "Promise compiler not configured: set AZURE_OPENAI_* env vars or OPENAI_API_KEY"
+  );
+}
+
+const speechHealthAtBoot = getSpeechHealth();
+console.log(
+  JSON.stringify({
+    event: "speech_startup",
+    configured: speechHealthAtBoot.configured,
+    region: speechHealthAtBoot.region,
+    language: speechHealthAtBoot.language,
+  })
+);
+
 app.get("/health", (_req, res) => {
   const provider = getClassifierProvider();
+  const promiseCompiler = getPromiseCompilerProvider();
   res.json({
     ok: true,
     classifier: provider
@@ -41,7 +86,46 @@ app.get("/health", (_req, res) => {
           promptVersion: PROMPT_VERSION,
         }
       : null,
+    promiseCompiler: promiseCompiler
+      ? {
+          provider: promiseCompiler.kind,
+          deployment: promiseCompiler.deployment,
+          promptVersion: PROMISE_COMPILER_PROMPT_VERSION,
+        }
+      : null,
+    speech: getSpeechHealth(),
+    visionExperiment: {
+      enabled: isVisionExperimentEnabled(),
+      deployment: getVisionDeployment(),
+    },
+    modelLadder: {
+      compiler: promiseCompiler ? promiseCompiler.deployment : null,
+      classifier: provider ? provider.deployment : null,
+      vision: getVisionDeployment(),
+      speech: getSpeechHealth().model,
+    },
+    appDossier: true,
   });
+});
+
+app.post("/research-app", async (req, res) => {
+  try {
+    const result = await researchApp(req.body || {});
+    return res.json(result);
+  } catch (err) {
+    const status = err.statusCode || 500;
+    console.error(
+      JSON.stringify({
+        event: "research_app_error",
+        message: err.message,
+        statusCode: status,
+      })
+    );
+    return res.status(status).json({
+      error: status === 400 ? err.message : "App research failed",
+      detail: err.message,
+    });
+  }
 });
 
 app.post("/classify", async (req, res) => {
@@ -81,6 +165,101 @@ app.post("/classify", async (req, res) => {
       error: status === 500 ? "Classification failed" : err.message,
       detail: err.message,
     });
+  }
+});
+
+app.post("/compile-promise", async (req, res) => {
+  try {
+    const body = req.body || {};
+    const promise = body.promise;
+    const selectedClarificationOptionId =
+      body.selectedClarificationOptionId || body.selectedOptionId || null;
+
+    if (typeof promise !== "string" || promise.trim().length === 0) {
+      return res.status(400).json({
+        error: "promise must be a non-empty string",
+      });
+    }
+
+    if (!getPromiseCompilerProvider()) {
+      return res.status(503).json({
+        error:
+          "Promise compiler unavailable: set AZURE_OPENAI_* env vars or OPENAI_API_KEY",
+      });
+    }
+
+    const result = await compilePromise(promise, {
+      selectedClarificationOptionId,
+    });
+    return res.json(result);
+  } catch (err) {
+    if (err.statusCode === 502 && err.raw) {
+      return res.status(502).json({
+        error: err.message,
+        raw: err.raw,
+      });
+    }
+
+    console.error(
+      JSON.stringify({
+        event: "compile_promise_error",
+        message: err.message,
+        statusCode: err.statusCode || 500,
+      })
+    );
+
+    const status = err.statusCode || 500;
+    return res.status(status).json({
+      error:
+        status === 500 ? "Promise compilation failed" : err.message,
+      detail: err.message,
+    });
+  }
+});
+
+/**
+ * Voice promise input — transcript only. Never starts enforcement.
+ * Body: { audioBase64, audioFormat? } OR { transcript } OR { mock: true }.
+ */
+app.post("/transcribe-promise", async (req, res) => {
+  try {
+    const body = req.body || {};
+    const started = Date.now();
+    const result = await transcribePromise(body);
+
+    console.log(
+      JSON.stringify({
+        event: "transcribe_promise_ok",
+        provider: result.provider,
+        language: result.language,
+        latencyMs: result.latencyMs,
+        transcriptChars: result.transcript ? result.transcript.length : 0,
+        confidence: result.confidence,
+        wallMs: Date.now() - started,
+      })
+    );
+
+    return res.json(result);
+  } catch (err) {
+    console.error(
+      JSON.stringify({
+        event: "transcribe_promise_error",
+        message: err.message,
+        statusCode: err.statusCode || 500,
+      })
+    );
+
+    const status = err.statusCode || 500;
+    const payload = {
+      ok: false,
+      error:
+        status === 500 ? "Promise transcription failed" : err.message,
+      detail: err.message,
+    };
+    if (status === 502 && err.raw) {
+      payload.raw = err.raw;
+    }
+    return res.status(status).json(payload);
   }
 });
 

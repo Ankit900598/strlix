@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phonecodex.app/evals/promise-case-dimensions.schema.json",
+  "title": "PromiseCaseDimensions",
+  "description": "Eval dimension tags for Promise Compiler / messy commitment cases. Optional on legacy cases; required on new AI Lab gold.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "language": {
+      "type": "string",
+      "enum": ["en", "hi", "hinglish", "ta", "te", "bn", "mr", "mixed", "other"],
+      "description": "Primary language / code-switch style of userPromise."
+    },
+    "typo_level": {
+      "type": "string",
+      "enum": ["none", "light", "heavy"],
+      "description": "Spelling / keyboard messiness."
+    },
+    "promise_type": {
+      "type": "string",
+      "enum": [
+        "focus_session",
+        "quota_entertainment",
+        "permanent_guardrail",
+        "monk_mode",
+        "install_gate",
+        "time_threshold",
+        "combo",
+        "ambiguous",
+        "unsafe_reject"
+      ]
+    },
+    "app_surface": {
+      "type": "string",
+      "enum": [
+        "none",
+        "youtube",
+        "instagram",
+        "chrome",
+        "whatsapp",
+        "tiktok",
+        "reddit",
+        "play_store",
+        "multi",
+        "other"
+      ],
+      "description": "Primary in-app surface the promise cares about."
+    },
+    "time_role": {
+      "type": "string",
+      "enum": [
+        "none",
+        "session",
+        "media_max",
+        "media_min",
+        "usage_quota",
+        "lock",
+        "permanent",
+        "ambiguous",
+        "multi_clock"
+      ],
+      "description": "Which temporal clock the numbers in the promise belong to (FIVE CLOCKS)."
+    },
+    "safety_risk": {
+      "type": "string",
+      "enum": [
+        "none",
+        "adult",
+        "false_adult",
+        "tamper",
+        "emergency",
+        "unsafe_request",
+        "gambling",
+        "dating"
+      ]
+    },
+    "expected_followup": {
+      "type": "boolean",
+      "description": "Whether gold requires followUpQuestionRequired=true."
+    },
+    "expected_guardrails": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Guardrail ids expected in activeGuardrails (may be empty)."
+    }
+  },
+  "required": [
+    "language",
+    "typo_level",
+    "promise_type",
+    "app_surface",
+    "time_role",
+    "safety_risk",
+    "expected_followup",
+    "expected_guardrails"
+  ]
+}

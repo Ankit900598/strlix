@@ -11,7 +11,8 @@ object ClassifyRequestBuilder {
         appLabel: String?,
         screenText: String,
         session: FocusSession,
-        enabledGuardrailIds: List<String>
+        enabledGuardrailIds: List<String>,
+        imageJpegBase64: String? = null
     ): ClassificationRequest {
         val counters = mutableMapOf<String, Int>()
         if (session.attemptCount > 0) {
@@ -27,7 +28,8 @@ object ClassifyRequestBuilder {
             activeGuardrails = enabledGuardrailIds.map(::mapGuardrailIdForBackend),
             commitmentType = inferCommitmentType(session.goal, session),
             sessionCounters = counters.takeIf { it.isNotEmpty() },
-            limitState = "n/a"
+            limitState = "n/a",
+            imageJpegBase64 = imageJpegBase64
         )
     }
 

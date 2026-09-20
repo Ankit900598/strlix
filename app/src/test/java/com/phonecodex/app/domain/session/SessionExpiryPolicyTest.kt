@@ -40,4 +40,20 @@ class SessionExpiryPolicyTest {
         val endedSession = session.copy(status = SessionStatus.ENDED)
         assertFalse(SessionExpiryPolicy.isExpired(endedSession, 20_000L))
     }
+
+    @Test
+    fun shortsQuota_extendsPastThirtyMinuteDeadlineUntilMidnight() {
+        val zone = java.time.ZoneId.of("UTC")
+        val start = java.time.Instant.parse("2026-09-19T10:00:00Z").toEpochMilli()
+        val thirtyMinDeadline = start + 30L * 60L * 1000L
+        val quotaSession = session.copy(
+            startTimeMillis = start,
+            deadlineMillis = thirtyMinDeadline
+        )
+        val thirtyOneMinLater = start + 31L * 60L * 1000L
+        assertTrue(SessionExpiryPolicy.isExpired(quotaSession, thirtyOneMinLater))
+        assertFalse(
+            SessionExpiryPolicy.isExpired(quotaSession, thirtyOneMinLater, 10, zone)
+        )
+    }
 }

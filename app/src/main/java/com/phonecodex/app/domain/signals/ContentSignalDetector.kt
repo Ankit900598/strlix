@@ -1,5 +1,8 @@
 package com.phonecodex.app.domain.signals
 
+import com.phonecodex.app.domain.enforcement.AccessibilityUrlExtractor
+import com.phonecodex.app.domain.enforcement.VideoPlatformRegistry
+import com.phonecodex.app.domain.guardrail.AdultContentLaw
 import com.phonecodex.app.domain.model.ContentSignals
 
 class ContentSignalDetector {
@@ -8,16 +11,16 @@ class ContentSignalDetector {
         val matchedSignals = mutableListOf<String>()
         val normalizedText = screenText.lowercase()
 
-        val isYouTubeShorts = packageName == YOUTUBE_PACKAGE &&
+        val isYouTubeShorts = VideoPlatformRegistry.isOfficialYouTube(packageName) &&
             detectYouTubeShortsBlock(normalizedText, matchedSignals)
 
-        val isLikelySearchOrLecture = packageName == YOUTUBE_PACKAGE &&
+        val isLikelySearchOrLecture = VideoPlatformRegistry.isOfficialYouTube(packageName) &&
             detectYouTubeStudyLikeContent(normalizedText, matchedSignals)
 
-        val isChromeAdultOrPorn = packageName == CHROME_PACKAGE &&
-            detectChromeAdultContent(normalizedText, matchedSignals)
+        val isChromeAdultOrPorn = VideoPlatformRegistry.isChrome(packageName) &&
+            detectChromeAdultContent(packageName, screenText, matchedSignals)
 
-        val isChromeStudyLike = packageName == CHROME_PACKAGE &&
+        val isChromeStudyLike = VideoPlatformRegistry.isChrome(packageName) &&
             detectChromeStudyLikeContent(normalizedText, matchedSignals)
 
         return ContentSignals(
@@ -56,8 +59,8 @@ class ContentSignalDetector {
             }
         }
 
-        if (normalizedText.contains("/shorts/")) {
-            strongSignals.add("/shorts/")
+        if (AccessibilityUrlExtractor.containsYouTubeShortsUrl(normalizedText)) {
+            strongSignals.add("shorts_url")
         }
 
         val hasPlayerAction = strongSignals.isNotEmpty()
@@ -106,32 +109,41 @@ class ContentSignalDetector {
         normalizedText: String,
         matchedSignals: MutableList<String>
     ): Boolean {
-        var matched = false
-
-        YOUTUBE_STUDY_LIKE_KEYWORDS.forEach { keyword ->
-            if (normalizedText.contains(keyword)) {
-                matchedSignals.add("youtube_study_like:$keyword")
-                matched = true
-            }
+        val hits = YOUTUBE_STUDY_LIKE_KEYWORDS.filter { keyword ->
+            normalizedText.contains(keyword)
         }
+        if (hits.isEmpty()) return false
 
-        return matched
+        // Single weak tokens like "search" / "playlist" alone must not hard-ALLOW.
+        val strongHits = hits.filter { it !in YOUTUBE_STUDY_WEAK_ALONE }
+        val allow = strongHits.isNotEmpty() || hits.size >= 2
+        if (!allow) return false
+
+        hits.forEach { keyword ->
+            matchedSignals.add("youtube_study_like:$keyword")
+        }
+        return true
     }
 
     private fun detectChromeAdultContent(
-        normalizedText: String,
+        packageName: String,
+        screenText: String,
         matchedSignals: MutableList<String>
     ): Boolean {
-        var matched = false
-
-        CHROME_ADULT_KEYWORDS.forEach { keyword ->
-            if (normalizedText.contains(keyword)) {
-                matchedSignals.add("chrome_adult:$keyword")
-                matched = true
-            }
+        val verdict = AdultContentLaw.inspect(
+            packageName,
+            screenText
+        )
+        if (!verdict.isHardBlock) {
+            return false
         }
-
-        return matched
+        verdict.strongSites.forEach { signal ->
+            matchedSignals.add("chrome_adult:$signal")
+        }
+        verdict.weakWords.forEach { signal ->
+            matchedSignals.add("chrome_adult:$signal")
+        }
+        return true
     }
 
     private fun detectChromeStudyLikeContent(
@@ -151,9 +163,6 @@ class ContentSignalDetector {
     }
 
     companion object {
-        private const val YOUTUBE_PACKAGE = "com.google.android.youtube"
-        private const val CHROME_PACKAGE = "com.android.chrome"
-
         private val SHORTS_WORD_PATTERN = Regex("\\bshorts\\b")
 
         private val SHORTS_NAV_SELECTED_PATTERNS = listOf(
@@ -195,15 +204,9 @@ class ContentSignalDetector {
             "algorithm"
         )
 
-        private val CHROME_ADULT_KEYWORDS = listOf(
-            "porn",
-            "xxx",
-            "sex",
-            "nude",
-            "onlyfans",
-            "adult",
-            "xvideos",
-            "pornhub"
+        private val YOUTUBE_STUDY_WEAK_ALONE = setOf(
+            "search",
+            "playlist"
         )
 
         private val CHROME_STUDY_LIKE_KEYWORDS = listOf(

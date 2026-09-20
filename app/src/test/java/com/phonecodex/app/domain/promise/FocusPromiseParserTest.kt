@@ -442,6 +442,56 @@ class FocusPromiseParserTest {
     }
 
     @Test
+    fun messyAllowLongerThan50ForOneHours_session60Min50_noClarification() {
+        val draft = parser.parse(
+            "allow video longer than 50 min for one hours shorter video block"
+        )
+
+        assertEquals(60, draft.sessionDurationMinutes)
+        assertFalse(draft.needsClarification)
+        assertNull(draft.clarificationQuestion)
+        assertTrue(
+            draft.contentRules.any {
+                it.operator == "gt" &&
+                    it.value == 50 &&
+                    it.action == ContentRuleAction.ALLOW
+            }
+        )
+        assertTrue(
+            draft.contentRules.any {
+                it.action == ContentRuleAction.BLOCK &&
+                    (it.operator == "lt" || it.operator == "lte") &&
+                    it.value == 50
+            }
+        )
+        assertEquals(50, PromiseContentRuleSupport.minVideoLengthBlockMinutes(draft))
+    }
+
+    @Test
+    fun messyOneHourPhrases_allBindToSixtyMinutes() {
+        val phrases = listOf(
+            "1 hrs",
+            "1 hr",
+            "one hours",
+            "for one hour",
+            "for 1 hour",
+            "no shorts for 1 hrs",
+            "allow only videos longer than 40 minutes for 1 hrs"
+        )
+        for (phrase in phrases) {
+            val draft = parser.parse(phrase)
+            val stored = ConfirmedPromiseBinder.bind(draft)
+            assertEquals("$phrase session", 60, draft.sessionDurationMinutes)
+            assertEquals("$phrase bound", 60, stored.durationMinutes)
+            assertEquals(
+                "$phrase millis",
+                60 * 60_000L,
+                ConfirmedPromiseBinder.sessionDurationMillis(draft)
+            )
+        }
+    }
+
+    @Test
     fun allowEverythingOnChrome_suggestsAllow() {
         val draft = parser.parse(
             "allow everything on chrome except youtube whose length is greater than 20 min for next 1 hrs"
@@ -451,5 +501,50 @@ class FocusPromiseParserTest {
             AppRuleBehavior.ALLOW,
             draft.suggestedAppRules.first { it.packageName == "com.android.chrome" }.behavior
         )
+    }
+
+    @Test
+    fun netmirrorThisApp_scopesOnlyToNetMirror() {
+        val draft = parser.parse(
+            "block videos longer than 2 hours for 1 hour only on this app netmirror",
+            "app.netmirror.newtv"
+        )
+        assertTrue(draft.scopePackages.contains("app.netmirror.newtv"))
+        assertEquals(
+            "app.netmirror.newtv",
+            ConfirmedPromiseBinder.bind(draft).enforcementScopePackages.single()
+        )
+        assertFalse(draft.scopePackages.contains("com.android.chrome"))
+        assertFalse(draft.scopePackages.contains("com.google.android.youtube"))
+        assertEquals(120, ConfirmedPromiseBinder.bind(draft).maxVideoLengthBlockMinutes)
+    }
+
+    @Test
+    fun thisAppHint_withoutNetMirrorWord_stillScopesHintPackage() {
+        val draft = parser.parse(
+            "only lock this app's content",
+            "app.netmirror.newtv"
+        )
+        assertTrue(draft.scopePackages.contains("app.netmirror.newtv"))
+        assertEquals(
+            AppRuleBehavior.AI_DECIDE,
+            draft.suggestedAppRules.first { it.packageName == "app.netmirror.newtv" }.behavior
+        )
+    }
+
+    @Test
+    fun blockThisAppNetMirror_suggestsBlock() {
+        val draft = parser.parse("block this app netmirror", "app.netmirror.newtv")
+        assertEquals(
+            AppRuleBehavior.BLOCK,
+            draft.suggestedAppRules.first { it.packageName == "app.netmirror.newtv" }.behavior
+        )
+    }
+
+    @Test
+    fun genericTwoHourVideoPromise_doesNotScopeToOnePackage() {
+        val draft = parser.parse("block videos longer than 2 hours for 1 hour")
+        assertTrue(draft.scopePackages.isEmpty())
+        assertTrue(ConfirmedPromiseBinder.bind(draft).enforcementScopePackages.isEmpty())
     }
 }

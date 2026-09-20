@@ -1,0 +1,65 @@
+/**
+ * Offline smoke for backend/appAuth.js
+ * Run: node backend/smoke_app_auth.js
+ */
+const assert = require("assert");
+const { isPublicHealth, requireAppSecret, appAuthMiddleware } = require("./appAuth");
+
+process.env.STRLIX_BACKEND_APP_SECRET = "test-secret";
+
+function fakeRes() {
+  return {
+    statusCode: 200,
+    body: null,
+    status(code) {
+      this.statusCode = code;
+      return this;
+    },
+    json(obj) {
+      this.body = obj;
+      return this;
+    },
+  };
+}
+
+let nextCalled = false;
+requireAppSecret(
+  { get: () => "" },
+  fakeRes(),
+  () => {
+    nextCalled = true;
+  }
+);
+assert.strictEqual(nextCalled, false, "missing secret must not next");
+
+nextCalled = false;
+const denied = fakeRes();
+requireAppSecret({ get: () => "wrong" }, denied, () => {
+  nextCalled = true;
+});
+assert.strictEqual(denied.statusCode, 401);
+assert.strictEqual(nextCalled, false);
+
+nextCalled = false;
+requireAppSecret({ get: (h) => (h === "x-strlix-app-secret" ? "test-secret" : "") }, fakeRes(), () => {
+  nextCalled = true;
+});
+assert.strictEqual(nextCalled, true);
+
+assert.strictEqual(isPublicHealth({ method: "GET", path: "/health" }), true);
+assert.strictEqual(isPublicHealth({ method: "POST", path: "/compile-promise" }), false);
+
+nextCalled = false;
+appAuthMiddleware({ method: "GET", path: "/health", get: () => "" }, fakeRes(), () => {
+  nextCalled = true;
+});
+assert.strictEqual(nextCalled, true, "health stays public");
+
+delete process.env.STRLIX_BACKEND_APP_SECRET;
+nextCalled = false;
+requireAppSecret({ get: () => "" }, fakeRes(), () => {
+  nextCalled = true;
+});
+assert.strictEqual(nextCalled, true, "empty env is local-open");
+
+console.log("ASSERTIONS_PASSED=app_auth");
