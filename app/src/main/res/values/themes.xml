@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <style name="Theme.PhoneCodex" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Opaque full-screen activity. windowIsFloating=true is what makes MIUI look like a panel. -->
+    <style name="Theme.PhoneCodex" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowIsTranslucent">false</item>
+        <item name="android:windowBackground">@color/white</item>
+    </style>
 </resources>

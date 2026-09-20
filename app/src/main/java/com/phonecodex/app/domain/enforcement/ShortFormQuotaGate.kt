@@ -87,7 +87,8 @@ class ShortFormQuotaGate(
         limit: Int,
         allowLongEducational: Boolean = true,
         nowMillis: Long = clock(),
-        enforcementScopePackages: Collection<String> = emptyList()
+        enforcementScopePackages: Collection<String> = emptyList(),
+        contentBrands: Collection<String> = emptyList()
     ): ShortFormQuotaDecision {
         val dayKey = todayKey(nowMillis)
         hydrate(dayKey)
@@ -108,8 +109,14 @@ class ShortFormQuotaGate(
             )
         }
 
-        val scope = enforcementScopePackages.map { it.trim() }.filter { it.isNotEmpty() }.toSet()
-        if (scope.isNotEmpty() && packageName !in scope) {
+        if (
+            !EnforcementScopeLaw.matches(
+                packageName = packageName,
+                screenText = screenText,
+                scopePackages = enforcementScopePackages,
+                contentBrands = contentBrands
+            )
+        ) {
             return ShortFormQuotaDecision(
                 action = ShortFormQuotaAction.NONE,
                 count = currentCount(dayKey),

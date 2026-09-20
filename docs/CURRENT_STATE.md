@@ -65,6 +65,14 @@ Install already on Redmi (`installDebug` succeeded). Backend: `adb reverse tcp:8
 
 **Revisit when:** A real landscape layout for composer / confirmation exists.
 
+### Full-screen, not a floating panel (2026-09-20)
+
+`android:resizeableActivity="false"` on application + MainActivity. PIP off. Theme `windowIsFloating=false` with opaque background. This stops MIUI/Android freeform from opening Strlix as a broken mini window. Overlay enforcement windows are unchanged.
+
+### Reinstall setup truth (2026-09-20)
+
+Accessibility is off after reinstall/update. Protection status is **Needs setup**, primary CTA **Turn on Accessibility**, greeting is not “Ready to keep a promise?”. Leftover session/guardrail/heartbeat cannot flip Protected. Backup restore of a fake “working” home is disabled (`allowBackup=false`).
+
 ### Backend status truth
 
 Probe kinds (`BackendProbeKind`): `REACHABLE` | `UNREACHABLE` | `BRIDGE_MISSING` | `CHECKING` | `STALE_OK` | `IDLE`.

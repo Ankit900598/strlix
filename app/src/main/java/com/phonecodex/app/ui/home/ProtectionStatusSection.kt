@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.phonecodex.app.domain.protection.ProtectionPrimaryAction
+import com.phonecodex.app.domain.protection.ProtectionReliabilityGate
 import com.phonecodex.app.domain.protection.ProtectionReliabilityLevel
 import com.phonecodex.app.domain.protection.ProtectionReliabilityUiModel
 
@@ -27,7 +28,7 @@ internal fun ProtectionReliabilityCard(
     onOpenAccessibilitySettings: () -> Unit,
     onRunProtectionCheck: () -> Unit
 ) {
-    var detailsOpen by remember { mutableStateOf(false) }
+    var detailsOpen by remember(model.level) { mutableStateOf(model.detailsExpandedByDefault) }
     val colors = MaterialTheme.colorScheme
     val headlineColor = when (model.level) {
         ProtectionReliabilityLevel.PROTECTED -> colors.primary
@@ -72,8 +73,9 @@ internal fun ProtectionReliabilityCard(
         if (model.primaryAction == ProtectionPrimaryAction.OPEN_ACCESSIBILITY) {
             Spacer(modifier = Modifier.height(16.dp))
             PrimaryAction(
-                text = model.primaryActionLabel ?: "Turn on protection",
-                onClick = onOpenAccessibilitySettings
+                text = model.primaryActionLabel ?: ProtectionReliabilityGate.ACTION_TURN_ON,
+                onClick = onOpenAccessibilitySettings,
+                modifier = Modifier.testTag("protection_reliability_primary")
             )
         }
         Spacer(modifier = Modifier.height(10.dp))
@@ -121,13 +123,15 @@ internal fun ProtectionSetupCard(onOpenAccessibilitySettings: () -> Unit) {
         )
         Spacer(modifier = Modifier.height(6.dp))
         Text(
-            text = "Turn on the PhoneCodex accessibility service so I can notice when you " +
-                "drift. Until then I can hold a promise, but I cannot protect it.",
+            text = ProtectionReliabilityGate.SUMMARY_NEEDS_SETUP,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(modifier = Modifier.height(16.dp))
-        PrimaryAction(text = "Turn On Protection", onClick = onOpenAccessibilitySettings)
+        PrimaryAction(
+            text = ProtectionReliabilityGate.ACTION_TURN_ON,
+            onClick = onOpenAccessibilitySettings
+        )
     }
 }
 

@@ -37,6 +37,13 @@ class StudyWorldSettingsStore(context: Context) {
                 ?.filter { it.isNotBlank() }
                 ?.distinct()
                 .orEmpty(),
+            enforcementContentBrands = prefs.getStringSet(KEY_ENFORCEMENT_CONTENT_BRANDS, emptySet())
+                ?.filter { it.isNotBlank() }
+                ?.distinct()
+                .orEmpty(),
+            enforcementScopeKind = prefs.getString(KEY_ENFORCEMENT_SCOPE_KIND, null)
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() },
             visionExperimentEnabled = if (prefs.contains(KEY_VISION_EXPERIMENT_ENABLED)) {
                 prefs.getBoolean(KEY_VISION_EXPERIMENT_ENABLED, false)
             } else {
@@ -72,6 +79,11 @@ class StudyWorldSettingsStore(context: Context) {
                 KEY_ENFORCEMENT_SCOPE,
                 settings.enforcementScopePackages.map { it.trim() }.filter { it.isNotEmpty() }.toSet()
             )
+            .putStringSet(
+                KEY_ENFORCEMENT_CONTENT_BRANDS,
+                settings.enforcementContentBrands.map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+            )
+            .putString(KEY_ENFORCEMENT_SCOPE_KIND, settings.enforcementScopeKind)
             // Vision experiment is a debug flag, not a promise clock. Do not wipe it here.
             .commit()
     }
@@ -150,6 +162,8 @@ class StudyWorldSettingsStore(context: Context) {
         private const val KEY_ALLOW_LONG_EDU = "allow_long_educational"
         private const val KEY_TIME_WINDOW_KIND = "time_window_kind"
         private const val KEY_ENFORCEMENT_SCOPE = "enforcement_scope_packages"
+        private const val KEY_ENFORCEMENT_CONTENT_BRANDS = "enforcement_content_brands"
+        private const val KEY_ENFORCEMENT_SCOPE_KIND = "enforcement_scope_kind"
         private const val KEY_VISION_EXPERIMENT_ENABLED = "vision_experiment_enabled"
         private const val SENTINEL_NONE = -1
 

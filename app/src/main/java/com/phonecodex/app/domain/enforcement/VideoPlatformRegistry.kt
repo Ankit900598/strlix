@@ -147,6 +147,18 @@ object VideoPlatformRegistry {
         return packageName in scope
     }
 
+    fun isInEnforcementScope(
+        packageName: String,
+        screenText: String,
+        enforcementScopePackages: Collection<String>,
+        contentBrands: Collection<String> = emptyList()
+    ): Boolean = EnforcementScopeLaw.matches(
+        packageName = packageName,
+        screenText = screenText,
+        scopePackages = enforcementScopePackages,
+        contentBrands = contentBrands
+    )
+
     fun canonicalizeNamedPackage(raw: String): String? {
         val lower = raw.lowercase().trim()
         if (lower.isEmpty()) return null

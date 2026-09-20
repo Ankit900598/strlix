@@ -51,7 +51,8 @@ object EntertainmentBanGate {
         packageName: String,
         screenText: String,
         goal: String,
-        enforcementScopePackages: Collection<String>
+        enforcementScopePackages: Collection<String>,
+        contentBrands: Collection<String> = emptyList()
     ): Boolean {
         if (EntertainmentClassDetector.isMonkExemptPackage(packageName)) return false
         if (PromiseIntentRules.isLifestyleEntertainmentBan(goal) &&
@@ -59,7 +60,14 @@ object EntertainmentBanGate {
         ) {
             return true
         }
-        if (VideoPlatformRegistry.isInEnforcementScope(packageName, enforcementScopePackages)) {
+        if (
+            EnforcementScopeLaw.matches(
+                packageName = packageName,
+                screenText = screenText,
+                scopePackages = enforcementScopePackages,
+                contentBrands = contentBrands
+            )
+        ) {
             return true
         }
         return shouldOverrideNamedScopeAllow(packageName, screenText, goal)

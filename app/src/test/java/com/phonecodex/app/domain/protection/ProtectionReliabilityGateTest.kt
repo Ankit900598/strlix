@@ -25,7 +25,29 @@ class ProtectionReliabilityGateTest {
         assertEquals("Off", model.accessibilityLine)
         assertEquals(ProtectionPrimaryAction.OPEN_ACCESSIBILITY, model.primaryAction)
         assertEquals(ProtectionReliabilityGate.ACTION_TURN_ON, model.primaryActionLabel)
+        assertEquals(ProtectionReliabilityGate.SUMMARY_NEEDS_SETUP, model.summary)
+        assertTrue(model.detailsExpandedByDefault)
+        assertEquals(ProtectionReliabilityGate.GREETING_NEEDS_SETUP, model.idleGreeting)
+        assertFalse(model.isProtected)
         assertFalse(model.nothingEnforced)
+    }
+
+    @Test
+    fun reinstall_a11yOff_restoredSessionAndHeartbeat_stillNeedsSetup() {
+        val model = ProtectionReliabilityGate.evaluate(
+            input(
+                accessibilityEnabled = false,
+                accessibilityAlive = true,
+                lastEventMillis = now - 1_000L,
+                hasActiveCommitment = true,
+                permanentGuardrailOn = true
+            )
+        )
+        assertEquals(ProtectionReliabilityLevel.NEEDS_SETUP, model.level)
+        assertFalse(model.isProtected)
+        assertEquals(ProtectionPrimaryAction.OPEN_ACCESSIBILITY, model.primaryAction)
+        assertTrue(model.summary.contains("You are not protected"))
+        assertEquals("Turn on Accessibility", model.primaryActionLabel)
     }
 
     @Test

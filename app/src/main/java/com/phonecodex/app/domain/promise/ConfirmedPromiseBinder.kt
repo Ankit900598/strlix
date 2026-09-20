@@ -35,7 +35,9 @@ object ConfirmedPromiseBinder {
             } else {
                 "session_fixed"
             },
-            enforcementScopePackages = PromiseContentRuleSupport.enforcementScopePackages(draft)
+            enforcementScopePackages = PromiseContentRuleSupport.enforcementScopePackages(draft),
+            enforcementContentBrands = PromiseContentRuleSupport.enforcementContentBrands(draft),
+            enforcementScopeKind = PromiseContentRuleSupport.enforcementScopeKind(draft)
         )
     }
 
@@ -56,7 +58,9 @@ object ConfirmedPromiseBinder {
             minVideoLengthBlockMinutes = stored.minVideoLengthBlockMinutes,
             maxVideoLengthBlockMinutes = stored.maxVideoLengthBlockMinutes,
             shortFormDailyQuotaLimit = stored.shortFormDailyQuotaLimit,
-            enforcementScopePackages = stored.enforcementScopePackages
+            enforcementScopePackages = stored.enforcementScopePackages,
+            enforcementContentBrands = stored.enforcementContentBrands,
+            enforcementScopeKind = stored.enforcementScopeKind
         )
 
     fun hasStructuredMediaRule(settings: StudyWorldSettings): Boolean =
@@ -83,7 +87,9 @@ data class PromiseStartAudit(
     val minVideoLengthBlockMinutes: Int?,
     val maxVideoLengthBlockMinutes: Int?,
     val shortFormDailyQuotaLimit: Int?,
-    val enforcementScopePackages: List<String>
+    val enforcementScopePackages: List<String>,
+    val enforcementContentBrands: List<String> = emptyList(),
+    val enforcementScopeKind: String? = null
 ) {
     fun format(): String =
         "rawPromise=${rawPromise.replace("\n", " ").take(240)} " +
@@ -92,9 +98,12 @@ data class PromiseStartAudit(
             "maxVideoLengthBlockMinutes=$maxVideoLengthBlockMinutes " +
             "shortFormDailyQuotaLimit=$shortFormDailyQuotaLimit " +
             "enforcementScopePackages=[${enforcementScopePackages.joinToString(",")}] " +
+            "enforcementContentBrands=[${enforcementContentBrands.joinToString(",")}] " +
+            "enforcementScopeKind=$enforcementScopeKind " +
             "stored settings after write: " +
             "min=$minVideoLengthBlockMinutes max=$maxVideoLengthBlockMinutes " +
-            "quota=$shortFormDailyQuotaLimit scope=$enforcementScopePackages"
+            "quota=$shortFormDailyQuotaLimit scope=$enforcementScopePackages " +
+            "brands=$enforcementContentBrands"
 
     fun missingStructuredMediaLine(): String =
         "code=${EnforcementReasonCodes.NO_STRUCTURED_MEDIA_RULE} " +

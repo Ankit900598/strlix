@@ -333,4 +333,53 @@ class MediaLengthEnforcementTest {
             )
         )
     }
+
+    @Test
+    fun youtubeContentBrand_chromeYoutubeHost_underMin_blocks() {
+        assertEquals(
+            MediaLengthLocalDecision.BLOCK,
+            MediaLengthEnforcement.decide(
+                packageName = VideoPlatformRegistry.CHROME,
+                goal = "allow YouTube video longer than 40 min only",
+                screenText =
+                    "https://m.youtube.com/watch?v=abc Hide player controls Play Pause 00:10 / 12:00",
+                structuredMaxBlockMinutes = null,
+                structuredMinBlockMinutes = 40,
+                enforcementScopePackages = emptyList(),
+                contentBrands = listOf("youtube")
+            )
+        )
+    }
+
+    @Test
+    fun youtubeContentBrand_chromeGmail_isNone() {
+        assertEquals(
+            MediaLengthLocalDecision.NONE,
+            MediaLengthEnforcement.decide(
+                packageName = VideoPlatformRegistry.CHROME,
+                goal = "allow YouTube video longer than 40 min only",
+                screenText = "https://mail.google.com/mail Inbox Primary",
+                structuredMaxBlockMinutes = null,
+                structuredMinBlockMinutes = 40,
+                enforcementScopePackages = emptyList(),
+                contentBrands = listOf("youtube")
+            )
+        )
+    }
+
+    @Test
+    fun youtubeContentBrand_newPipeShort_blocks() {
+        assertEquals(
+            MediaLengthLocalDecision.BLOCK,
+            MediaLengthEnforcement.decide(
+                packageName = VideoPlatformRegistry.NEWPIPE,
+                goal = "allow YouTube video longer than 40 min only",
+                screenText = "Play Pause 00:15 / 00:59 Hide player controls",
+                structuredMaxBlockMinutes = null,
+                structuredMinBlockMinutes = 40,
+                enforcementScopePackages = emptyList(),
+                contentBrands = listOf("youtube")
+            )
+        )
+    }
 }

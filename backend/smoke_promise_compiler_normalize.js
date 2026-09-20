@@ -242,6 +242,46 @@ check(
     (r) => r.action === "BLOCK" && r.contentType === "short_form_video"
   )
 );
+check(
+  fromDesc.contentBrands.includes("youtube") &&
+    fromDesc.surfaceScope.includes("youtube") &&
+    fromDesc.contentScope.includes("youtube"),
+  "YouTube video promise uses content/surface brand"
+);
+eq(fromDesc.scopeKind, "youtube_content");
+check(
+  !fromDesc.scopePackages.includes("com.android.chrome") ||
+    fromDesc.contentBrands.includes("youtube"),
+  "YouTube content is not a Chrome-only package lock"
+);
+check(
+  fromDesc.scopePackages.length === 0 ||
+    !fromDesc.scopePackages.every((p) => p === "com.google.android.youtube"),
+  "YouTube video must not exclusive-package the official app"
+);
+
+const youtubeAppOnlyDto = normalizeCompiledPromise(
+  basePolicy({
+    duration: { kind: "fixed", value: 1, unit: "hours", until: null },
+    allowedContent: [
+      {
+        type: "long_form_video",
+        description: "videos longer than 40 min",
+        apps: ["com.google.android.youtube"],
+      },
+    ],
+  }),
+  "YouTube app only: only allow videos longer than 40 min for 1 hour"
+);
+eq(youtubeAppOnlyDto.scopeKind, "youtube_app_only");
+check(
+  youtubeAppOnlyDto.scopePackages.includes("com.google.android.youtube"),
+  "YouTube app only keeps official package"
+);
+check(
+  youtubeAppOnlyDto.contentBrands.length === 0,
+  "YouTube app only has no content brand"
+);
 
 // --- Clock C: true usage budget ---
 const budget = normalizeCompiledPromise(
@@ -1000,6 +1040,13 @@ check(
   afterPickYt.scopePackages.includes("com.google.android.youtube") &&
     !afterPickYt.scopePackages.includes("com.android.chrome"),
   "YouTube-only rematerialize differs from Chrome"
+);
+check(
+  afterPickYt.contentBrands.length === 0 &&
+    (afterPickYt.scopeKind === "youtube_app_only" ||
+      afterPickYt.optionScopeKind === "youtube_only" ||
+      afterPickYt.optionScopeKind === "youtube_app_only"),
+  "YouTube-only rematerialize stays package-exclusive"
 );
 assertNoPackageLeak(afterPickYt, "afterPickYt");
 assertNoPackageLeak(afterPick, "afterPickChrome");

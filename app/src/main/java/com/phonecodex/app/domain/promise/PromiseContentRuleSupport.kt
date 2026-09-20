@@ -1,5 +1,6 @@
 package com.phonecodex.app.domain.promise
 
+import com.phonecodex.app.domain.enforcement.EnforcementScopeLaw
 import com.phonecodex.app.domain.model.ContentRule
 import com.phonecodex.app.domain.model.ContentRuleAction
 import com.phonecodex.app.domain.model.FocusPromise
@@ -117,10 +118,47 @@ object PromiseContentRuleSupport {
     }
 
     /**
-     * Packages that clocks should apply to after clarification rematerialize.
-     * Prefer explicit [FocusPromise.scopePackages]; else distinct packageNames on contentRules.
+     * Package-exclusive clock scope. YouTube *content* promises return empty here
+     * so Chrome youtube.com / NewPipe are not treated as outside scope.
      */
-    fun enforcementScopePackages(draft: FocusPromise): List<String> {
+    fun enforcementScopePackages(draft: FocusPromise): List<String> =
+        EnforcementScopeLaw.resolvePackageScope(
+            rawPackages = rawNamedPackages(draft),
+            contentBrands = enforcementContentBrands(draft),
+            scopeKind = draft.scopeKind,
+            rawText = draft.rawText
+        )
+
+    /**
+     * Content brands from DTO aliases or inferred from "YouTube video/content".
+     * Empty for "YouTube app only".
+     */
+    fun enforcementContentBrands(draft: FocusPromise): List<String> =
+        EnforcementScopeLaw.resolveContentBrands(
+            explicitBrands = draft.contentBrands + draft.contentScope + draft.surfaceScope,
+            scopeKind = draft.scopeKind,
+            rawText = draft.rawText
+        )
+
+    fun enforcementScopeKind(draft: FocusPromise): String? {
+        val kind = draft.scopeKind?.trim()?.takeIf { it.isNotEmpty() }
+        if (kind != null) {
+            return if (EnforcementScopeLaw.isYouTubeAppOnlyScopeKind(kind)) {
+                EnforcementScopeLaw.SCOPE_YOUTUBE_APP_ONLY
+            } else {
+                kind
+            }
+        }
+        if (PromiseIntentRules.namesYouTubeAppOnly(draft.rawText)) {
+            return EnforcementScopeLaw.SCOPE_YOUTUBE_APP_ONLY
+        }
+        if (enforcementContentBrands(draft).contains(EnforcementScopeLaw.BRAND_YOUTUBE)) {
+            return EnforcementScopeLaw.SCOPE_YOUTUBE_CONTENT
+        }
+        return null
+    }
+
+    private fun rawNamedPackages(draft: FocusPromise): List<String> {
         if (draft.scopePackages.isNotEmpty()) {
             return draft.scopePackages.map { it.trim() }.filter { it.isNotEmpty() }.distinct()
         }
@@ -130,7 +168,8 @@ object PromiseContentRuleSupport {
         if (fromRules.isNotEmpty()) return fromRules
         if (
             PromiseIntentRules.namesThisAppOnly(draft.rawText) ||
-            PromiseIntentRules.namesNetMirror(draft.rawText)
+            PromiseIntentRules.namesNetMirror(draft.rawText) ||
+            PromiseIntentRules.namesYouTubeAppOnly(draft.rawText)
         ) {
             return draft.suggestedAppRules
                 .map { it.packageName.trim() }

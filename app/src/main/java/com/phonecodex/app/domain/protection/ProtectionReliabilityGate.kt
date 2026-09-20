@@ -41,7 +41,9 @@ data class ProtectionReliabilityUiModel(
     val nothingEnforced: Boolean,
     val showAdbReverseHint: Boolean,
     val adbReverseHint: String,
-    val checkLogLine: String
+    val checkLogLine: String,
+    val detailsExpandedByDefault: Boolean,
+    val idleGreeting: String
 ) {
     val isProtected: Boolean get() = level == ProtectionReliabilityLevel.PROTECTED
 }
@@ -57,7 +59,13 @@ object ProtectionReliabilityGate {
     const val HEADLINE_NEEDS_SETUP = "Needs setup"
     const val NOTHING_ENFORCED = "Nothing is enforced."
     const val ADB_REVERSE = "adb reverse tcp:8787 tcp:8787"
-    const val ACTION_TURN_ON = "Turn on protection"
+    const val ACTION_TURN_ON = "Turn on Accessibility"
+    const val SUMMARY_NEEDS_SETUP =
+        "After install or update, Accessibility is off. You are not protected until you turn it on."
+    const val GREETING_NEEDS_SETUP =
+        "Turn on Accessibility first. You are not protected yet."
+    const val GREETING_NOT_PROTECTING = "Strlix is not protecting this phone."
+    const val GREETING_READY = "Ready to keep a promise?"
 
     fun evaluate(input: ProtectionReliabilityInput): ProtectionReliabilityUiModel {
         val ageMs = AccessibilityHeartbeatLaw.ageMs(input.nowMillis, input.lastEventMillis)
@@ -81,14 +89,18 @@ object ProtectionReliabilityGate {
         }
 
         val summary = when {
-            !input.accessibilityEnabled ->
-                "Accessibility is off. The phone cannot enforce anything."
+            !input.accessibilityEnabled -> SUMMARY_NEEDS_SETUP
             !loopAlive ->
                 "Accessibility is not bound. Enforcement is dead."
             nothingEnforced ->
                 "$NOTHING_ENFORCED Start a promise or turn on a life rule."
             else ->
                 "The enforcement loop is alive."
+        }
+        val idleGreeting = when (level) {
+            ProtectionReliabilityLevel.NEEDS_SETUP -> GREETING_NEEDS_SETUP
+            ProtectionReliabilityLevel.NOT_PROTECTING -> GREETING_NOT_PROTECTING
+            ProtectionReliabilityLevel.PROTECTED -> GREETING_READY
         }
 
         val accessibilityLine = when {
@@ -135,7 +147,9 @@ object ProtectionReliabilityGate {
             nothingEnforced = nothingEnforced,
             showAdbReverseHint = showAdb,
             adbReverseHint = if (showAdb) ADB_REVERSE else "",
-            checkLogLine = checkLogLine
+            checkLogLine = checkLogLine,
+            detailsExpandedByDefault = level != ProtectionReliabilityLevel.PROTECTED,
+            idleGreeting = idleGreeting
         )
     }
 

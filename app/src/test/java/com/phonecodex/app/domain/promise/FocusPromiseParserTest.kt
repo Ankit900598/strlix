@@ -547,4 +547,29 @@ class FocusPromiseParserTest {
         assertTrue(draft.scopePackages.isEmpty())
         assertTrue(ConfirmedPromiseBinder.bind(draft).enforcementScopePackages.isEmpty())
     }
+
+    @Test
+    fun youtubeVideoPromise_bindsContentBrandNotOfficialPackage() {
+        val draft = parser.parse("allow YouTube video longer than 40 min only")
+        val stored = ConfirmedPromiseBinder.bind(draft)
+        assertTrue(draft.contentBrands.contains("youtube"))
+        assertEquals("youtube_content", draft.scopeKind)
+        assertTrue(draft.scopePackages.isEmpty())
+        assertTrue(stored.enforcementContentBrands.contains("youtube"))
+        assertTrue(stored.enforcementScopePackages.isEmpty())
+        assertEquals(40, stored.minVideoLengthBlockMinutes)
+        assertFalse(draft.needsClarification)
+    }
+
+    @Test
+    fun youtubeAppOnly_bindsOfficialPackageNotContentBrand() {
+        val draft = parser.parse(
+            "YouTube app only: only allow videos longer than 40 min for 1 hour"
+        )
+        val stored = ConfirmedPromiseBinder.bind(draft)
+        assertTrue(PromiseIntentRules.namesYouTubeAppOnly(draft.rawText))
+        assertTrue(stored.enforcementScopePackages.contains("com.google.android.youtube"))
+        assertTrue(stored.enforcementContentBrands.isEmpty())
+        assertFalse(stored.enforcementScopePackages.contains("com.android.chrome"))
+    }
 }

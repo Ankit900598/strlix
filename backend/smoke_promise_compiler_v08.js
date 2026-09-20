@@ -482,6 +482,35 @@ check(
   "shorts all vs YT-only differ"
 );
 
+const youtubeContent = normalizeCompiledPromise(
+  base({
+    duration: { kind: "fixed", value: 1, unit: "hours", until: null },
+    allowedContent: [
+      {
+        type: "long_form_video",
+        description: "videos longer than 40 min",
+        apps: ["com.google.android.youtube"],
+      },
+    ],
+  }),
+  "allow YouTube video longer than 40 min only"
+);
+eq(youtubeContent.scopeKind, "youtube_content", "CK-YT-CONTENT scope kind");
+check(
+  youtubeContent.contentBrands.includes("youtube") &&
+    youtubeContent.surfaceScope.includes("youtube"),
+  "CK-YT-CONTENT brand/surface separate from package"
+);
+check(
+  !youtubeContent.scopePackages.includes("com.android.chrome") &&
+    youtubeContent.scopePackages.every((p) => p !== "com.google.android.youtube" || youtubeContent.contentBrands.includes("youtube")),
+  "CK-YT-CONTENT does not lock Chrome out by official-package scope"
+);
+check(
+  youtubeContent.scopePackages.length === 0,
+  "CK-YT-CONTENT exclusive package list empty"
+);
+
 console.log(`ASSERTIONS_PASSED=${ASSERTIONS}`);
 console.log(
   JSON.stringify({

@@ -1,5 +1,6 @@
 package com.phonecodex.app.domain.promise
 
+import com.phonecodex.app.domain.enforcement.EnforcementScopeLaw
 import com.phonecodex.app.domain.enforcement.VideoPlatformRegistry
 import com.phonecodex.app.domain.model.AppRule
 import com.phonecodex.app.domain.model.AppRuleBehavior
@@ -31,6 +32,10 @@ data class CompiledPromiseResponse(
     val timeWindowKind: String? = null,
     val quotaBoundary: String? = null,
     val scopePackages: List<String> = emptyList(),
+    val contentBrands: List<String> = emptyList(),
+    val surfaceScope: List<String> = emptyList(),
+    val contentScope: List<String> = emptyList(),
+    val scopeKind: String? = null,
     val interpretationNotes: List<String> = emptyList(),
     val clarificationOptions: List<ClarificationOptionDto> = emptyList(),
     val clarificationRequired: Boolean = false,
@@ -105,6 +110,13 @@ object CompiledPromiseResponseParser {
                 quotaBoundary = json.optString("quotaBoundary")
                     .takeIf { it.isNotBlank() && it != "null" },
                 scopePackages = stringList(json.optJSONArray("scopePackages")),
+                contentBrands = stringList(json.optJSONArray("contentBrands")),
+                surfaceScope = stringList(json.optJSONArray("surfaceScope")),
+                contentScope = stringList(json.optJSONArray("contentScope")),
+                scopeKind = json.optString("scopeKind")
+                    .takeIf { it.isNotBlank() && it != "null" }
+                    ?: json.optString("optionScopeKind")
+                        .takeIf { it.isNotBlank() && it != "null" },
                 interpretationNotes = stringList(json.optJSONArray("interpretationNotes")),
                 clarificationOptions = clarificationOptions(json.optJSONArray("clarificationOptions")),
                 clarificationRequired = json.optBoolean("clarificationRequired", false),
@@ -262,6 +274,14 @@ object CompiledPromiseMapper {
             scopePackages = response.scopePackages
                 .mapNotNull { canonicalizePackage(it) }
                 .distinct(),
+            contentBrands = mergeBrandLists(
+                response.contentBrands,
+                response.contentScope,
+                response.surfaceScope
+            ),
+            surfaceScope = mergeBrandLists(response.surfaceScope, response.contentBrands),
+            contentScope = mergeBrandLists(response.contentScope, response.contentBrands),
+            scopeKind = response.scopeKind?.trim()?.takeIf { it.isNotEmpty() },
             clarificationQuestion = response.clarificationQuestion?.takeIf { it.isNotBlank() },
             warnings = (response.cautionMessages + response.interpretationNotes + checkThis + safetyNotes)
                 .filter { it.isNotBlank() }
@@ -334,6 +354,11 @@ object CompiledPromiseMapper {
             action = action
         )
     }
+
+    private fun mergeBrandLists(vararg lists: List<String>): List<String> =
+        lists.flatMap { list ->
+            list.map { EnforcementScopeLaw.normalizeBrand(it) }.filter { it.isNotEmpty() }
+        }.distinct()
 
     private fun canonicalizePackage(raw: String): String? {
         val trimmed = raw.trim()

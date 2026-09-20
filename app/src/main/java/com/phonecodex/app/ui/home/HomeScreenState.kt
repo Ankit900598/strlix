@@ -479,7 +479,7 @@ internal class HomeScreenState(
 
         if (!isAccessibilityEnabled) {
             startBlockedMessage =
-                "Turn on protection first, otherwise I cannot keep this promise for you."
+                "Turn on Accessibility first. You are not protected yet."
             return
         }
 

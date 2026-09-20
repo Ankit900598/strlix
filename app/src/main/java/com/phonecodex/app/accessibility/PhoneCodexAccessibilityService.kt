@@ -473,13 +473,16 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
         maybeResearchApp(packageName, screenText, storedSession.goal.orEmpty())
 
         val scopedSettings = studyWorldSettingsStore.getSettings()
+        val scopedAppRule = appRulesStore.getBehaviorForPackage(packageName)
         if (
             !EntertainmentBanGate.mustEvaluate(
                 packageName = packageName,
                 screenText = screenText,
                 goal = storedSession.goal.orEmpty(),
-                enforcementScopePackages = scopedSettings.enforcementScopePackages
-            )
+                enforcementScopePackages = scopedSettings.enforcementScopePackages,
+                contentBrands = scopedSettings.enforcementContentBrands
+            ) &&
+            scopedAppRule != AppRuleBehavior.BLOCK
         ) {
             hideWarningOverlay()
             hideBlockOverlay()
@@ -492,7 +495,7 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
                     rule = "Scope",
                     decision = "ALLOW",
                     reasonCode = EnforcementReasonCodes.ENFORCEMENT_SCOPE_ALLOW,
-                    reason = "Package outside this promise's named-app scope",
+                    reason = "Outside this promise's package/content scope",
                     activity = surface.activity.name.lowercase()
                 )
             )
@@ -686,7 +689,8 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
             packageName = packageName,
             screenText = screenText,
             goal = storedSession.goal.orEmpty(),
-            enforcementScopePackages = studyWorldSettingsStore.getSettings().enforcementScopePackages
+            enforcementScopePackages = studyWorldSettingsStore.getSettings().enforcementScopePackages,
+            contentBrands = studyWorldSettingsStore.getSettings().enforcementContentBrands
         )
         if (!result.isHardDecision) return false
 
@@ -984,7 +988,8 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
             screenText = screenText,
             structuredMaxBlockMinutes = maxVideoBlockMinutes,
             structuredMinBlockMinutes = minVideoBlockMinutes,
-            enforcementScopePackages = settings.enforcementScopePackages
+            enforcementScopePackages = settings.enforcementScopePackages,
+            contentBrands = settings.enforcementContentBrands
         )
         when (mediaLength.decision) {
             MediaLengthLocalDecision.BLOCK -> {
@@ -1219,7 +1224,8 @@ class PhoneCodexAccessibilityService : AccessibilityService() {
             screenText = screenText,
             limit = limit,
             allowLongEducational = settings.allowLongEducationalVideos,
-            enforcementScopePackages = settings.enforcementScopePackages
+            enforcementScopePackages = settings.enforcementScopePackages,
+            contentBrands = settings.enforcementContentBrands
         )
         Log.d("PhoneCodexDecision", ShortFormQuotaGate.formatLog(decision, packageName))
 

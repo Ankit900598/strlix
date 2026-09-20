@@ -154,13 +154,30 @@ function normalizeInternalPolicyPreview(raw) {
       ? sanitizeUserFacingCopy(raw.appliesTo.trim())
       : null;
   const expandShortForm = Boolean(raw.expandShortForm);
-  if (packages.length === 0 && !expandShortForm && !scopeKind) return null;
+  const contentBrands = uniqueStrings(
+    ["contentBrands", "contentScope", "surfaceScope"].flatMap((key) =>
+      Array.isArray(raw[key])
+        ? raw[key].filter((s) => typeof s === "string")
+        : []
+    )
+  ).map((b) => normalizeContentBrand(b));
+  if (
+    packages.length === 0 &&
+    !expandShortForm &&
+    !scopeKind &&
+    contentBrands.length === 0
+  ) {
+    return null;
+  }
   return {
     scopeKind,
     appliesTo,
     expandShortForm,
     packages,
     scopePackages: packages.map((p) => p.packageName),
+    contentBrands,
+    surfaceScope: contentBrands,
+    contentScope: contentBrands,
   };
 }
 
@@ -208,18 +225,52 @@ function buildScopeInternalPreview({
   appliesTo,
   packages,
   expandShortForm = false,
+  contentBrands = [],
 }) {
   const pkgs = (packages || []).map((p) => ({
     packageName: p.packageName,
     appLabel: p.appLabel || knownAppLabel(p.packageName),
   }));
+  const brands = uniqueStrings(contentBrands || []).map((b) =>
+    normalizeContentBrand(b)
+  );
   return {
     scopeKind,
     appliesTo: sanitizeUserFacingCopy(appliesTo || ""),
     expandShortForm: Boolean(expandShortForm),
     packages: pkgs,
     scopePackages: pkgs.map((p) => p.packageName),
+    contentBrands: brands,
+    surfaceScope: brands,
+    contentScope: brands,
   };
+}
+
+function normalizeContentBrand(raw) {
+  const lower = String(raw || "")
+    .trim()
+    .toLowerCase();
+  if (!lower) return "";
+  if (lower === "youtube" || lower.includes("youtube") || lower === "yt") {
+    return "youtube";
+  }
+  return lower;
+}
+
+function namesYouTubeAppOnly(rawText) {
+  const text = String(rawText || "").toLowerCase();
+  return /youtube\s+app\s+only|only\s+(?:the\s+)?youtube\s+app|youtube\s+application\s+only|limit(?:\s+\w+){0,8}\s+to\s+(?:the\s+)?youtube\s+app/.test(
+    text
+  );
+}
+
+function namesYouTubeContentBrand(rawText) {
+  const text = String(rawText || "").toLowerCase();
+  if (namesYouTubeAppOnly(text)) return false;
+  if (!/\byoutube\b/.test(text) && !/\byt\b/.test(text)) return false;
+  return /\b(?:video|videos|content|lecture|lectures|watch|watching)\b/.test(
+    text
+  ) || looksLikeMediaLengthThreshold(text);
 }
 
 function stringListField(raw, ...keys) {
@@ -651,7 +702,13 @@ function resolveOptionRematerialize(option) {
   if (structured && String(structured.scopeKind || "") === "compound_combine") {
     return structured;
   }
-  if (structured && (structured.packages.length > 0 || structured.expandShortForm)) {
+  if (
+    structured &&
+    (structured.packages.length > 0 ||
+      structured.expandShortForm ||
+      (structured.contentBrands && structured.contentBrands.length > 0) ||
+      structured.scopeKind === "youtube_content")
+  ) {
     return structured;
   }
   const blob = [
@@ -756,7 +813,19 @@ function rematerializeDtoFromOptionPreview(dto, preview, promiseText) {
           packageName: pkg,
           appLabel: knownAppLabel(pkg),
         }));
-  if (packages.length === 0 && !preview.expandShortForm) return false;
+  const previewBrands = uniqueStrings([
+    ...(preview.contentBrands || []),
+    ...(preview.contentScope || []),
+    ...(preview.surfaceScope || []),
+  ]).map((b) => normalizeContentBrand(b));
+  if (
+    packages.length === 0 &&
+    !preview.expandShortForm &&
+    previewBrands.length === 0 &&
+    preview.scopeKind !== "youtube_content"
+  ) {
+    return false;
+  }
 
   const scopePkgs = packages.map((p) => p.packageName);
   const pkgSet = new Set(scopePkgs);
@@ -811,6 +880,15 @@ function rematerializeDtoFromOptionPreview(dto, preview, promiseText) {
 
   dto.contentRules = dedupeContentRules(nextRules);
   dto.scopePackages = uniqueStrings(scopePkgs);
+  const youtubeAppOnly = isYouTubeAppOnlyScopeKind(preview.scopeKind);
+  const youtubeContent =
+    preview.scopeKind === "youtube_content" || previewBrands.includes("youtube");
+  dto.contentBrands = youtubeAppOnly ? [] : uniqueStrings(previewBrands);
+  dto.surfaceScope = dto.contentBrands;
+  dto.contentScope = dto.contentBrands;
+  dto.scopeKind = youtubeAppOnly
+    ? "youtube_app_only"
+    : preview.scopeKind || (youtubeContent ? "youtube_content" : null);
   dto.hiddenInternalScope = uniqueStrings([
     ...(dto.hiddenInternalScope || []),
     ...scopePkgs,
@@ -844,8 +922,11 @@ function rematerializeDtoFromOptionPreview(dto, preview, promiseText) {
 
   const appliesTo =
     preview.appliesTo ||
-    (preview.scopeKind === "youtube_only"
+    (preview.scopeKind === "youtube_only" ||
+    preview.scopeKind === "youtube_app_only"
       ? "YouTube only"
+      : preview.scopeKind === "youtube_content"
+        ? "YouTube videos anywhere — app, browser pages, and other YouTube clients"
       : preview.scopeKind === "chrome_browser"
         ? "Chrome / browser video"
         : preview.scopeKind === "all_video_apps"
@@ -2391,6 +2472,10 @@ function normalizeCompiledPromise(parsed, rawText, options = {}) {
     ),
     interpretationNotes: userFacingNotes,
     scopePackages,
+    scopeKind: null,
+    contentBrands: [],
+    surfaceScope: [],
+    contentScope: [],
     contentRules,
     clarificationQuestion: clarificationQuestion
       ? sanitizeUserFacingCopy(clarificationQuestion, promiseText)
@@ -2497,8 +2582,89 @@ function normalizeCompiledPromise(parsed, rawText, options = {}) {
   stripFalseUnrecognizedWarnings(dto, selectedId);
   clearGhostClarificationIfConcrete(dto);
   stripPackageLeaksFromDto(dto, promiseText);
+  applyYouTubeContentOrAppScope(dto, promiseText);
   applyFailClosedStartGates(dto);
   return dto;
+}
+
+function isYouTubeAppOnlyScopeKind(scopeKind) {
+  const kind = String(scopeKind || "").trim();
+  return (
+    kind === "youtube_app_only" ||
+    kind === "youtube_only" ||
+    kind === "youtube_shorts_only"
+  );
+}
+
+/**
+ * "YouTube video/content" is a brand, not the official package.
+ * Package-exclusive scope only when the user said YouTube app only
+ * or picked the app-only rematerialize option.
+ */
+function applyYouTubeContentOrAppScope(dto, promiseText) {
+  if (!dto || typeof dto !== "object") return;
+  const kind = dto.optionScopeKind || dto.scopeKind;
+  if (isYouTubeAppOnlyScopeKind(kind)) {
+    dto.scopeKind = kind === "youtube_shorts_only" ? kind : "youtube_app_only";
+    dto.contentBrands = [];
+    dto.surfaceScope = [];
+    dto.contentScope = [];
+    if (!Array.isArray(dto.scopePackages) || dto.scopePackages.length === 0) {
+      dto.scopePackages = [PKG_YOUTUBE];
+    }
+    return;
+  }
+  if (
+    kind === "chrome_browser" ||
+    kind === "all_video_apps" ||
+    kind === "short_form_all_surfaces"
+  ) {
+    return;
+  }
+  if (/\bgoogle\s+videos?\b/i.test(promiseText) && !dto.optionRematerialized) {
+    return;
+  }
+  if (namesYouTubeAppOnly(promiseText)) {
+    dto.scopeKind = "youtube_app_only";
+    dto.scopePackages = [PKG_YOUTUBE];
+    dto.contentBrands = [];
+    dto.surfaceScope = [];
+    dto.contentScope = [];
+    return;
+  }
+  if (!namesYouTubeContentBrand(promiseText)) return;
+
+  dto.scopeKind = "youtube_content";
+  dto.contentBrands = ["youtube"];
+  dto.surfaceScope = ["youtube"];
+  dto.contentScope = ["youtube"];
+  const pkgs = Array.isArray(dto.scopePackages) ? dto.scopePackages : [];
+  const withoutYoutubeClients = pkgs.filter(
+    (p) =>
+      p !== PKG_YOUTUBE &&
+      p !== "com.vanced.android.youtube" &&
+      !/youtube|vanced|revanced/i.test(String(p || ""))
+  );
+  dto.scopePackages =
+    pkgs.length > 0 && withoutYoutubeClients.length === 0
+      ? []
+      : withoutYoutubeClients;
+
+  const applies =
+    "YouTube videos anywhere — app, browser pages, and other YouTube clients";
+  if (dto.userFacingConfirmation) {
+    dto.userFacingConfirmation = {
+      ...dto.userFacingConfirmation,
+      appliesTo: applies,
+      appliesToText: applies,
+    };
+  }
+  dto.conditionalSummaries = uniqueStrings([
+    ...(dto.conditionalSummaries || []).filter(
+      (s) => !/^applies to:/i.test(String(s || ""))
+    ),
+    `Applies to: ${applies}`,
+  ]);
 }
 
 function uniqueStrings(items) {

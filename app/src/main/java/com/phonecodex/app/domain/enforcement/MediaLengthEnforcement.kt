@@ -46,7 +46,8 @@ object MediaLengthEnforcement {
         screenText: String,
         structuredMaxBlockMinutes: Int?,
         structuredMinBlockMinutes: Int? = null,
-        enforcementScopePackages: Collection<String> = emptyList()
+        enforcementScopePackages: Collection<String> = emptyList(),
+        contentBrands: Collection<String> = emptyList()
     ): MediaLengthLocalDecision =
         decideDetailed(
             packageName = packageName,
@@ -54,7 +55,8 @@ object MediaLengthEnforcement {
             screenText = screenText,
             structuredMaxBlockMinutes = structuredMaxBlockMinutes,
             structuredMinBlockMinutes = structuredMinBlockMinutes,
-            enforcementScopePackages = enforcementScopePackages
+            enforcementScopePackages = enforcementScopePackages,
+            contentBrands = contentBrands
         ).decision
 
     fun decideDetailed(
@@ -63,7 +65,8 @@ object MediaLengthEnforcement {
         screenText: String,
         structuredMaxBlockMinutes: Int?,
         structuredMinBlockMinutes: Int? = null,
-        enforcementScopePackages: Collection<String> = emptyList()
+        enforcementScopePackages: Collection<String> = emptyList(),
+        contentBrands: Collection<String> = emptyList()
     ): MediaLengthDecisionDetail {
         val parsed = VideoDurationParser.parse(screenText)
         val hasLimit = structuredMaxBlockMinutes != null ||
@@ -73,9 +76,14 @@ object MediaLengthEnforcement {
             return detail(MediaLengthLocalDecision.NONE, parsed)
         }
 
-        val scope = enforcementScopePackages.map { it.trim() }.filter { it.isNotEmpty() }.toSet()
-        if (scope.isNotEmpty() && packageName !in scope) {
-            // Clarification rematerialize: length law does not apply outside selected apps.
+        if (
+            !EnforcementScopeLaw.matches(
+                packageName = packageName,
+                screenText = screenText,
+                scopePackages = enforcementScopePackages,
+                contentBrands = contentBrands
+            )
+        ) {
             return detail(MediaLengthLocalDecision.NONE, parsed)
         }
 

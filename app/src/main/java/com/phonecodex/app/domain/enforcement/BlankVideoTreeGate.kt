@@ -45,11 +45,19 @@ object BlankVideoTreeGate {
         packageName: String,
         screenText: String,
         goal: String,
-        enforcementScopePackages: Collection<String> = emptyList()
+        enforcementScopePackages: Collection<String> = emptyList(),
+        contentBrands: Collection<String> = emptyList()
     ): BlankVideoTreeResult {
         if (!hasActiveSession) return NONE
         if (SafeAppsCatalog.isDefaultPackage(packageName)) return NONE
-        if (!VideoPlatformRegistry.isInEnforcementScope(packageName, enforcementScopePackages)) {
+        if (
+            !EnforcementScopeLaw.matches(
+                packageName = packageName,
+                screenText = screenText,
+                scopePackages = enforcementScopePackages,
+                contentBrands = contentBrands
+            )
+        ) {
             return NONE
         }
         if (!VideoPlatformRegistry.isVideoOrStreamingPackage(packageName)) return NONE

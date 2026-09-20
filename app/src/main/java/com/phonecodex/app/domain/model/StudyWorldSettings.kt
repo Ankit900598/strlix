@@ -27,10 +27,17 @@ data class StudyWorldSettings(
      */
     val timeWindowKind: String? = null,
     /**
-     * When non-empty, media-length / short-form clocks only apply inside these packages.
-     * Empty = legacy unrestricted platform set.
+     * Package-exclusive clock scope ("YouTube app only", Chrome-only rematerialize).
+     * Empty = not package-locked. Combined with [enforcementContentBrands].
      */
     val enforcementScopePackages: List<String> = emptyList(),
+    /**
+     * Content brands (youtube, …). YouTube brand matches the YouTube surface
+     * in any package — official app, browser host, NewPipe, embeds.
+     */
+    val enforcementContentBrands: List<String> = emptyList(),
+    /** Persisted compiler scope kind; used to keep app-only vs content-brand honest. */
+    val enforcementScopeKind: String? = null,
     /**
      * Developer opt-in for the 10-day vision counsel experiment.
      * Default OFF. Still requires [VisionExperiment] calendar window.

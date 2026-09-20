@@ -19,10 +19,21 @@ data class FocusPromise(
     val suggestedAppRules: List<AppRule>,
     val contentRules: List<ContentRule> = emptyList(),
     /**
-     * Internal enforcement scope (package IDs). Never show raw in user-facing copy.
-     * Empty = legacy / unrestricted platform set for clocks that already apply.
+     * Package-exclusive scope. Never show raw in user-facing copy.
+     * Empty unless the user named a specific app ("YouTube app only", NetMirror, …).
      */
     val scopePackages: List<String> = emptyList(),
+    /**
+     * Content brands (youtube, …). Separate from [scopePackages].
+     * "YouTube video" → youtube brand, not the official package alone.
+     */
+    val contentBrands: List<String> = emptyList(),
+    /** Alias of [contentBrands] from compiler DTO `surfaceScope`. */
+    val surfaceScope: List<String> = emptyList(),
+    /** Alias of [contentBrands] from compiler DTO `contentScope`. */
+    val contentScope: List<String> = emptyList(),
+    /** Compiler scope kind: youtube_content | youtube_app_only | youtube_only | … */
+    val scopeKind: String? = null,
     val clarificationQuestion: String? = null,
     val warnings: List<String> = emptyList(),
     val allowedSummaries: List<String> = emptyList(),

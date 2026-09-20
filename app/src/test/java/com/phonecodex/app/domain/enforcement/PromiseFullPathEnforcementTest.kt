@@ -468,6 +468,122 @@ class PromiseFullPathEnforcementTest {
                 screenText = screenText
             )
         )
+
+    private val youtubeContent40 = "allow YouTube video longer than 40 min only"
+    private val youtubeAppOnly40 =
+        "YouTube app only: only allow videos longer than 40 min for 1 hour"
+    private val chromeYoutubeShortPlayer =
+        "https://www.youtube.com/watch?v=dQw4w9WgXcQ Hide player controls Play Pause 00:15 / 12:00"
+    private val chromeGmailInbox =
+        "https://mail.google.com/mail Inbox Primary Compose Search mail"
+    private val newPipeShortPlayer =
+        "Play Pause 00:15 / 00:59 Hide player controls"
+    private val vancedYoutube = "com.vanced.android.youtube"
+
+    @Test
+    fun youtubeContent_officialAppUnderMin_blocks() {
+        val draft = parser.parse(youtubeContent40)
+        val stored = ConfirmedPromiseBinder.bind(draft)
+        assertEquals(40, stored.minVideoLengthBlockMinutes)
+        assertTrue(stored.enforcementContentBrands.contains("youtube"))
+        assertTrue(
+            "YouTube video is a brand, not the official package lock",
+            stored.enforcementScopePackages.isEmpty()
+        )
+        val result = evaluate(
+            packageName = VideoPlatformRegistry.YOUTUBE,
+            screenText = newPipeShortPlayer,
+            settings = stored,
+            appRule = AppRuleBehavior.AI_DECIDE,
+            goal = youtubeContent40
+        )
+        assertEquals(DecisionType.BLOCK, result.decision)
+        assertEquals(EnforcementReasonCodes.MEDIA_BLOCK_UNDER_MIN, result.reasonCode)
+    }
+
+    @Test
+    fun youtubeContent_chromeYoutubeHostUnderMin_blocks() {
+        val stored = ConfirmedPromiseBinder.bind(parser.parse(youtubeContent40))
+        val result = evaluate(
+            packageName = VideoPlatformRegistry.CHROME,
+            screenText = chromeYoutubeShortPlayer,
+            settings = stored,
+            appRule = AppRuleBehavior.AI_DECIDE,
+            goal = youtubeContent40
+        )
+        assertEquals(DecisionType.BLOCK, result.decision)
+        assertEquals(EnforcementReasonCodes.MEDIA_BLOCK_UNDER_MIN, result.reasonCode)
+        assertNotEquals(EnforcementReasonCodes.ENFORCEMENT_SCOPE_ALLOW, result.reasonCode)
+    }
+
+    @Test
+    fun youtubeContent_newPipeAndAlternateClientUnderMin_blocks() {
+        val stored = ConfirmedPromiseBinder.bind(parser.parse(youtubeContent40))
+        for (pkg in listOf(VideoPlatformRegistry.NEWPIPE, vancedYoutube)) {
+            val result = evaluate(
+                packageName = pkg,
+                screenText = newPipeShortPlayer,
+                settings = stored,
+                appRule = AppRuleBehavior.AI_DECIDE,
+                goal = youtubeContent40
+            )
+            assertEquals("$pkg short", DecisionType.BLOCK, result.decision)
+            assertEquals(
+                "$pkg code",
+                EnforcementReasonCodes.MEDIA_BLOCK_UNDER_MIN,
+                result.reasonCode
+            )
+        }
+    }
+
+    @Test
+    fun youtubeContent_nonYouTubeChromePage_notBlocked_unlessChromeAppRule() {
+        val stored = ConfirmedPromiseBinder.bind(parser.parse(youtubeContent40))
+        val gmail = evaluate(
+            packageName = VideoPlatformRegistry.CHROME,
+            screenText = chromeGmailInbox,
+            settings = stored,
+            appRule = AppRuleBehavior.AI_DECIDE,
+            goal = youtubeContent40
+        )
+        assertNotEquals(DecisionType.BLOCK, gmail.decision)
+        assertEquals(EnforcementReasonCodes.ENFORCEMENT_SCOPE_ALLOW, gmail.reasonCode)
+
+        val blockChrome = evaluate(
+            packageName = VideoPlatformRegistry.CHROME,
+            screenText = chromeGmailInbox,
+            settings = stored,
+            appRule = AppRuleBehavior.BLOCK,
+            goal = youtubeContent40
+        )
+        assertEquals(DecisionType.BLOCK, blockChrome.decision)
+        assertEquals(EnforcementReasonCodes.APP_RULE_BLOCK, blockChrome.reasonCode)
+    }
+
+    @Test
+    fun youtubeAppOnly_doesNotEnforceChromeYoutubeHost() {
+        val stored = ConfirmedPromiseBinder.bind(parser.parse(youtubeAppOnly40))
+        assertTrue(stored.enforcementScopePackages.contains(VideoPlatformRegistry.YOUTUBE))
+        assertTrue(stored.enforcementContentBrands.isEmpty())
+        val chrome = evaluate(
+            packageName = VideoPlatformRegistry.CHROME,
+            screenText = chromeYoutubeShortPlayer,
+            settings = stored,
+            appRule = AppRuleBehavior.AI_DECIDE,
+            goal = youtubeAppOnly40
+        )
+        assertEquals(DecisionType.ALLOW, chrome.decision)
+        assertEquals(EnforcementReasonCodes.ENFORCEMENT_SCOPE_ALLOW, chrome.reasonCode)
+        val youtube = evaluate(
+            packageName = VideoPlatformRegistry.YOUTUBE,
+            screenText = newPipeShortPlayer,
+            settings = stored,
+            appRule = AppRuleBehavior.AI_DECIDE,
+            goal = youtubeAppOnly40
+        )
+        assertEquals(DecisionType.BLOCK, youtube.decision)
+        assertEquals(EnforcementReasonCodes.MEDIA_BLOCK_UNDER_MIN, youtube.reasonCode)
+    }
 }
 
 class BlankVideoTreeGateTest {

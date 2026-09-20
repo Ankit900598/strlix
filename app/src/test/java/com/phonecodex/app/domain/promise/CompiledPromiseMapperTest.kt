@@ -424,6 +424,65 @@ class CompiledPromiseMapperTest {
     }
 
     @Test
+    fun youtubeContentDto_mapsSurfaceScopeSeparateFromPackageScope() {
+        val draft = CompiledPromiseMapper.toFocusPromise(
+            CompiledPromiseResponse(
+                rawText = "allow YouTube video longer than 40 min only",
+                sessionDurationMinutes = 60,
+                strictness = "STRICT",
+                allowedSummaries = listOf("YouTube videos longer than 40 min"),
+                blockedSummaries = listOf("YouTube videos under 40 min"),
+                conditionalSummaries = emptyList(),
+                contentRules = listOf(
+                    CompiledContentRuleDto(
+                        appLabel = "YouTube",
+                        packageName = "com.google.android.youtube",
+                        surface = "video",
+                        contentType = "long_form_video",
+                        operator = "gt",
+                        value = 40,
+                        unit = "minutes",
+                        action = "ALLOW",
+                        description = "YouTube videos longer than 40 min"
+                    )
+                ),
+                clarificationQuestion = null,
+                cautionMessages = emptyList(),
+                source = "azure_promise_compiler",
+                confidence = 0.9,
+                suggestedAppRules = listOf(
+                    CompiledAppRuleDto("com.google.android.youtube", "YouTube", "AI_DECIDE")
+                ),
+                scopePackages = listOf("com.google.android.youtube"),
+                contentBrands = listOf("youtube"),
+                surfaceScope = listOf("youtube"),
+                contentScope = listOf("youtube"),
+                scopeKind = "youtube_content",
+                clarificationRequired = false,
+                canStartCommitment = true,
+                userFacingConfirmation = UserFacingConfirmationDto(
+                    understood = "YouTube videos 40 min or longer",
+                    allowed = listOf("YouTube videos longer than 40 min"),
+                    blocked = listOf("shorter YouTube videos"),
+                    time = "About 1 hour",
+                    appliesTo = "YouTube videos anywhere",
+                    checkThis = emptyList(),
+                    safetyNotes = emptyList()
+                )
+            )
+        )
+        assertEquals(listOf("youtube"), draft.contentBrands)
+        assertEquals(listOf("youtube"), draft.surfaceScope)
+        assertEquals("youtube_content", draft.scopeKind)
+        val stored = ConfirmedPromiseBinder.bind(draft)
+        assertTrue(stored.enforcementContentBrands.contains("youtube"))
+        assertTrue(
+            "content-brand YouTube must not lock clocks to the official package",
+            stored.enforcementScopePackages.isEmpty()
+        )
+    }
+
+    @Test
     fun shortsAllSurfacesRematerialize_expandsScopeOnFocusPromise() {
         val draft = CompiledPromiseMapper.toFocusPromise(
             CompiledPromiseResponse(

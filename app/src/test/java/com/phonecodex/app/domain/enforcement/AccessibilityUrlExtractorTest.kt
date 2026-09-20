@@ -73,6 +73,21 @@ class AccessibilityUrlExtractorTest {
     }
 
     @Test
+    fun youtubeWatchAndYoutuBe_areYouTubeHosts() {
+        assertTrue(
+            AccessibilityUrlExtractor.containsYouTubeUrl(
+                "Address bar https://www.youtube.com/watch?v=abcdefghijk"
+            )
+        )
+        assertTrue(AccessibilityUrlExtractor.isYouTubeHost("https://youtu.be/abcdefghijk"))
+        assertFalse(
+            AccessibilityUrlExtractor.containsYouTubeUrl(
+                "https://mail.google.com/mail Inbox"
+            )
+        )
+    }
+
+    @Test
     fun homeNavWordShorts_isNotAShortsUrl() {
         assertFalse(
             AccessibilityUrlExtractor.containsYouTubeShortsUrl(

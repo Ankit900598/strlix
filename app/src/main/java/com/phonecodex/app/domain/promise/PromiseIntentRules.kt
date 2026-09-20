@@ -114,6 +114,29 @@ object PromiseIntentRules {
         return THIS_APP_SCOPE_PHRASES.any { phrase -> normalized.contains(phrase) }
     }
 
+    /** Exclusive official-app lock. "YouTube video" is not this. */
+    fun namesYouTubeAppOnly(goal: String): Boolean {
+        val normalized = goal.lowercase()
+        return YOUTUBE_APP_ONLY_REGEX.containsMatchIn(normalized)
+    }
+
+    /**
+     * YouTube named as content/brand (video, lecture, length), not "YouTube app only".
+     * Enforcement then matches the YouTube surface anywhere.
+     */
+    fun namesYouTubeContentBrand(goal: String): Boolean {
+        val normalized = goal.lowercase()
+        if (namesYouTubeAppOnly(normalized)) return false
+        if (!normalized.contains("youtube") && !YT_TOKEN.containsMatchIn(normalized)) {
+            return false
+        }
+        return normalized.contains("video") ||
+            normalized.contains("content") ||
+            normalized.contains("lecture") ||
+            normalized.contains("watch") ||
+            hasMediaLengthLimit(normalized)
+    }
+
     fun hasExplicitSessionDuration(goal: String): Boolean {
         val normalized = goal.lowercase()
         return EXPLICIT_SESSION_DURATION_REGEX.containsMatchIn(normalized)
@@ -389,6 +412,14 @@ object PromiseIntentRules {
         "only this app",
         "lock this app",
         "only lock this"
+    )
+
+    private val YT_TOKEN = Regex("""\byt\b""")
+
+    private val YOUTUBE_APP_ONLY_REGEX = Regex(
+        """(?:youtube\s+app\s+only|only\s+(?:the\s+)?youtube\s+app|""" +
+            """youtube\s+application\s+only|""" +
+            """limit(?:\s+\w+){0,8}\s+to\s+(?:the\s+)?youtube\s+app)"""
     )
 
     private val SHORT_FORM_BLOCK_PHRASES = listOf(

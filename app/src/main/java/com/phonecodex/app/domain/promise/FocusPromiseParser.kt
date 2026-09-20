@@ -1,5 +1,6 @@
 package com.phonecodex.app.domain.promise
 
+import com.phonecodex.app.domain.enforcement.EnforcementScopeLaw
 import com.phonecodex.app.domain.enforcement.VideoPlatformRegistry
 import com.phonecodex.app.domain.model.AppRule
 import com.phonecodex.app.domain.model.AppRuleBehavior
@@ -30,6 +31,8 @@ class FocusPromiseParser {
 
         val sessionDurationMinutes = parseSessionDurationMinutes(normalized, contentLengthHits)
         val suggestedAppRules = parseSuggestedAppRules(normalized, contentRules, hintedPackage)
+        val contentBrands = inferContentBrands(normalized)
+        val scopeKind = inferScopeKind(normalized, contentBrands)
         val scopePackages = inferScopePackages(normalized, contentRules, suggestedAppRules, hintedPackage)
         val strictness = parseStrictness(normalized)
         val clarification = detectClarification(normalized, contentRules, contentLengthHits)
@@ -51,6 +54,10 @@ class FocusPromiseParser {
                 suggestedAppRules = suggestedAppRules,
                 contentRules = contentRules,
                 scopePackages = scopePackages,
+                contentBrands = contentBrands,
+                surfaceScope = contentBrands,
+                contentScope = contentBrands,
+                scopeKind = scopeKind,
                 clarificationQuestion = clarification,
                 warnings = warnings,
                 allowedSummaries = summaries.allowed,
@@ -246,7 +253,10 @@ class FocusPromiseParser {
         if (hits.isEmpty()) return rules
         val onlyLong = hits.any { hit ->
             val before = normalized.substring(0, hit.range.first).takeLast(72)
+            val after = normalized.substring(hit.range.last + 1).trim()
+            val trailingOnly = after == "only" || after.startsWith("only ")
             ONLY_ALLOW_CUE.containsMatchIn(before) ||
+                trailingOnly ||
                 (before.contains("only") &&
                     (before.contains("allow") || before.contains("youtube") ||
                         before.contains("video")))
@@ -666,18 +676,38 @@ class FocusPromiseParser {
         }
     }
 
+    private fun inferContentBrands(normalized: String): List<String> {
+        if (PromiseIntentRules.namesYouTubeContentBrand(normalized)) {
+            return listOf(EnforcementScopeLaw.BRAND_YOUTUBE)
+        }
+        return emptyList()
+    }
+
+    private fun inferScopeKind(normalized: String, contentBrands: List<String>): String? = when {
+        PromiseIntentRules.namesYouTubeAppOnly(normalized) ->
+            EnforcementScopeLaw.SCOPE_YOUTUBE_APP_ONLY
+        contentBrands.contains(EnforcementScopeLaw.BRAND_YOUTUBE) ->
+            EnforcementScopeLaw.SCOPE_YOUTUBE_CONTENT
+        else -> null
+    }
+
     private fun inferScopePackages(
         normalized: String,
         contentRules: List<ContentRule>,
         suggestedAppRules: List<AppRule>,
         hintedPackage: String?
     ): List<String> {
+        val youtubeAppOnly = PromiseIntentRules.namesYouTubeAppOnly(normalized)
         if (!PromiseIntentRules.namesNetMirror(normalized) &&
-            !PromiseIntentRules.namesThisAppOnly(normalized)
+            !PromiseIntentRules.namesThisAppOnly(normalized) &&
+            !youtubeAppOnly
         ) {
             return emptyList()
         }
         val named = linkedSetOf<String>()
+        if (youtubeAppOnly) {
+            named += PKG_YOUTUBE
+        }
         if (PromiseIntentRules.namesNetMirror(normalized)) {
             named += PKG_NETMIRROR
         }

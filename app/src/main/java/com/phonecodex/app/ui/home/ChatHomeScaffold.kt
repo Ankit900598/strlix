@@ -80,6 +80,7 @@ internal fun ChatHomeScaffold(
         ) {
             if (understanding == null) {
                 IdleGreeting(
+                    greeting = protection.idleGreeting,
                     modifier = Modifier
                         .align(Alignment.Center)
                         .padding(horizontal = 12.dp)
@@ -143,7 +144,10 @@ private fun ChatHomeHeader(protectionLevel: ProtectionReliabilityLevel) {
 }
 
 @Composable
-private fun IdleGreeting(modifier: Modifier = Modifier) {
+private fun IdleGreeting(
+    greeting: String,
+    modifier: Modifier = Modifier
+) {
     val colors = MaterialTheme.colorScheme
     Column(
         modifier = modifier.testTag("chat_home_greeting"),
@@ -157,10 +161,11 @@ private fun IdleGreeting(modifier: Modifier = Modifier) {
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Ready to keep a promise?",
+            text = greeting,
             style = MaterialTheme.typography.bodyLarge,
             color = colors.onSurfaceVariant,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            modifier = Modifier.testTag("chat_home_greeting_status")
         )
     }
 }

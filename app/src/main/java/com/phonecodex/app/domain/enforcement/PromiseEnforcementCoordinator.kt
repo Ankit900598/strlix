@@ -48,9 +48,19 @@ object PromiseEnforcementCoordinator {
                 packageName = input.packageName,
                 screenText = input.screenText,
                 goal = input.goal,
-                enforcementScopePackages = input.settings.enforcementScopePackages
+                enforcementScopePackages = input.settings.enforcementScopePackages,
+                contentBrands = input.settings.enforcementContentBrands
             )
         ) {
+            if (input.appRule == AppRuleBehavior.BLOCK) {
+                return decided(
+                    input,
+                    DecisionType.BLOCK,
+                    EnforcementReasonCodes.APP_RULE_BLOCK,
+                    "scope_app_rule",
+                    prelude
+                )
+            }
             return decided(
                 input,
                 DecisionType.ALLOW,
@@ -65,7 +75,8 @@ object PromiseEnforcementCoordinator {
             packageName = input.packageName,
             screenText = input.screenText,
             goal = input.goal,
-            enforcementScopePackages = input.settings.enforcementScopePackages
+            enforcementScopePackages = input.settings.enforcementScopePackages,
+            contentBrands = input.settings.enforcementContentBrands
         )
         when (blankTree.action) {
             BlankVideoTreeAction.BLOCK -> return decided(
@@ -94,7 +105,8 @@ object PromiseEnforcementCoordinator {
             screenText = input.screenText,
             structuredMaxBlockMinutes = input.settings.maxVideoLengthBlockMinutes,
             structuredMinBlockMinutes = input.settings.minVideoLengthBlockMinutes,
-            enforcementScopePackages = input.settings.enforcementScopePackages
+            enforcementScopePackages = input.settings.enforcementScopePackages,
+            contentBrands = input.settings.enforcementContentBrands
         )
         when (media.decision) {
             MediaLengthLocalDecision.BLOCK -> {
@@ -239,6 +251,7 @@ object PromiseEnforcementCoordinator {
             "max=${input.settings.maxVideoLengthBlockMinutes} " +
             "quota=${input.settings.shortFormDailyQuotaLimit} " +
             "scope=${input.settings.enforcementScopePackages} " +
+            "brands=${input.settings.enforcementContentBrands} " +
             "pkg=${input.packageName} appRule=${input.appRule} " +
             "contentGatesBeforeAppRule=true$missingPart"
     }

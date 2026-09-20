@@ -29,6 +29,17 @@ object AccessibilityUrlExtractor {
         return found.toList()
     }
 
+    fun containsYouTubeUrl(screenText: String): Boolean =
+        extract(screenText).any { isYouTubeHost(it) } ||
+            YOUTUBE_HOST_INLINE.containsMatchIn(screenText.lowercase())
+
+    fun isYouTubeHost(url: String): Boolean {
+        val token = sanitize(url)
+        return token.contains("youtube.com") ||
+            token.contains("youtu.be") ||
+            token.contains("youtube-nocookie.com")
+    }
+
     fun containsYouTubeShortsUrl(screenText: String): Boolean =
         extract(screenText).any { isYouTubeShortsUrl(it) } ||
             YOUTUBE_SHORTS_INLINE.containsMatchIn(screenText.lowercase())
@@ -80,6 +91,10 @@ object AccessibilityUrlExtractor {
     /** Path-only hrefs: `/shorts/ID`, `/reel/ID`, `/reels/ID`. */
     private val SHORT_PATH_REGEX = Regex(
         """/(?:shorts|reels?)/[a-zA-Z0-9_-]+"""
+    )
+
+    private val YOUTUBE_HOST_INLINE = Regex(
+        """(?:^|[^\w])(?:(?:m|music|www)\.)?(?:youtube\.com|youtu\.be|youtube-nocookie\.com)\b"""
     )
 
     private val YOUTUBE_SHORTS_INLINE = Regex(

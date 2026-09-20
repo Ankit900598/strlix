@@ -178,5 +178,19 @@ class PromiseIntentRulesTest {
         assertTrue(PromiseIntentRules.hasMediaLengthLimit("block videos longer than 2 hours for 1 hour"))
         assertTrue(PromiseIntentRules.namesThisAppOnly("only lock this app's content"))
         assertTrue(PromiseIntentRules.namesNetMirror("block netmirror movies"))
+        assertTrue(
+            PromiseIntentRules.namesYouTubeContentBrand(
+                "allow YouTube video longer than 40 min only"
+            )
+        )
+        assertFalse(
+            PromiseIntentRules.namesYouTubeAppOnly(
+                "allow YouTube video longer than 40 min only"
+            )
+        )
+        assertTrue(PromiseIntentRules.namesYouTubeAppOnly("YouTube app only for 1 hour"))
+        assertFalse(
+            PromiseIntentRules.namesYouTubeContentBrand("YouTube app only for 1 hour")
+        )
     }
 }
