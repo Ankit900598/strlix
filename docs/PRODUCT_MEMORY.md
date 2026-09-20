@@ -13,6 +13,19 @@ The long-term idea has two connected products:
    - AI helps operate or configure the phone with permission.
    - This is later and needs careful control surfaces such as intents, deterministic accessibility, ADB/Shizuku, Device Owner, or future OS-level APIs.
 
+   A critical version of this is the **delegated connector path**. If an app is
+   blocked, Strlix should still help the user handle necessary life tasks without
+   unlocking the addictive app surface. Example: the user blocks Gmail for 3
+   weeks, but pre-authorizes Strlix to read important mail through a Gmail
+   connector/API, summarize it, draft replies, and send only after confirmation.
+   The same product direction applies to LinkedIn, WhatsApp, Instagram, Facebook,
+   and other communication apps where safe connectors, notifications, share flows,
+   companion control, or OS-level control planes can be used.
+
+   The principle is: **blocked UI, not blocked life**. Strlix should close the
+   addictive feed/inbox while offering a safer AI-mediated path for important
+   messages and actions.
+
 2. **Parallel Focus Worlds**
    - User enters a constrained phone world.
    - Distractions are removed or delayed.

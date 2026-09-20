@@ -18,6 +18,16 @@ Examples:
 
 The unique idea is promise-relative control inside apps, not just blocking whole apps.
 
+The second unique idea is safe substitution: when a distracting app is blocked,
+Strlix should eventually offer a delegated AI path for necessary life tasks.
+Example: if Gmail is blocked for 3 weeks, the user should not freely open Gmail,
+but a pre-authorized Strlix AI connector can summarize important mail, draft a
+reply, and ask for confirmation before sending. The same long-term pattern can
+extend to LinkedIn, WhatsApp, Instagram, Facebook, and other apps where safe APIs,
+notifications, share flows, companion control, or OS-level control planes exist.
+Blocked UI does not mean blocked life; it means the addictive surface is closed
+while necessary tasks move through a controlled AI operator.
+
 ## Core Law
 
 ```text
@@ -126,6 +136,9 @@ After the core blocker is reliable, Strlix should grow toward:
 - recovery and accountability paths
 - optional vision understanding when screen text is insufficient
 - safe phone operator assistant for user-approved tasks
+- safe delegated connectors for blocked apps: read important messages, summarize,
+  draft replies, and act only through pre-authorized channels without unlocking
+  addictive feeds or inboxes
 
 ## Safety Principles
 
