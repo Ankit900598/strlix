@@ -1,6 +1,6 @@
 # Day-1 Hardening Applied — Strlix / Zevi Cloud Phone
 
-**When:** 2026-09-21 ~21:15 IST (cutover pass; prior AFD/Redis create ~20:05 IST)  
+**When:** 2026-09-21 ~22:00 IST (Redis PE pass; prior cutover ~21:15 IST; AFD/Redis create ~20:05 IST)  
 **Subscription:** `a3dc5296-f948-427e-8656-c6bc52afee21`  
 **RG lock:** `rg-zevi-cloudphone` ONLY (no other RGs touched)  
 **Constraints honored:** no deletes · no GPU · Stripe live OFF (pay_mode remains `test`)
@@ -125,19 +125,49 @@ Est. cost: ~$35/mo AFD Standard base + egress + ~$2.5 WAF policy.
 
 ---
 
-## 3) Private endpoints — **SKIPPED** (not safe to `--apply`)
+## 3) Private endpoints — **Redis PE APPLIED** (2026-09-21 ~22:00 IST)
 
-Ran `infra/hardening/CREATE-private-endpoints.sh` dry-run only. Reasons:
+### Applied — Azure Managed Redis PE (eastus)
 
-| Check | Finding |
-|-------|---------|
-| `pe-subnet` | **Missing** — VNet `vm-zevi-cloudphone-vnet` has only `default` (10.0.0.0/24) |
-| VNet region | **eastus** only; script defaults `LOC=eastus2` (KV is eastus2; CAE is eastus2) |
-| Redis target | Script still stubs `redis-zevi-strlix` (CreateFailed eastus2); live AMR is **eastus** `redis-strlix-amr` |
-| Cost | ~$7.30/mo per PE ×2 ≈ $15–20/mo — modest, but would fail/misplace without eastus2 VNet + pe-subnet + correct Redis ID |
-| Postgres PE | **SKIP** (centralus) — unchanged |
+| Resource | Value |
+|----------|-------|
+| Subnet | `pe-subnet` = **10.0.1.0/27** on `vm-zevi-cloudphone-vnet` (eastus); `privateEndpointNetworkPolicies=Disabled` |
+| Private endpoint | `pe-redis-strlix-amr` (eastus) — **Succeeded / Approved** |
+| Target | `redis-strlix-amr` (`Microsoft.Cache/redisEnterprise`) |
+| group-id | `redisEnterprise` (not classic `redisCache`) |
+| Private IP | `10.0.1.4` → `redis-strlix-amr.eastus.redis.azure.net` |
+| Private DNS | zone `privatelink.redis.azure.net` + VNet link + dns-zone-group `redis-amr-zone-group` |
+| A record | `redis-strlix-amr.eastus.privatelink.redis.azure.net` → 10.0.1.4 |
+| Redis `publicNetworkAccess` | **Enabled** (left on — market-api / CAE eastus2 still needs public path) |
+| Est. cost | ~**$7–8/mo** PE + pennies DNS (no extra VNet) |
 
-**Do not `--apply` until:** eastus2 VNet (or peering) + `pe-subnet` with PE policies disabled + script REDIS id pointed at `redis-strlix-amr` (group-id for Managed Redis may differ from classic `redisCache`).
+Smoke after PE: origin `/health` → `redis:true`; AFD `/health` → **200**. Public Redis path unbroken.
+
+CLI recipe (also in `infra/hardening/CREATE-private-endpoints.sh`):
+
+```bash
+az network vnet subnet create -g rg-zevi-cloudphone --vnet-name vm-zevi-cloudphone-vnet \
+  -n pe-subnet --address-prefixes 10.0.1.0/27 --private-endpoint-network-policies Disabled
+REDIS_ID=$(az redisenterprise show -g rg-zevi-cloudphone -n redis-strlix-amr --query id -o tsv)
+az network private-endpoint create -g rg-zevi-cloudphone -n pe-redis-strlix-amr -l eastus \
+  --vnet-name vm-zevi-cloudphone-vnet --subnet pe-subnet \
+  --private-connection-resource-id "$REDIS_ID" \
+  --group-id redisEnterprise --connection-name pe-conn-redis-amr
+# DNS: privatelink.redis.azure.net + link + dns-zone-group
+```
+
+### SKIP — Key Vault PE (eastus2)
+
+| Check | Decision |
+|-------|----------|
+| KV region | `kv-zevi-strlix` is **eastus2**; VNet is **eastus** |
+| Cross-region PE | Painful / not useful without same-region VNet or peering |
+| Extra eastus2 VNet + pe-subnet + PE | Complexity + ~$7–8 PE (+ VNet plumbing) → typically **>$15/mo** vs benefit today |
+| **Decision** | **SKIP** — document only; revisit when CAE has VNet integration or KV moves eastus |
+
+### SKIP — Postgres PE
+
+`psql-zevi-strlix` is **centralus** — unchanged SKIP.
 
 ## 4) GPU quota requests (no VMs created — limit still 0)
 
@@ -163,7 +193,7 @@ Ran `infra/hardening/CREATE-private-endpoints.sh` dry-run only. Reasons:
 
 - No GPU resources created (Azure N* limit still **0**; AWS G/VT request pending)  
 - Stripe live gates remain OFF (`pay_mode=test`)  
-- No private endpoints applied  
+- Redis Managed Redis PE applied (public access still Enabled); KV PE skipped (cross-region)  
 - No deletes in any RG  
 
 ---
@@ -180,4 +210,5 @@ Ran `infra/hardening/CREATE-private-endpoints.sh` dry-run only. Reasons:
 - [x] AFD endpoint hostname reported  
 - [x] AFD `/health` 200  
 - [x] Azure + AWS GPU quota requests attempted (Azure portal follow-up needed)  
-- [ ] Private endpoints (skipped — no pe-subnet / region mismatch)  
+- [x] Redis PE (`pe-redis-strlix-amr` + `pe-subnet` 10.0.1.0/27); public access kept Enabled  
+- [ ] Key Vault PE (SKIP — eastus2 cross-region; avoid >$15/mo extra VNet)  
