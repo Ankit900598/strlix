@@ -1,4 +1,9 @@
-"""Redis-backed sessions and rate limits; configured Redis never falls back in-process."""
+"""Redis-backed sessions and rate limits; configured Redis never falls back in-process.
+
+When STRLIX_REDIS_URL is set and Redis is down, rate_limit() returns False
+(fail closed → HTTP 429). FREE_LAUNCH_MODE does not switch this to an
+in-process bucket and does not raise the caller's limit.
+"""
 from __future__ import annotations
 import time
 from typing import Optional

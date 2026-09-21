@@ -4,21 +4,43 @@
   const STREAM = cfg.streamUrl || "http://127.0.0.1:8789";
   const STREAM_FALLBACK = cfg.streamFallback || "http://127.0.0.1:8787";
   let PAY_MODE = cfg.payMode || "test";
+  let FREE_MONTH = (cfg.billingMode || "free_month") === "free_month" || cfg.freeLaunch !== false;
+  let LAUNCH_COPY = "Free for your first month — no card required.";
+  let INVITE_REQUIRED = false;
+  function paintLaunch() {
+    const payPill = document.getElementById("payPill");
+    const copy = document.getElementById("freeMonthCopy");
+    if (copy) copy.textContent = LAUNCH_COPY;
+    if (!payPill) return;
+    if (FREE_MONTH) {
+      payPill.textContent = "FREE MONTH";
+      payPill.classList.add("test");
+      payPill.title = LAUNCH_COPY + " Stripe stays in test mode.";
+      return;
+    }
+    payPill.textContent = "PAY: " + String(PAY_MODE).toUpperCase();
+    payPill.classList.toggle("test", PAY_MODE !== "live");
+    payPill.title = PAY_MODE === "live"
+      ? "LIVE gated on — real charges possible"
+      : "Stripe/Razorpay test mode — no real charges";
+  }
   async function refreshPayGates() {
-    if (!MARKET_API) return;
+    if (!MARKET_API) { paintLaunch(); return; }
     try {
-      const g = await fetch(MARKET_API.replace(/\/$/, "") + "/v1/payments/status").then((r) => r.json());
-      PAY_MODE = g.effective_mode || PAY_MODE;
-      const pill = document.querySelector(".pill.test, .top-actions .pill");
-      const payPill = [...document.querySelectorAll(".top-actions .pill")].find((el) => /PAY:/i.test(el.textContent || ""));
-      if (payPill) {
-        payPill.textContent = "PAY: " + String(PAY_MODE).toUpperCase();
-        payPill.classList.toggle("test", PAY_MODE !== "live");
-        payPill.title = PAY_MODE === "live"
-          ? "LIVE gated on — real charges possible"
-          : "Stripe/Razorpay test mode — no real charges";
-      }
-    } catch (_) { /* keep cfg default */ }
+      const base = MARKET_API.replace(/\/$/, "");
+      const [gates, launch] = await Promise.all([
+        fetch(base + "/v1/payments/status").then((r) => r.json()),
+        fetch(base + "/v1/launch").then((r) => r.json()),
+      ]);
+      PAY_MODE = gates.effective_mode || PAY_MODE;
+      if (typeof launch.free_month_active === "boolean") FREE_MONTH = launch.free_month_active;
+      if (launch.copy) LAUNCH_COPY = launch.copy;
+      INVITE_REQUIRED = !!launch.invite_required;
+      paintLaunch();
+      render();
+    } catch (_) {
+      paintLaunch();
+    }
   }
   refreshPayGates();
 
@@ -181,11 +203,11 @@
           <span class="chip net" title="Honest network class — not residential anti-detect">${escapeHtml(d.network || "datacenter")}</span>
           ${d.available ? "" : '<span class="chip gone">Unavailable</span>'}
         </div>
-        <div class="price">${money(d.price_hour_cents)}/hr · ${money(d.price_day_cents)}/day <span class="meta" style="display:inline">· ${escapeHtml(d.region || "")}</span></div>
+        <div class="price">${FREE_MONTH ? escapeHtml(LAUNCH_COPY) : `${money(d.price_hour_cents)}/hr · ${money(d.price_day_cents)}/day`} <span class="meta" style="display:inline">· ${escapeHtml(d.region || "")}</span></div>
         <p class="meta">${escapeHtml(d.notes || "")}</p>
         <div class="actions">
           <button class="btn primary" data-act="open" ${d.available ? "" : "disabled"}>Open phone</button>
-          <button class="btn" data-act="buy" ${d.available ? "" : "disabled"}>Rent</button>
+          <button class="btn" data-act="buy" ${d.available ? "" : "disabled"}>${FREE_MONTH ? "Free month" : "Rent"}</button>
         </div>
       </article>`;
     }).join("") || `<p class="meta">No devices match filters.</p>`;
@@ -380,7 +402,61 @@
     }
   }
 
+  async function startFreeMonth(device) {
+    selected = device;
+    els.modal.classList.add("open");
+    const invite = INVITE_REQUIRED
+      ? `<label class="sr-only" for="freeInvite">Invite code</label>
+         <input id="freeInvite" type="text" maxlength="64" placeholder="Invite code" required />`
+      : `<label class="sr-only" for="freeInvite">Invite code (optional)</label>
+         <input id="freeInvite" type="text" maxlength="64" placeholder="Invite code (optional)" />`;
+    els.modalBody.innerHTML = `<p class="pill test">${escapeHtml(LAUNCH_COPY)}</p>
+      <p>Open <strong>${escapeHtml(device.model)}</strong> for the free month. Stripe is not used. Test checkout stays available on the API and cannot charge a card.</p>
+      <label class="sr-only" for="freeEmail">Email for the waitlist (optional)</label>
+      <input id="freeEmail" type="email" autocomplete="email" placeholder="Email for the waitlist (optional)" />
+      ${invite}
+      <div class="row">
+        <button class="btn primary" id="freeStart" type="button">Start free month</button>
+        <button class="btn" id="payCancel" type="button">Cancel</button>
+      </div>`;
+    els.modalBody.querySelector("#payCancel").onclick = () => els.modal.classList.remove("open");
+    els.modalBody.querySelector("#freeStart").onclick = () => confirmFree(device);
+  }
+
+  async function confirmFree(device) {
+    const button = els.modalBody.querySelector("#freeStart");
+    if (button) button.disabled = true;
+    const email = (els.modalBody.querySelector("#freeEmail").value || "").trim();
+    const invite = (els.modalBody.querySelector("#freeInvite").value || "").trim();
+    try {
+      if (MARKET_API && email) {
+        const joined = await fetch(MARKET_API.replace(/\/$/, "") + "/v1/waitlist", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, invite_code: invite || undefined }),
+        });
+        await readJson(joined);
+      }
+      if (!MARKET_API) {
+        els.modal.classList.remove("open");
+        openFullscreen(device, { local: true, plan: "free_month", device_id: device.id, card_required: false });
+        return;
+      }
+      const granted = await apiJson("/v1/access/grant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ device_id: device.id, invite_code: invite || undefined }),
+      });
+      els.modal.classList.remove("open");
+      openFullscreen(device, granted, { wow: true });
+    } catch (err) {
+      els.modalBody.insertAdjacentHTML("beforeend", `<p class="claim-message">${escapeHtml(err.message)}</p>`);
+      if (button) button.disabled = false;
+    }
+  }
+
   async function startCheckout(device) {
+    if (FREE_MONTH) return startFreeMonth(device);
     selected = device;
     els.modal.classList.add("open");
     els.modalBody.innerHTML = `<p class="pill test">PAYMENT MODE: ${PAY_MODE.toUpperCase()} — no real charges</p>

@@ -331,6 +331,16 @@
       font-size: 11px; color: var(--muted);
       padding: 0 4px;
     }
+    .trust-row {
+      width: min(420px, 92vw);
+      display: flex; flex-wrap: wrap; gap: 4px 10px;
+      justify-content: space-between; align-items: center;
+      font-size: 10px; color: var(--muted);
+      padding: 0 4px 2px;
+    }
+    .trust-row nav { display: flex; gap: 8px; }
+    .trust-row a { color: var(--muted); text-decoration: none; }
+    .trust-row a:hover, .trust-row a:focus-visible { color: var(--fg); }
     .live-badge {
       display: inline-flex; align-items: center; gap: 5px;
       font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
@@ -636,6 +646,7 @@
         <div class="phone-empty" id="phoneEmpty">
           <div>
             <strong>Connecting to your phone…</strong>
+            Free for your first month — no card required.
             Live preview appears when ADB is connected.
           </div>
         </div>
@@ -733,6 +744,15 @@
       <span class="live-badge off" id="streamBadge"><span class="blink"></span> Preview</span>
       <span id="streamHud" title="transport · frame rate · bitrate · tap-to-pixels"></span>
       <span id="shotStamp">—</span>
+    </div>
+    <div class="trust-row">
+      <span>Free for your first month — no card required.</span>
+      <nav aria-label="Legal">
+        <a href="/static/legal/terms.html">Terms</a>
+        <a href="/static/legal/privacy.html">Privacy</a>
+        <a href="/static/legal/support.html">Support</a>
+        <a href="/static/legal/capabilities.html">Limits</a>
+      </nav>
     </div>
   </div>
 

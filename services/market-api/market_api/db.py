@@ -30,6 +30,12 @@ CREATE TABLE IF NOT EXISTS audit_log (
   id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT, action TEXT,
   resource_type TEXT, resource_id TEXT, meta TEXT, created_at REAL
 );
+CREATE TABLE IF NOT EXISTS waitlist (
+  id TEXT PRIMARY KEY,
+  email TEXT UNIQUE,
+  created_at REAL NOT NULL,
+  invite_code_hash TEXT
+);
 """
 
 def new_id() -> str:
@@ -123,6 +129,9 @@ def session(user_id: Optional[str] = None) -> Iterator[Conn]:
         columns = {row[1] for row in raw.execute("PRAGMA table_info(users)").fetchall()}
         if "is_anonymous" not in columns:
             raw.execute("ALTER TABLE users ADD COLUMN is_anonymous INTEGER NOT NULL DEFAULT 0")
+        wait_cols = {row[1] for row in raw.execute("PRAGMA table_info(waitlist)").fetchall()}
+        if wait_cols and "invite_code_hash" not in wait_cols:
+            raw.execute("ALTER TABLE waitlist ADD COLUMN invite_code_hash TEXT")
         con = Conn(raw, "sqlite")
         try:
             yield con

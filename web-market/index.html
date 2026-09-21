@@ -16,7 +16,7 @@
   <header class="top">
     <div class="brand"><div class="logo" aria-hidden="true">S</div> Strlix <span class="pill">Cloud phone + in-phone AI</span></div>
     <div class="top-actions">
-      <span class="pill test" title="Stripe/Razorpay test mode">PAY: TEST</span>
+      <span class="pill test" id="payPill" title="Free first month. Stripe stays in test mode — no card.">FREE MONTH</span>
       <span class="pill" id="sessionPill">Guest preview · no signup</span>
       <span class="pill">Android 7+ graceful viewer</span>
       <button class="btn" type="button" onclick="location.href='../static/index.html'">Legacy viewer</button>
@@ -29,8 +29,8 @@
       <h1>Your cloud Android.<br/>AI lives <em>inside</em> the phone.</h1>
       <p>
         Tap the mini phone to expand into a fullscreen bezel experience.
-        Filter by model, Android version, RAM, and ROM — then rent with a test-mode checkout stub (no real charges).
-        Built to avoid the wallet-gauntlet and outside-chat cockpit patterns common in cloud phone apps.
+        <strong id="freeMonthCopy">Free for your first month — no card required.</strong>
+        Filter by model, Android version, RAM, and ROM. Stripe stays in test mode and is not required to open a phone.
       </p>
       <div class="hero-cta">
         <button class="btn primary" type="button" id="btnTry2" onclick="document.getElementById('btnTry').click()">Try live preview</button>
@@ -78,9 +78,14 @@
   </section>
 
   <footer class="footer">
-    Strlix · rg-zevi-cloudphone · desktop-api :8789 · market-api :8792 ·
-    Practices from BEST-PRACTICES-500 · Mistakes addressed from MISTAKES-50 ·
-    Payment stubs only (Stripe/Razorpay test keys).
+    <p>Strlix · free first month · no card · Stripe test mode only.</p>
+    <nav class="legal-nav" aria-label="Legal">
+      <a href="/legal/terms.html">Terms</a>
+      <a href="/legal/privacy.html">Privacy</a>
+      <a href="/legal/support.html">Support</a>
+      <a href="/legal/capabilities.html">What Strlix can and can't do</a>
+    </nav>
+    <p>support@strlix.app is a placeholder until a custom domain is attached.</p>
   </footer>
 
   <!-- Fullscreen phone -->
@@ -101,7 +106,7 @@
     <aside class="claim-prompt" id="claimPrompt" hidden aria-live="polite">
       <div>
         <strong>Your phone is live.</strong>
-        <span>Save this rental across devices — email only, no password.</span>
+        <span>Free for your first month — no card required. Save this phone with an email, no password.</span>
       </div>
       <form id="claimForm">
         <label class="sr-only" for="claimEmail">Email</label>
@@ -128,7 +133,9 @@
       marketApi: "http://127.0.0.1:8792",
       streamUrl: "http://127.0.0.1:8789",
       streamFallback: "http://127.0.0.1:8787",
-      payMode: "test"
+      payMode: "test",
+      billingMode: "free_month",
+      freeLaunch: true
     };
   </script>
   <script src="js/market.js"></script>

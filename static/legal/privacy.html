@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Strlix — Privacy</title>
+  <link rel="stylesheet" href="legal.css" />
+</head>
+<body>
+  <main>
+    <p class="placeholder">Placeholder. Company name is Strlix until a legal entity is confirmed. Contact <a href="mailto:support@strlix.app">support@strlix.app</a> (placeholder; set SUPPORT_EMAIL). Have counsel review before a wide launch. This is not legal advice.</p>
+    <a class="back" href="/">← Phone</a>
+    <h1>Privacy</h1>
+    <p class="updated">Last updated 21 September 2026 · Strlix preview</p>
+    <p>Strlix is a cloud phone. The preview is built to keep personal data small: an email if you choose to save one, a session, and the phone lease.</p>
+    <h2>What we store</h2>
+    <ul>
+      <li><strong>Waitlist.</strong> Email and the time you joined (<code>created_at</code>). An invite code, if you used one, is stored only as a hash.</li>
+      <li><strong>Account.</strong> Email and display name after you claim a session. Anonymous preview sessions have no email until you save one.</li>
+      <li><strong>Lease.</strong> Which cloud device you were granted, for how long, and that the amount was zero during the free month.</li>
+      <li><strong>Payments.</strong> Not used for the free month. If a test checkout runs, we store a provider intent id and status. We do not store card numbers.</li>
+      <li><strong>Rate limits.</strong> A short hash of the client address in Redis, not the raw address in audit logs.</li>
+    </ul>
+    <h2>What we don't do</h2>
+    <ul>
+      <li>No live card charge during the free month.</li>
+      <li>No sale of waitlist emails.</li>
+      <li>No requirement to sign in with Entra for the phone preview. Entra is optional and off by default.</li>
+    </ul>
+    <h2>How to delete</h2>
+    <p>Signed-in sessions can request a soft-delete from the API (<code>/v1/privacy/soft-delete</code>). Waitlist emails are separate: email <a href="mailto:support@strlix.app">support@strlix.app</a> and ask us to remove that address. Hard-delete of backups is a later job, not an instant wipe of every replica.</p>
+    <h2>Where it runs</h2>
+    <p>The service runs in Azure resource group <code>rg-zevi-cloudphone</code>. The database is Postgres. Sessions and rate limits use Redis. See <a href="support.html">Support</a> for contact.</p>
+    <nav class="legal-nav" aria-label="Legal">
+      <a href="terms.html">Terms</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="support.html">Support</a>
+      <a href="capabilities.html">Limits</a>
+    </nav>
+  </main>
+</body>
+</html>

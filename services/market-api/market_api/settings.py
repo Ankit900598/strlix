@@ -34,7 +34,36 @@ class Settings(BaseSettings):
     cors_origins: str = "*"
 
     rate_limit_per_min: int = 60
+    # Anonymous and signup paths stay tight during the free month. Redis is
+    # the shared limiter when STRLIX_REDIS_URL is set; free launch does not
+    # raise these caps.
+    anon_rate_per_min: int = 5
+    login_rate_per_min: int = 10
+    waitlist_rate_per_min: int = 8
     applicationinsights_connection_string: str = ""
+
+    # Launch billing. Default is a free first month with no card.
+    # Live Stripe stays independently triple-gated in payments.py.
+    # Turn the free month off only by setting BOTH:
+    #   STRLIX_BILLING_MODE=test|live   (or unprefixed BILLING_MODE)
+    #   STRLIX_FREE_LAUNCH_MODE=false   (or unprefixed FREE_LAUNCH_MODE)
+    billing_mode: str = "free_month"
+    free_launch_mode: bool = True
+    free_month_days: int = 30
+    invite_codes: str = ""  # comma-separated; empty = open signup
+    support_email: str = "support@strlix.app"
+    # True until Ankit attaches a domain he owns. Legal pages say so.
+    support_email_placeholder: bool = True
+
+    # Auth. Default anon keeps /v1/auth/anon and phone-first demos working.
+    # entra adds RS256 validation; it does not disable anon sessions.
+    auth_mode: str = "anon"  # anon | entra
+    entra_tenant_id: str = ""
+    entra_client_id: str = ""
+    entra_audience: str = "api://strlix-market"
+    entra_issuer: str = ""
+    entra_jwks_uri: str = ""
+    entra_kind: str = "workforce"  # workforce | ciam
 
     @property
     def use_postgres(self) -> bool:

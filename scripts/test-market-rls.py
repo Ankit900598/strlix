@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """Demonstrate per-user RLS isolation against Azure Postgres."""
 import os, sys
-sys.path.insert(0, "/workspace/zevi-cloudphone/services/market-api")
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+CANDIDATES = [Path("/workspace/zevi-cloudphone"), ROOT]
+REPO = next((p for p in CANDIDATES if (p / "services" / "market-api").is_dir()), ROOT)
+sys.path.insert(0, str(REPO / "services" / "market-api"))
 from fastapi.testclient import TestClient
 from market_api.main import app
 

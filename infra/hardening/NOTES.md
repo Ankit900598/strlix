@@ -10,8 +10,15 @@
 | `afd-waf.bicep` | Same as Bicep skeleton | after FQDN params |
 | `CREATE-redis.sh` | Azure Cache for Redis Basic C0 | `--apply` Day 1; keep `ca-redis` until cutover |
 | `CREATE-private-endpoints.sh` | PE stubs KV (+ Redis); Postgres SKIP | cost-documented |
-| `ENTRA-EXTERNAL-ID.md` | Minimal Entra / CIAM path | portal-only |
-| `PAYMENTS-KEYVAULT.md` | Flip Stripe keys via KV; triple live gate | code shipped; live OFF |
+| `ENTRA-EXTERNAL-ID.md` | Entra JWT validation, default `STRLIX_AUTH_MODE=anon` | code shipped; portal still Ankit |
+| `PAYMENTS-KEYVAULT.md` | Flip Stripe keys via KV; triple live gate | code shipped; live OFF; deferred for free month |
+| `ABUSE-CONTROLS.md` | Redis rate limits + WAF notes | doc |
+| `TIGHTEN-WAF.sh` | Custom rate-limit rules; never matches `/health` | dry-run |
+| `ATTACH-CUSTOM-DOMAIN.sh` | Managed cert on `strlix-edge` when `DOMAIN` is set | dry-run; `--apply` needs `DOMAIN` |
+| `CUSTOM-DOMAIN.md` | DNS CNAME + TXT runbook | doc; domain not owned here |
+| `EXTEND-AFD-ROUTES.sh` | Add `/legal/*` to `route-market` | dry-run |
+| `PRIVATE-REDIS-PATH.sh` | CAE↔eastus path; public access off only with `CONFIRM=yes` | dry-run; no-ops without CAE VNet |
+| `PRIVATE-REDIS.md` | Why public Redis stays Enabled | doc |
 
 ## Front Door + WAF (CREATE Day 1)
 
@@ -37,9 +44,13 @@ Est.: ~$16/mo.
 - **No this sprint:** Postgres PE (server is **centralus** — fix region later).
 - Cost: ~$7–20/mo each + DNS — see script header.
 
-## Entra External ID (NOTES only)
+## Entra External ID (code shipped, default anon)
 
-See `ENTRA-EXTERNAL-ID.md`. Feature-flag auth later; keep anon preview for demos.
+See `ENTRA-EXTERNAL-ID.md`. `STRLIX_AUTH_MODE=entra` validates RS256 access tokens and still serves `/v1/auth/anon`. Do not flip demos to entra.
+
+## Free month
+
+`STRLIX_BILLING_MODE=free_month` and `STRLIX_FREE_LAUNCH_MODE=true` are the launch defaults. Checklist: `demo/launch/LAUNCH-CHECKLIST.md`. Ops stubs: `infra/ops/`.
 
 ## Payments live-readiness (gated — code shipped)
 

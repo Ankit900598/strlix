@@ -423,6 +423,10 @@ def handle_stripe_webhook(payload: bytes, sig_header: str | None) -> dict[str, A
 
 
 def gate_status() -> dict[str, Any]:
+    # Local import: launch must not import payments (no Stripe on the free path).
+    from . import launch
+
+    active = launch.free_month_active()
     return {
         "pay_mode_setting": settings.pay_mode,
         "payments_live": payments_live_flag(),
@@ -431,4 +435,8 @@ def gate_status() -> dict[str, Any]:
         "live_charges_allowed": live_charges_allowed(),
         "provider": settings.pay_provider,
         "publishable_key_prefix": (settings.stripe_publishable_key or "")[:12],
+        "billing_mode": launch.billing_mode(),
+        "free_launch_mode": launch.free_launch_flag(),
+        "free_month_active": active,
+        "card_required": not active,
     }
