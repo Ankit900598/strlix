@@ -46,22 +46,33 @@ run az afd origin create -g "$RG" --profile-name "$PROFILE" --origin-group-name 
 
 # Routes (path split — refine after first traffic)
 run az afd route create -g "$RG" --profile-name "$PROFILE" --endpoint-name "$ENDPOINT" -n route-market \
-  --origin-group og-market-api --supported-protocols Http Https --https-redirect Enabled \
+  --origin-group og-market-api --supported-protocols '[Http,Https]' --https-redirect Enabled \
   --forwarding-protocol HttpsOnly --link-to-default-domain Enabled \
-  --patterns-to-match '/v1/*' '/market/*' '/health' '/ready'
+  --patterns-to-match "['/v1/*','/market/*','/health','/ready']"
 
 run az afd route create -g "$RG" --profile-name "$PROFILE" --endpoint-name "$ENDPOINT" -n route-android \
-  --origin-group og-android-api --supported-protocols Http Https --https-redirect Enabled \
+  --origin-group og-android-api --supported-protocols '[Http,Https]' --https-redirect Enabled \
   --forwarding-protocol HttpsOnly --link-to-default-domain Enabled \
-  --patterns-to-match '/android/*' '/agent/*'
+  --patterns-to-match "['/android/*','/agent/*']"
 
-# Security policy association (WAF → endpoint) — may need portal if CLI schema drifts
+# Security policy association (WAF → endpoint) — soft-fail OK if CLI schema drifts
+SUB_ID=$(az account show --query id -o tsv)
+ENDPOINT_ID="/subscriptions/${SUB_ID}/resourceGroups/${RG}/providers/Microsoft.Cdn/profiles/${PROFILE}/afdEndpoints/${ENDPOINT}"
+WAF_ID="/subscriptions/${SUB_ID}/resourceGroups/${RG}/providers/Microsoft.Network/frontdoorWebApplicationFirewallPolicies/${WAF}"
+WAF_JSON=$(mktemp)
+cat > "$WAF_JSON" <<JSON
+{"wafPolicy":{"id":"${WAF_ID}"},"associations":[{"domains":[{"id":"${ENDPOINT_ID}"}],"patternsToMatch":["/*"]}]}
+JSON
 run az afd security-policy create -g "$RG" --profile-name "$PROFILE" -n sp-waf \
-  --domains "/subscriptions/\$(az account show --query id -o tsv)/resourceGroups/$RG/providers/Microsoft.Cdn/profiles/$PROFILE/afdEndpoints/$ENDPOINT" \
-  --waf-policy "/subscriptions/\$(az account show --query id -o tsv)/resourceGroups/$RG/providers/Microsoft.Network/frontdoorwebapplicationfirewallpolicies/$WAF" || true
+  --web-application-firewall "@${WAF_JSON}" || {
+  echo "NOTE: WAF security-policy association soft-failed (CLI schema/portal may be needed). Continuing."
+}
+rm -f "$WAF_JSON"
 
 echo
 echo "Est. cost: ~\$35/mo AFD Standard base + egress + ~\$2.5 WAF policy."
 echo "Bicep alternative: az deployment group create -g $RG -f infra/hardening/afd-waf.bicep \\
   -p marketOriginHost=$MARKET_FQDN androidOriginHost=$ANDROID_FQDN"
 [[ "$APPLY" -eq 0 ]] && echo "Re-run with --apply to execute (after portal credit check)."
+# Always exit 0 after soft-failable WAF step so --apply is not marked failed
+exit 0
