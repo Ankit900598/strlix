@@ -1,3 +1,5 @@
+> Newer cutover status: see [`STATUS.md`](./STATUS.md) + [`HARDENING-APPLIED.md`](./HARDENING-APPLIED.md) (2026-09-21 ~21:15 IST).
+
 # Credit-burn tonight — shipped (GPU NO-GO)
 
 **When:** 2026-09-21 ~19:45 IST (Asia/Calcutta)  

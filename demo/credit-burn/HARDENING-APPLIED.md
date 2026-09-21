@@ -1,6 +1,6 @@
 # Day-1 Hardening Applied — Strlix / Zevi Cloud Phone
 
-**When:** 2026-09-21 ~20:05 IST  
+**When:** 2026-09-21 ~21:15 IST (cutover pass; prior AFD/Redis create ~20:05 IST)  
 **Subscription:** `a3dc5296-f948-427e-8656-c6bc52afee21`  
 **RG lock:** `rg-zevi-cloudphone` ONLY (no other RGs touched)  
 **Constraints honored:** no deletes · no GPU · Stripe live OFF (pay_mode remains `test`)
@@ -50,14 +50,15 @@ Retrieve key:
 az keyvault secret show --vault-name kv-zevi-strlix -n redis-primary-key --query value -o tsv
 ```
 
-### Cutover status — **NOT done**
+### Cutover status — **DONE** (2026-09-21 ~21:15 IST)
 
-- `ca-redis` Container App still **Running** (minReplicas=1). Kept intentionally.
-- `ca-market-api` still on sidecar Redis (`/health` → `"redis":true` via ca-redis).
-- **Do not** point `STRLIX_REDIS_URL` at Managed Redis until a documented smoke passes:
-  1. Set env from KV secret + host/port above
-  2. `GET /health` → `redis:true`, no `redis_error`
-  3. Then scale `ca-redis` minReplicas→0 (still do not delete)
+1. Built `rediss://:<KV redis-primary-key>@redis-strlix-amr.eastus.redis.azure.net:10000/0` (host/port confirmed via `az redisenterprise`).
+2. Updated `ca-market-api` secrets `redis-url` + `redis-password` (password aligned to AMR primary so `STRLIX_REDIS_PASSWORD` kwargs do not override URL auth with the old sidecar password).
+3. Forced revision **`ca-market-api--0000003`** (`STRLIX_HARDENING_MARK=amr-cutover-20260921T2130IST`). Secret host verified: `redis-strlix-amr.eastus.redis.azure.net`.
+4. Smoke: origin + AFD `/health` → **200** `redis:true`, `redis_error:null`, `pay_mode=test`. AMR reachable (box `PING` ok; connected_clients ≥1).
+5. Scaled **`ca-redis` minReplicas→0** (max=1). Resource **not deleted**. App may still show Running until idle scale-to-zero settles.
+6. Note: `ca-market-api` still has unused `redis-sidecar` container (127.0.0.1); traffic uses Managed Redis. Sidecar cleanup is a follow-up (not deleted this run).
+7. Rollback (if needed): restore prior secrets `redis-url=redis://127.0.0.1:6379/0` + prior `redis-password`, then `az containerapp update` to new revision.
 
 ### Leftover stub (not deleted)
 
@@ -110,7 +111,7 @@ Protocols: Http+Https, https-redirect Enabled, forwarding HttpsOnly, link-to-def
 |-------|--------|
 | Origin market `/health` | **200** `ok:true` (pay_mode=test, redis via ca-redis) |
 | Origin android `/health` | **200** |
-| AFD `https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/health` | **404** Azure default page — route `deploymentStatus` still `NotStarted` (propagation lag; endpoint hostname is live) |
+| AFD `https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/health` | **200** (rechecked 2026-09-21 ~21:15 IST; was 404 during initial propagation) |
 
 Re-check later:
 
@@ -124,13 +125,44 @@ Est. cost: ~$35/mo AFD Standard base + egress + ~$2.5 WAF policy.
 
 ---
 
-## 3) Explicitly NOT done
+## 3) Private endpoints — **SKIPPED** (not safe to `--apply`)
 
-- No GPU resources created  
+Ran `infra/hardening/CREATE-private-endpoints.sh` dry-run only. Reasons:
+
+| Check | Finding |
+|-------|---------|
+| `pe-subnet` | **Missing** — VNet `vm-zevi-cloudphone-vnet` has only `default` (10.0.0.0/24) |
+| VNet region | **eastus** only; script defaults `LOC=eastus2` (KV is eastus2; CAE is eastus2) |
+| Redis target | Script still stubs `redis-zevi-strlix` (CreateFailed eastus2); live AMR is **eastus** `redis-strlix-amr` |
+| Cost | ~$7.30/mo per PE ×2 ≈ $15–20/mo — modest, but would fail/misplace without eastus2 VNet + pe-subnet + correct Redis ID |
+| Postgres PE | **SKIP** (centralus) — unchanged |
+
+**Do not `--apply` until:** eastus2 VNet (or peering) + `pe-subnet` with PE policies disabled + script REDIS id pointed at `redis-strlix-amr` (group-id for Managed Redis may differ from classic `redisCache`).
+
+## 4) GPU quota requests (no VMs created — limit still 0)
+
+### Azure eastus2
+
+| Attempt | Result | ID |
+|---------|--------|-----|
+| `az quota update` Standard NCASv3_T4 → 8 | **Failed** `QuotaNotAvailableForResource` | `e5f1e109-cd66-43eb-9f20-2a44385f9f10` (2026-09-21 15:39:25Z / ~21:09 IST) |
+| `az quota update` StandardNVADSA10v5 → 8 | **Failed** `ContactSupport` | `f8d83db5-c9e3-4817-ae47-38f3f6366577` (2026-09-21 15:40:59Z / ~21:11 IST) |
+| `az support in-subscription tickets create` (Compute-VM cores) | **Blocked** `InvalidSupportPlan` (subscription is **Developer** — Support API needs higher plan) | n/a |
+
+**Portal follow-up:** Azure Portal → Help + support → Quota increase → Compute-VM (cores) → eastus2 → NCASv3_T4 / NVADSA10v5 → 8. Do **not** create GPU VM until `az vm list-usage -l eastus2` shows limit > 0.
+
+### AWS us-east-1
+
+| Attempt | Result | IDs |
+|---------|--------|-----|
+| `aws service-quotas request-service-quota-increase` EC2 `L-DB2E81BA` (Running On-Demand G and VT) 0→4 | **CASE_OPENED** / PENDING | Request `ab584e62c7f748b8908dd6e1e61c01bamRtt8Z1K` · Case `179000526000600` |
+
+## 5) Explicitly NOT done / still gated
+
+- No GPU resources created (Azure N* limit still **0**; AWS G/VT request pending)  
 - Stripe live gates remain OFF (`pay_mode=test`)  
-- No private endpoints applied this run  
+- No private endpoints applied  
 - No deletes in any RG  
-- No market-api Redis cutover  
 
 ---
 
@@ -139,8 +171,11 @@ Est. cost: ~$35/mo AFD Standard base + egress + ~$2.5 WAF policy.
 - [x] Managed Redis low-cost SKU in `rg-zevi-cloudphone` (B0 eastus; Basic C0 unavailable)  
 - [x] Primary key in `kv-zevi-strlix` / `redis-primary-key`  
 - [x] rediss URL documented  
-- [x] `ca-redis` kept running  
+- [x] `ca-redis` scaled to minReplicas=0 after cutover (not deleted)  
+- [x] market-api Redis cutover to Managed Redis + smoke OK  
 - [x] AFD profile + endpoint + origins + routes  
 - [x] WAF policy + security-policy association  
 - [x] AFD endpoint hostname reported  
-- [ ] AFD `/health` 200 (pending Front Door route deployment propagation)  
+- [x] AFD `/health` 200  
+- [x] Azure + AWS GPU quota requests attempted (Azure portal follow-up needed)  
+- [ ] Private endpoints (skipped — no pe-subnet / region mismatch)  
