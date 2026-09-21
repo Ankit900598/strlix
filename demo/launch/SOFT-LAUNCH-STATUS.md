@@ -1,4 +1,4 @@
-# Soft-launch status snapshot — 2026-09-21 ~23:46 IST
+# Soft-launch status snapshot — 2026-09-22 ~00:16 IST
 
 **Operator:** box agent (not CloudAgent) · **RG lock:** `rg-zevi-cloudphone`  
 **Billing posture:** Ankit first calendar month **FREE** (soft-launch); do not enable Stripe **live** charges.  
@@ -8,30 +8,39 @@
 
 | Check | Result |
 |-------|--------|
-| AFD `https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/health` | **200** · `ok:true` · `pay_mode=test` · `redis:true` · `redis_error:null` · market-api 0.3.0 |
-| Origin `ca-market-api…/health` | **200** · same payload · rev `ca-market-api--0000003` Healthy |
-| Origin `ca-android-api…/health` | **200** |
-| Managed Redis `redis-strlix-amr` | **Running** / Succeeded · SKU Balanced_B0 · eastus · public Enabled |
-| GPU VMs in RG | **None** (Azure) — only `vm-zevi-cloudphone` = `Standard_D4nls_v6` (running) |
-| AWS GPU worker | **`i-0531c567f620877c3`** `g4dn.xlarge` **running** us-east-1b · pub `44.201.216.57` · priv `172.31.82.79` · ≈$0.526/hr |
+| AFD `https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/health` | **200** · `ok:true` · `pay_mode=test` · `redis:true` · `redis_error:null` · market-api **0.6.0** · `billing_mode=free_month` · `free_month_active:true` · `live_charges_allowed:false` |
+| Origin `ca-market-api…/health` | **200** · same payload · rev **`ca-market-api--0000004`** Healthy · traffic 100% |
+| Waitlist `POST /v1/waitlist` via AFD | **200** · `{"status":"joined",…,"card_required":false}` (dry smoke email) |
+| Origin `ca-android-api…/health` | unchanged this pass (not re-verified) |
+| Managed Redis `redis-strlix-amr` | left alone (public Enabled) — do not disable |
+| GPU VMs in RG | **None** (Azure) — only `vm-zevi-cloudphone` = `Standard_D4nls_v6` |
+| Stripe live | **OFF** · `STRLIX_PAY_MODE=test` · code defaults `billing_mode=free_month` |
 
 ## Applied this pass
 
-- Azure: action group `ag-strlix-ops` + 4 alerts (see `OPS-ALERTS.md`) — unchanged this GPU pass.
-- AWS: created **one** `g4dn.xlarge` `strlix-gpu-worker-1` (`i-0531c567f620877c3`) + SSM IAM + SG (no public inbound). Runbook: `infra/gpu-worker/aws/CREATE-aws-gpu-worker.md`.
+- **Postgres migration 006** on `psql-zevi-strlix` / db `strlix`: `market.waitlist` + `orders_plan_check` includes `free_month`; RLS insert policy + `GRANT INSERT` to `strlix_app`. Applied via Key Vault `database-url-admin` from the box (secrets not printed).
+- **market-api image** `acrzevistrlix.azurecr.io/market-api:0.6.0` built from `/workspace/zevi-cloudphone` and pushed; `ca-market-api` revision **`ca-market-api--0000004`** (image + `STRLIX_PAY_MODE=test`, hardening mark `soft-launch-006-20260921T1842IST`).
+- **WAF:** `TIGHTEN-WAF.sh --apply` **skipped / failed** — Azure CLI rejected `--match-condition` JSON on this az version. No custom WAF rules added; `/health` untouched. Script remains dry-run-safe for a later CLI-compatible fix.
 
 ## Docs this pass
 
-- `infra/gpu-worker/aws/CREATE-aws-gpu-worker.md` + `CREATE-aws-gpu-worker.sh`
-- Quota/status: `QUOTA-TICKETS.md`, `REQUEST-quota.md`, this file.
+- This file updated with migration + deploy + smoke results.
 
 ## Blockers
 
 | Area | State |
 |------|--------|
 | Custom domain / branded URL | Still on `*.azurefd.net` — not configured this pass |
-| Entra / portal | No block for Monitor alerts (CLI OK) |
-| Azure GPU NCasT4 / NVadsA10 | **Still limit 0** in eastus2 — Support **2609210040005251**; do not create GPU VM |
-| AWS G/VT On-Demand | Quota **4** (case **179000526000600** **CASE_CLOSED**); **worker created** `i-0531c567f620877c3` — see `infra/gpu-worker/aws/CREATE-aws-gpu-worker.md` |
+| WAF rate-limit rules | `TIGHTEN-WAF.sh` CLI syntax mismatch — no RateLimit* rules on `wafzevistrlix` yet |
+| Azure GPU NCasT4 / NVadsA10 | **Still limit 0** in eastus2 — do not create GPU VM |
 | Private Redis cutover | Region split CAE eastus2 vs VNet/Redis eastus — see `PRIVATE-REDIS-PATH.md` |
 | Stripe live | **Deferred** — pay_mode stays `test` |
+
+## Curl helpers
+
+```bash
+curl -sS https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/health
+curl -sS -X POST https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/v1/waitlist \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"you@example.com"}'
+```
