@@ -1,5 +1,7 @@
 # Flip Stripe live keys via Key Vault (no git secrets)
 
+**Deferred.** The soft launch is a free first month. Do not run the "Flip live" section until that period is over. `STRLIX_PAY_MODE` stays `test`. `PAYMENTS_LIVE` and `STRLIX_ALLOW_LIVE_CHARGES` stay false. Phone access uses `POST /v1/access/grant`, which never calls Stripe.
+
 **RG lock:** `rg-zevi-cloudphone` only. Vault: `kv-zevi-strlix` (eastus2).  
 **Default:** TEST. Live charges stay off until Ankit flips **three** gates.
 

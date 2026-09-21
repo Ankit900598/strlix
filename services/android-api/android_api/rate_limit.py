@@ -1,4 +1,9 @@
-"""Simple in-process token bucket (phase-1). Replace with Redis for multi-replica."""
+"""In-process token bucket for android-api chat (phase-1).
+
+Not Redis-backed. market-api owns the Redis limiter used for anon, login,
+waitlist, and checkout. FREE_LAUNCH_MODE does not bypass this bucket.
+See infra/hardening/ABUSE-CONTROLS.md.
+"""
 from __future__ import annotations
 
 import time
