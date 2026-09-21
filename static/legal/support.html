@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Strlix — Support</title>
+  <link rel="stylesheet" href="legal.css" />
+</head>
+<body>
+  <main>
+    <p class="placeholder">Placeholder contact. <a href="mailto:support@strlix.app">support@strlix.app</a> is the default until Ankit attaches a domain he owns. Set <code>SUPPORT_EMAIL</code> or <code>STRLIX_SUPPORT_EMAIL</code> on market-api and the <code>/v1/launch</code> payload follows. This page is static and keeps the placeholder visible on purpose.</p>
+    <a class="back" href="/">← Phone</a>
+    <h1>Support</h1>
+    <p class="updated">Strlix preview · rg-zevi-cloudphone only</p>
+    <p>Email <a href="mailto:support@strlix.app">support@strlix.app</a> for access problems, waitlist removal, or a lease that did not start. Include the time and the email you used. Do not send passwords, card numbers, or session tokens.</p>
+    <h2>Before you write</h2>
+    <ul>
+      <li>The first month is free. You should not be asked for a card. If a screen asks for one, stop and email support — live Stripe is off.</li>
+      <li>The phone on screen is a cloud device (today, an emulator unless a physical phone is attached). It is not your personal phone.</li>
+      <li>Read <a href="capabilities.html">what Strlix can and can't do</a> before reporting a missing assistant or a latency number.</li>
+    </ul>
+    <h2>Status</h2>
+    <p>API health is <code>GET /health</code> on market-api. It reports <code>pay_mode</code>, whether the free month is active, and whether a card is required. It does not include secrets.</p>
+    <nav class="legal-nav" aria-label="Legal">
+      <a href="terms.html">Terms</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="support.html">Support</a>
+      <a href="capabilities.html">Limits</a>
+    </nav>
+  </main>
+</body>
+</html>
