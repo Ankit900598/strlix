@@ -304,6 +304,11 @@ object PromiseIntentRules {
     private fun isAllowOnlyLongerFloor(normalized: String): Boolean =
         ALLOW_ONLY_LONGER_REGEX.containsMatchIn(normalized)
 
+    fun requiresStrictlyLongerThanFloor(goal: String): Boolean {
+        val normalized = goal.lowercase()
+        return isAllowOnlyLongerFloor(normalized) && !isBlockLongerCeiling(normalized)
+    }
+
     private fun isBlockLongerCeiling(normalized: String): Boolean =
         BLOCK_LONGER_CEILING_REGEX.containsMatchIn(normalized)
 

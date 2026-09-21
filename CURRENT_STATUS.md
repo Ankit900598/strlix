@@ -44,6 +44,8 @@ The most important risk is reliability on the phone:
 
 Every task should improve measured reliability, clarity, or speed.
 
+Offline **Phone Surface Trace Replay** (`docs/enforcement-trace-replay.md`) freezes real Accessibility dumps and asserts ALLOW/WARN/BLOCK/LOCK/WAIT without the phone. Add a failing trace before fixing the next phone bug. This does not replace overlay / bind / Xiaomi checks.
+
 Home now has a **Protection Reliability Gate**: Protected only if Accessibility is actually bound (alive or fresh heartbeat) **and** there is an active commitment or an enabled life rule. “Installed” is not “protecting.”
 
 Hosted Understand is live on App Service `phonecodex-backend` (HTTPS). POSTs require `STRLIX_BACKEND_APP_SECRET`. Compiler `pc-lab-astra`, classifier `pc-lab-terra`, vision OFF. PolicyEngine is still law.
@@ -64,7 +66,7 @@ Prefer this loop:
 build -> install/run on phone -> start commitment -> test real app -> inspect logs -> record pass/fail
 ```
 
-For Android work, phone verification matters more than desktop-only tests.
+For Android work, phone verification still matters for overlay and Accessibility bind. Run `PhoneSurfaceTraceReplayTest` first so decision-law bugs fail on a laptop.
 
 For AI work, evals matter more than one impressive example.
 

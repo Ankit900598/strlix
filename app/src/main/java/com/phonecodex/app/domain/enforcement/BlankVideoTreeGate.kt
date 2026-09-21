@@ -61,6 +61,22 @@ object BlankVideoTreeGate {
             return NONE
         }
         if (!VideoPlatformRegistry.isVideoOrStreamingPackage(packageName)) return NONE
+        val surface = SurfaceDetector.detect(packageName, screenText)
+        // Shorts / Reels URL or player is identified short-form — not an unknown
+        // blank movie tree. Media-length / quota law owns that surface.
+        if (
+            surface.isShortFormPlay ||
+            AccessibilityUrlExtractor.containsShortFormVideoUrl(screenText, packageName)
+        ) {
+            return NONE
+        }
+        // Browser home / search / article dumps are not fullscreen OTT trees.
+        if (
+            EnforcementScopeLaw.looksLikeBrowserPackage(packageName) &&
+            !surface.isActivePlayer
+        ) {
+            return NONE
+        }
         if (!isNearBlankAccessibilityTree(screenText)) return NONE
 
         if (PromiseIntentRules.blocksEntertainmentOrMovies(goal)) {

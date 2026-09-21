@@ -425,6 +425,21 @@ class MediaLengthEnforcementTest {
     }
 
     @Test
+    fun allowOnlyLongerThan40_blocksExactly40Minutes() {
+        val detailed = MediaLengthEnforcement.decideDetailed(
+            packageName = VideoPlatformRegistry.CHROME,
+            goal = youtubeMin40,
+            screenText = "Hide player controls YouTube Time duration 40 minutes",
+            structuredMaxBlockMinutes = null,
+            structuredMinBlockMinutes = 40,
+            contentBrands = listOf("youtube")
+        )
+        assertEquals(40 * 60, detailed.currentPlayerDurationSeconds)
+        assertEquals(MediaLengthLocalDecision.BLOCK, detailed.decision)
+        assertEquals(DurationSource.CURRENT_PLAYER, detailed.durationSource)
+    }
+
+    @Test
     fun chromeSpokenSeekbar_hourCommaForm_isNotWait() {
         val screen = "Time elapsed 8 secondsTime duration 1 hour, 2 minutes, 3 seconds"
         val detailed = MediaLengthEnforcement.decideDetailed(

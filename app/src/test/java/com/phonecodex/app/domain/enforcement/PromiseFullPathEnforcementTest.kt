@@ -859,4 +859,41 @@ class BlankVideoTreeGateTest {
         assertNotEquals(DecisionType.BLOCK, result.decision)
         assertNotEquals(DecisionType.WARN, result.decision)
     }
+
+    @Test
+    fun chromeYoutubeHomeThinDump_isNotBlankMovieTree() {
+        val result = BlankVideoTreeGate.evaluate(
+            hasActiveSession = true,
+            packageName = VideoPlatformRegistry.CHROME,
+            screenText = "https://m.youtube.com Home",
+            goal = min40Goal
+        )
+        assertEquals(BlankVideoTreeAction.NONE, result.action)
+    }
+
+    @Test
+    fun chromeShortsUrlThinDump_isNotBlankMovieTree_blocksMinLength() {
+        val shorts = "youtube.com/shorts/ccc333 Shorts player"
+        val gate = BlankVideoTreeGate.evaluate(
+            hasActiveSession = true,
+            packageName = VideoPlatformRegistry.CHROME,
+            screenText = shorts,
+            goal = min40Goal
+        )
+        assertEquals(BlankVideoTreeAction.NONE, gate.action)
+
+        val stored = ConfirmedPromiseBinder.bind(parser.parse(min40Goal))
+        val result = PromiseEnforcementCoordinator.evaluate(
+            PromiseEvalInput(
+                hasActiveSession = true,
+                goal = min40Goal,
+                settings = stored,
+                appRule = AppRuleBehavior.AI_DECIDE,
+                packageName = VideoPlatformRegistry.CHROME,
+                screenText = shorts
+            )
+        )
+        assertEquals(DecisionType.BLOCK, result.decision)
+        assertEquals(EnforcementReasonCodes.MEDIA_BLOCK_UNDER_MIN, result.reasonCode)
+    }
 }

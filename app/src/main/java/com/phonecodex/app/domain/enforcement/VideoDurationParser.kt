@@ -112,6 +112,8 @@ object VideoDurationParser {
         playerZone: String,
         fullText: String
     ): Int? {
+        val recommendationSplit = playerZone != fullText
+
         // 1) Position / total clocks (NewPipe + many native players).
         PLAYER_POSITION_TOTAL_REGEX.find(playerZone)?.let { match ->
             val total = clockToSeconds(
@@ -121,13 +123,16 @@ object VideoDurationParser {
             )
             if (total != null && total > 0) return total
         }
-        PLAYER_POSITION_TOTAL_REGEX.find(fullText)?.let { match ->
-            val total = clockToSeconds(
-                match.groupValues[4],
-                match.groupValues[5],
-                match.groupValues[6]
-            )
-            if (total != null && total > 0) return total
+        // After a "More videos" cut, full-text clock pairs are shelf cards.
+        if (!recommendationSplit) {
+            PLAYER_POSITION_TOTAL_REGEX.find(fullText)?.let { match ->
+                val total = clockToSeconds(
+                    match.groupValues[4],
+                    match.groupValues[5],
+                    match.groupValues[6]
+                )
+                if (total != null && total > 0) return total
+            }
         }
 
         // 2) Explicit a11y "time duration …" (YouTube / Chrome watch controls).
@@ -138,7 +143,9 @@ object VideoDurationParser {
 
         // 3) Duration adjacent to player chrome / seekbar (not recommendation prose).
         findDurationNearPlayerChrome(playerZone)?.let { return it }
-        findDurationNearPlayerChrome(fullText)?.let { return it }
+        if (!recommendationSplit) {
+            findDurationNearPlayerChrome(fullText)?.let { return it }
+        }
 
         return null
     }

@@ -139,6 +139,13 @@ object MediaLengthEnforcement {
         ) {
             return detail(MediaLengthLocalDecision.BLOCK, parsed)
         }
+        if (
+            structuredMinBlockMinutes != null &&
+            PromiseIntentRules.requiresStrictlyLongerThanFloor(goal) &&
+            parsed.currentPlayerDurationSeconds <= structuredMinBlockMinutes * 60
+        ) {
+            return detail(MediaLengthLocalDecision.BLOCK, parsed)
+        }
 
         return detail(MediaLengthLocalDecision.ALLOW, parsed)
     }

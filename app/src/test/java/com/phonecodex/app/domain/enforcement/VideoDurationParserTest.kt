@@ -13,6 +13,27 @@ class VideoDurationParserTest {
         "do not allow videos shorter than 30 minutes for next 1 hour"
 
     @Test
+    fun recShelfClockPairs_afterMoreVideos_areNotCurrentPlayer() {
+        val screen =
+            "youtube.com/watch?v=chip Chip design Show player controls " +
+                "More videos Can This Vibe Coder 8 minutes 55 seconds " +
+                "Andrew Tate 4 minutes 48 seconds 2:14 8:10"
+        val parsed = VideoDurationParser.parse(screen)
+        assertNull(parsed.currentPlayerDurationSeconds)
+        assertEquals(DurationSource.RECOMMENDATION_IGNORED, parsed.source)
+        assertNotEquals(
+            MediaLengthLocalDecision.BLOCK,
+            MediaLengthEnforcement.decide(
+                packageName = VideoPlatformRegistry.CHROME,
+                goal = minLengthPromise,
+                screenText = screen,
+                structuredMaxBlockMinutes = null,
+                structuredMinBlockMinutes = 40
+            )
+        )
+    }
+
+    @Test
     fun liveChromeWatch_recommendationsOnly_ignoresRecDurations() {
         val screen =
             "youtube.com/watch?v=chip " +

@@ -115,3 +115,10 @@ enforcement *loop* is alive before any commitment test:
 - `Run protection check` refreshes those signals and logs; it does not Start
 
 See `ProtectionReliabilityGate` + Home **Protection status** card.
+
+## 8. Phone Surface Trace Replay (2026-09-21)
+
+Offline replay of frozen Accessibility dumps through the same law chain
+(safe → adult → lock → coordinator → quota). Add a failing trace before the
+next phone fix. See `docs/enforcement-trace-replay.md`. This does not prove
+overlay flicker or Accessibility bind.
