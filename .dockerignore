@@ -1,0 +1,14 @@
+.venv
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+demo
+android-agent
+platform-tools
+static
+app
+**/*.md
+**/.env
+**/logs
+**/*.log
+**/*.pid

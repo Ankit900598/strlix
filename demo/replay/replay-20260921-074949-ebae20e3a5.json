@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "id": "ebae20e3a5",
+  "title": "Test replay",
+  "steps": [
+    "Opening Chrome\u2026",
+    "Searching\u2026",
+    "Found it",
+    "Done"
+  ],
+  "frame_count": 4,
+  "gif": "/demo/replay/replay-20260921-074949-ebae20e3a5.gif",
+  "json": "/demo/replay/replay-20260921-074949-ebae20e3a5.json",
+  "created_at": "20260921-074949"
+}

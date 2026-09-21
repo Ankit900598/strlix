@@ -1,0 +1,367 @@
+"""Strlix market-api — catalog, JWT auth, test checkout, per-user Postgres RLS."""
+from __future__ import annotations
+import json, time
+from pathlib import Path
+from typing import Any, Literal, Optional
+
+from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, EmailStr, Field
+
+from .settings import settings
+from . import db, auth, redis_client
+from .jobs import create as create_job, get as get_job
+
+ROOT = Path("/workspace/zevi-cloudphone")
+DEVICES = ROOT / "web-market" / "devices.json"
+
+app = FastAPI(title="Strlix market-api", version="0.4.0")
+origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"] if origins == ["*"] else origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+class LoginIn(BaseModel):
+    email: EmailStr
+    display_name: Optional[str] = None
+
+class ClaimIn(BaseModel):
+    email: EmailStr
+    display_name: Optional[str] = Field(default=None, max_length=120)
+
+class RefreshIn(BaseModel):
+    refresh_token: str
+
+class CheckoutIn(BaseModel):
+    device_id: str
+    plan: str = Field(pattern="^(hour|day)$")
+    provider: Optional[str] = None
+
+class JobCreateIn(BaseModel):
+    """Create a status-only job; task content never crosses this boundary."""
+    kind: Literal["phone_task", "device_wake", "replay_export"] = "phone_task"
+
+def _devices_payload() -> dict[str, Any]:
+    if DEVICES.is_file():
+        return json.loads(DEVICES.read_text())
+    return {"devices": []}
+
+def _rate(claims: dict) -> None:
+    if not redis_client.rate_limit(claims["sub"], settings.rate_limit_per_min):
+        raise HTTPException(429, "rate limit exceeded")
+
+def _anonymous_rate(request: Request) -> None:
+    # Only a short-lived hash is sent to the limiter. Do not put raw client
+    # addresses in audit rows or Redis keys.
+    client_host = request.client.host if request.client else "unknown"
+    key = "anon_create:" + auth.hash_ua(client_host)[:32]
+    if not redis_client.rate_limit(key, min(settings.rate_limit_per_min, 5)):
+        raise HTTPException(429, "anonymous session rate limit exceeded")
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    return response
+
+@app.get("/health")
+def health():
+    return {
+        "ok": True,
+        "service": "market-api",
+        "version": "0.4.0",
+        "pay_mode": settings.pay_mode,
+        "db": "postgres" if settings.use_postgres else "sqlite",
+        "redis": redis_client.redis_ok(),
+        "redis_error": redis_client.redis_error(),
+        "jwt_access_ttl_sec": settings.jwt_access_ttl_sec,
+    }
+
+@app.get("/ready")
+def ready():
+    if settings.use_postgres:
+        try:
+            with db.session() as con:
+                con.execute("SELECT 1")
+        except Exception as e:
+            raise HTTPException(503, f"db not ready: {type(e).__name__}") from e
+    return {"ready": True}
+
+@app.post("/v1/jobs", status_code=202)
+def create_async_job(body: JobCreateIn, claims: dict = Depends(auth.require_user)):
+    """Start a minimal pollable job state machine: queued → running → done.
+
+    This shell is deliberately process-local and accepts no prompt, chat text,
+    device content, URL, or outbound destination. It is suitable for wiring the
+    phone UI before a durable worker is selected.
+    """
+    job = create_job(claims["sub"], body.kind)
+    return {**job, "poll_after_ms": 250}
+
+
+@app.get("/v1/jobs/{job_id}")
+def read_async_job(job_id: str, claims: dict = Depends(auth.require_user)):
+    # A missing job and another user's job are intentionally indistinguishable.
+    job = get_job(job_id, claims["sub"])
+    if not job:
+        raise HTTPException(404, "job not found")
+    return job
+
+
+@app.get("/v1/devices")
+def list_devices():
+    return _devices_payload()
+
+@app.get("/v1/devices/{device_id}")
+def get_device(device_id: str):
+    for d in _devices_payload().get("devices", []):
+        if d["id"] == device_id:
+            return d
+    raise HTTPException(404, "device not found")
+
+@app.post("/v1/auth/login")
+def login(body: LoginIn, request: Request):
+    email = body.email.lower()
+    with db.session() as con:
+        if settings.use_postgres:
+            cur = con.execute(
+                "SELECT market.find_or_create_user(%s::citext, %s) AS id",
+                (email, body.display_name),
+            )
+            uid = str(db.fetchone(cur)["id"])
+            con.set_user(uid)
+            db.audit(con, uid, "login", "user", uid, {"ua_hash": auth.hash_ua(request.headers.get("user-agent"))})
+        else:
+            cur = con.execute("SELECT * FROM users WHERE email=%s AND deleted_at IS NULL", (email,))
+            row = db.fetchone(cur)
+            if not row:
+                uid = db.new_id()
+                con.execute(
+                    "INSERT INTO users(id,email,display_name,created_at) VALUES (%s,%s,%s,%s)",
+                    (uid, email, body.display_name or email.split("@")[0], time.time()),
+                )
+            else:
+                uid = row["id"]
+            db.audit(con, uid, "login", "user", uid, {})
+    return auth.mint_pair(uid, email, is_anonymous=False)
+
+@app.post("/v1/auth/anon")
+def anonymous_session(request: Request):
+    """Create a PII-free session only when the visitor starts a rental."""
+    _anonymous_rate(request)
+    with db.session() as con:
+        if settings.use_postgres:
+            cur = con.execute("SELECT market.create_anon_user() AS id")
+            uid = str(db.fetchone(cur)["id"])
+            con.set_user(uid)
+            db.audit(con, uid, "anon_create", "user", uid, {})
+        else:
+            uid = db.new_id()
+            con.execute(
+                "INSERT INTO users(id,email,display_name,is_anonymous,created_at) VALUES (%s,NULL,NULL,1,%s)",
+                (uid, time.time()),
+            )
+            db.audit(con, uid, "anon_create", "user", uid, {})
+    return auth.mint_pair(uid, "", is_anonymous=True)
+
+@app.post("/v1/auth/claim")
+def claim_anonymous(body: ClaimIn, claims: dict = Depends(auth.require_user)):
+    """Attach an email to the existing anonymous identity without changing its id."""
+    if not claims.get("anon", False):
+        raise HTTPException(409, "session is already claimed")
+    email = body.email.lower()
+    uid = claims["sub"]
+    try:
+        with db.session(user_id=uid) as con:
+            if settings.use_postgres:
+                cur = con.execute(
+                    "SELECT market.claim_anon_user(%s::uuid,%s::citext,%s) AS id",
+                    (uid, email, body.display_name),
+                )
+                row = db.fetchone(cur)
+                if not row or row["id"] is None:
+                    raise HTTPException(409, "session is already claimed or unavailable")
+            else:
+                existing = db.fetchone(
+                    con.execute("SELECT id FROM users WHERE email=%s AND deleted_at IS NULL", (email,))
+                )
+                if existing and existing["id"] != uid:
+                    raise HTTPException(409, "email already belongs to another account")
+                current = db.fetchone(con.execute("SELECT is_anonymous FROM users WHERE id=%s", (uid,)))
+                if not current or not current["is_anonymous"]:
+                    raise HTTPException(409, "session is already claimed or unavailable")
+                con.execute(
+                    "UPDATE users SET email=%s, display_name=%s, is_anonymous=0 WHERE id=%s",
+                    (email, body.display_name or email.split("@", 1)[0], uid),
+                )
+            db.audit(con, uid, "claim", "user", uid, {})
+    except HTTPException:
+        raise
+    except Exception as exc:
+        # The SECURITY DEFINER function turns the cross-tenant duplicate check
+        # into a stable application error while preserving RLS boundaries.
+        if "email already belongs" in str(exc) or "duplicate key" in str(exc).lower() or "unique" in str(exc).lower():
+            raise HTTPException(409, "email already belongs to another account") from exc
+        raise
+    return auth.mint_pair(uid, email, is_anonymous=False)
+
+@app.post("/v1/auth/refresh")
+def refresh(body: RefreshIn):
+    claims = auth.decode_token(body.refresh_token, expect_typ="refresh")
+    redis_client.revoke_session(claims["sub"], claims["jti"])
+    is_anonymous = bool(claims.get("anon", False))
+    # The claim can happen in another tab. Read the authoritative flag so a
+    # stale refresh token cannot resurrect the anonymous UX after claiming.
+    with db.session(user_id=claims["sub"]) as con:
+        cur = con.execute(
+            "SELECT is_anonymous FROM market.users WHERE id=%s::uuid AND deleted_at IS NULL"
+            if settings.use_postgres else
+            "SELECT is_anonymous FROM users WHERE id=%s AND deleted_at IS NULL",
+            (claims["sub"],),
+        )
+        row = db.fetchone(cur)
+        if row is not None:
+            is_anonymous = bool(row["is_anonymous"])
+    return auth.mint_pair(claims["sub"], claims.get("email", ""), is_anonymous=is_anonymous)
+
+@app.post("/v1/auth/logout")
+def logout(claims: dict = Depends(auth.require_user)):
+    redis_client.revoke_session(claims["sub"], claims["jti"])
+    return {"ok": True}
+
+@app.post("/v1/checkout/session")
+def checkout(body: CheckoutIn, claims: dict = Depends(auth.require_user)):
+    if settings.pay_mode != "test":
+        raise HTTPException(503, "live charges disabled in this build")
+    _rate(claims)
+    devices = {d["id"]: d for d in _devices_payload().get("devices", [])}
+    if body.device_id not in devices:
+        raise HTTPException(404, "device not found")
+    d = devices[body.device_id]
+    if not d.get("available", True):
+        raise HTTPException(409, "device unavailable")
+    amount = d["price_hour_cents"] if body.plan == "hour" else d["price_day_cents"]
+    provider = body.provider or settings.pay_provider
+    oid = db.new_id()
+    pref = f"test_{provider}_{oid[:8]}"
+    with db.session(user_id=claims["sub"]) as con:
+        if settings.use_postgres:
+            con.execute(
+                """INSERT INTO market.orders(id,user_id,device_id,plan,amount_cents,currency,provider,status,provider_ref)
+                   VALUES (%s::uuid,%s::uuid,%s,%s,%s,'USD',%s,'checkout',%s)""",
+                (oid, claims["sub"], body.device_id, body.plan, amount, provider, pref),
+            )
+        else:
+            con.execute(
+                "INSERT INTO orders(id,user_id,device_id,plan,amount_cents,currency,provider,status,provider_ref,created_at) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (oid, claims["sub"], body.device_id, body.plan, amount, "USD", provider, "checkout", pref, time.time()),
+            )
+        db.audit(con, claims["sub"], "checkout", "order", oid, {"plan": body.plan, "provider": provider})
+    return {
+        "order_id": oid,
+        "mode": "test",
+        "provider": provider,
+        "amount_cents": amount,
+        "currency": "USD",
+        "publishable_key": settings.stripe_publishable_key if provider == "stripe" else settings.razorpay_key_id,
+        "checkout_url": f"/pay/stub?order={oid}",
+        "client_secret": f"stub_secret_{oid}",
+        "message": "TEST MODE — no real charge. Confirm via POST /v1/checkout/confirm",
+        "device": d,
+        "stream_after_pay": settings.stream_url,
+    }
+
+@app.post("/v1/checkout/confirm")
+def confirm(order_id: str, claims: dict = Depends(auth.require_user)):
+    _rate(claims)
+    with db.session(user_id=claims["sub"]) as con:
+        if settings.use_postgres:
+            cur = con.execute("SELECT * FROM market.orders WHERE id=%s::uuid AND deleted_at IS NULL", (order_id,))
+        else:
+            cur = con.execute("SELECT * FROM orders WHERE id=%s AND deleted_at IS NULL", (order_id,))
+        row = db.fetchone(cur)
+        if not row:
+            raise HTTPException(404, "order not found")
+        lid = db.new_id()
+        now = time.time()
+        hours = 1 if row["plan"] == "hour" else 24
+        if settings.use_postgres:
+            con.execute("UPDATE market.orders SET status=%s WHERE id=%s::uuid", ("paid_test", order_id))
+            con.execute(
+                """INSERT INTO market.leases(id,user_id,order_id,device_id,broker_sid,starts_at,ends_at,status)
+                   VALUES (%s::uuid,%s::uuid,%s::uuid,%s,NULL,to_timestamp(%s),to_timestamp(%s),'active')""",
+                (lid, claims["sub"], order_id, row["device_id"], now, now + hours * 3600),
+            )
+        else:
+            con.execute("UPDATE orders SET status=%s WHERE id=%s", ("paid_test", order_id))
+            con.execute(
+                "INSERT INTO leases(id,user_id,order_id,device_id,broker_sid,starts_at,ends_at,status) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
+                (lid, claims["sub"], order_id, row["device_id"], None, now, now + hours * 3600, "active"),
+            )
+        db.audit(con, claims["sub"], "paid_test", "order", order_id, {})
+    return {
+        "status": "paid_test",
+        "lease_id": lid,
+        "device_id": row["device_id"],
+        "viewer_url": f"/phone?device={row['device_id']}&lease={lid}",
+        "stream_url": settings.stream_url,
+        "stream_fallback": settings.stream_fallback,
+    }
+
+@app.get("/v1/me/orders")
+def my_orders(claims: dict = Depends(auth.require_user)):
+    with db.session(user_id=claims["sub"]) as con:
+        if settings.use_postgres:
+            cur = con.execute(
+                "SELECT id::text, device_id, plan, amount_cents, status, created_at FROM market.orders WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 50"
+            )
+        else:
+            cur = con.execute(
+                "SELECT id, device_id, plan, amount_cents, status, created_at FROM orders WHERE user_id=%s AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 50",
+                (claims["sub"],),
+            )
+        return {"orders": db.fetchall(cur)}
+
+@app.post("/v1/privacy/soft-delete")
+def soft_delete(claims: dict = Depends(auth.require_user)):
+    with db.session(user_id=claims["sub"]) as con:
+        if settings.use_postgres:
+            con.execute("UPDATE market.users SET deleted_at=now() WHERE id=%s::uuid", (claims["sub"],))
+            con.execute("UPDATE market.orders SET deleted_at=now() WHERE user_id=%s::uuid", (claims["sub"],))
+            con.execute("UPDATE market.leases SET deleted_at=now() WHERE user_id=%s::uuid", (claims["sub"],))
+        else:
+            now = time.time()
+            con.execute("UPDATE users SET deleted_at=%s WHERE id=%s", (now, claims["sub"]))
+            con.execute("UPDATE orders SET deleted_at=%s WHERE user_id=%s", (now, claims["sub"]))
+            con.execute("UPDATE leases SET deleted_at=%s WHERE user_id=%s", (now, claims["sub"]))
+        db.audit(con, claims["sub"], "soft_delete", "user", claims["sub"], {})
+    redis_client.revoke_session(claims["sub"], claims["jti"])
+    return {"status": "soft_deleted", "user_id": claims["sub"]}
+
+@app.post("/v1/privacy/hard-delete")
+def hard_delete_stub(claims: dict = Depends(auth.require_user)):
+    with db.session(user_id=claims["sub"]) as con:
+        db.audit(con, claims["sub"], "hard_delete_requested", "user", claims["sub"], {})
+    return {"status": "accepted", "note": "Hard-delete job stubbed (phase-2).", "user_id": claims["sub"]}
+
+@app.post("/v1/webhooks/stripe")
+async def stripe_webhook():
+    return {"received": True, "mode": "test"}
+
+@app.post("/v1/webhooks/razorpay")
+async def razorpay_webhook():
+    return {"received": True, "mode": "test"}
+
+@app.get("/")
+def root():
+    return {"service": "market-api", "docs": "/docs", "health": "/health", "ready": "/ready", "market_ui": "/market/"}
+
+_WM = ROOT / "web-market"
+if _WM.is_dir():
+    app.mount("/market", StaticFiles(directory=str(_WM), html=True), name="web_market")

@@ -1,0 +1,68 @@
+{
+  "stats_snapshot": {
+    "source": "scrcpy",
+    "size": [
+      360,
+      800
+    ],
+    "bitrate": 800000,
+    "fps": 17.2,
+    "scrcpy_max_size": 800,
+    "scrcpy_codec_options": "i-frame-interval:int=1,latency:int=1",
+    "flush_idle_ms": 12.0
+  },
+  "measurements": [
+    {
+      "kind": "tap",
+      "samples_ms": [
+        52.8,
+        235.9,
+        169.6,
+        108.9,
+        101.0,
+        87.2
+      ],
+      "median_ms": 105.0,
+      "min_ms": 52.8,
+      "max_ms": 235.9
+    },
+    {
+      "kind": "swipe30",
+      "samples_ms": [
+        110.3,
+        349.0,
+        249.6,
+        268.8,
+        141.1,
+        286.1
+      ],
+      "median_ms": 259.2,
+      "min_ms": 110.3,
+      "max_ms": 349.0
+    },
+    {
+      "kind": "swipe160",
+      "samples_ms": [
+        287.6,
+        302.7,
+        366.6,
+        413.2,
+        348.0,
+        455.4
+      ],
+      "median_ms": 357.3,
+      "min_ms": 287.6,
+      "max_ms": 455.4
+    }
+  ],
+  "summary": {
+    "best_host_input_to_au_median_ms": 105.0,
+    "tap_to_au_median_ms": 105.0,
+    "swipe30_to_au_median_ms": 259.2,
+    "swipe160_to_au_median_ms": 357.3,
+    "prior_scrcpy_warm_median_ms": 253.0,
+    "prior_screenrecord_median_ms": 576.5,
+    "glass_to_glass_under_100ms": false,
+    "honest_ceiling_note": "On this ranchu emulator, host input\u2192AU floor is ~120-150ms even with local-VM ADB (VM floor sweep median ~165ms). Tunnel RTT (~53ms shell) is NOT the dominant term once encode knobs are lowered. Glass-to-glass adds WebCodecs decode+paint (~1-10ms here) so <100ms is not reachable on this hardware/emulator path without a real device + local encoder."
+  }
+}

@@ -1,0 +1,27 @@
+You are a senior product designer + consumer growth lead. Write a sharp UI vision for Strlix.
+
+PRODUCT (honor these constraints strictly):
+- Strlix = AI that lives INSIDE a cloud Android phone (home Ask bar, Live voice, full device control via Accessibility).
+- Desktop is a PHONE WINDOW (viewer/bezel), NOT a chat website. Rejected: big outside web chat pilot.
+- Separate backends already exist: android-api vs desktop-api.
+- Brand: Strlix "S" logo mark, indigo/blue accent (~#5b8cff / indigo family). Dark, calm chrome; phone screen is the colorful subject.
+- Existing strengths: home Ask pill, Live voice, phone-first desktop bezel, H.264 stream path.
+- Known trust risks: Accessibility, overlay, mic permissions can feel like spyware if mishandled.
+
+GOAL: Attract and retain a billion users — not enterprise QA tooling, not another ChatGPT clone.
+
+Write a complete design vision document covering:
+1. North-star emotional promise (1 sentence)
+2. First 60 seconds on Android; first 60 seconds on desktop viewer
+3. Exact screens/flows: home Ask bar, Live voice, permission onboarding (a11y/mic/overlay without spyware vibe), desktop bezel viewer, empty/error/offline states
+4. Visual system: color, type, motion, density (reference S logo / indigo)
+5. Interaction: tap latency expectations, haptic/sound cues, voice barge-in UX
+6. What NOT to build (anti-patterns from Humane/Rabbit, chat-cockpit UIs, engineer consoles)
+7. Metrics that prove love (D1 retention, time-to-first-wow, tap latency p95, etc.)
+8. Phased roadmap: wow-now / next / later
+9. 3–5 ASCII or mermaid wireframes
+10. Brief TLDR at top (1 screen for founder Ankit)
+
+Tone: decisive, specific, consumer-obsessed. Steal transferable principles from Pixel/iOS simplicity, Dynamic Island, AssistiveTouch, ChatGPT/Claude/Gemini apps, Character.ai engagement, Perplexity, TikTok first-session magic, Superhuman polish, Linear, Stripe docs clarity, scrcpy/BrowserStack/Apple Continuity/Samsung DeX (steal/avoid). Explain WHY Humane Pin and Rabbit R1 failed and how Strlix avoids those traps.
+
+Output markdown only. Be concrete (px, ms, copy strings, states). No generic fluff.

@@ -1,0 +1,2297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Strlix — Cloud Phone</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #05070c;
+      --bg-glow: #0a1020;
+      --fg: #eef2ff;
+      --muted: #7d8eab;
+      --accent: #5b8cff;
+      --accent-2: #7c5cff;
+      --live-violet: #7C6BFF;
+      --surface-1: #12151C; --surface-2: #191D26; --hairline: #252A35;
+      --text-1: #EEF1F7; --text-2: #9BA3B4; --text-3: #636B7D;
+      --warm: #F5F1E8; --spring: cubic-bezier(.2,.8,.2,1);
+      --accent-glow: rgba(91, 140, 255, 0.4);
+      --ok: #34d399;
+      --warn: #fbbf24;
+      --err: #f87171;
+      --border: rgba(148, 163, 184, 0.12);
+      --bezel: #0c0e14;
+      --bezel-edge: #1a1f2e;
+      --panel: rgba(18, 24, 40, 0.92);
+      --shadow-phone: 0 40px 100px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.06);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+      background:
+        radial-gradient(900px 500px at 50% -15%, rgba(91,140,255,0.16), transparent 55%),
+        radial-gradient(700px 400px at 80% 100%, rgba(124,92,255,0.1), transparent 50%),
+        var(--bg);
+      color: var(--fg);
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    /* ── Top chrome (minimal) ── */
+    .topbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+      height: 52px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 18px;
+      background: rgba(5, 7, 12, 0.72);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .brand {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .logo {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      display: grid; place-items: center;
+      font-weight: 700; font-size: 13px; color: #fff;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.1), 0 4px 14px var(--accent-glow);
+    }
+    .brand h1 {
+      margin: 0; font-size: 14px; font-weight: 650; letter-spacing: -0.02em;
+    }
+    .brand span {
+      font-size: 11px; color: var(--muted); font-weight: 500;
+      margin-left: 2px;
+    }
+    .top-right {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end;
+    }
+    .pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 10px; border-radius: 999px;
+      background: rgba(18,24,40,0.8); border: 1px solid var(--border);
+      font-size: 11px; color: var(--muted); white-space: nowrap;
+    }
+    .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--muted); flex-shrink: 0;
+    }
+    .dot.ok { background: var(--ok); box-shadow: 0 0 8px rgba(52,211,153,0.55); }
+    .dot.warn { background: var(--warn); }
+    .dot.err { background: var(--err); }
+
+    #liveBtn {
+      appearance: none; border: 1px solid rgba(91,140,255,0.4);
+      background: linear-gradient(135deg, rgba(91,140,255,0.22), rgba(124,92,255,0.22));
+      color: #fff; padding: 6px 12px; border-radius: 999px;
+      font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 7px;
+    }
+    #liveBtn .pulse {
+      width: 7px; height: 7px; border-radius: 50%; background: var(--ok);
+      box-shadow: 0 0 8px rgba(52,211,153,.7);
+    }
+    #liveBtn.active {
+      background: linear-gradient(135deg, rgba(91,140,255,.28), rgba(124,107,255,.28));
+      border-color: rgba(91,140,255,.5);
+    }
+    #liveBtn.active .pulse { background: #fff; animation: blink 1s infinite; }
+    @keyframes blink { 50% { opacity: .35; } }
+
+    #topLang {
+      appearance: none; background: rgba(18,24,40,0.8); color: var(--fg);
+      border: 1px solid var(--border); border-radius: 999px;
+      padding: 5px 28px 5px 10px; font: inherit; font-size: 11px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237d8eab'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center;
+      cursor: pointer; max-width: 140px;
+    }
+    .ghost-btn {
+      appearance: none; border: 1px solid var(--border);
+      background: rgba(18,24,40,0.8); color: var(--fg);
+      padding: 5px 10px; border-radius: 999px; font: inherit; font-size: 11px;
+      cursor: pointer;
+    }
+    .ghost-btn:hover { border-color: rgba(91,140,255,0.45); }
+    .ghost-btn:disabled { opacity: .45; cursor: wait; }
+
+    /* ── Stage: full-bleed phone ── */
+    .stage {
+      height: 100dvh;
+      padding: 68px 16px 24px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 14px;
+    }
+
+    /* Pixel-like device */
+    .device {
+      position: relative;
+      height: min(calc(100dvh - 172px), 840px);
+      aspect-ratio: 9 / 19.5;
+      max-width: min(420px, 92vw);
+      background: var(--bezel);
+      border-radius: 44px;
+      padding: 12px;
+      box-shadow: var(--shadow-phone);
+      border: 1.5px solid var(--bezel-edge);
+    }
+    .device::before {
+      content: "";
+      position: absolute; inset: 0; border-radius: 44px; pointer-events: none;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+    }
+    .device-screen {
+      position: relative;
+      width: 100%; height: 100%;
+      border-radius: 34px;
+      overflow: hidden;
+      background: #000;
+    }
+    .punch {
+      position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+      width: 22%; height: 11px; border-radius: 999px;
+      background: #050505; z-index: 3;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.04);
+    }
+    /* Canvas (WS stream) and img (MJPEG fallback) are positioned+sized by JS to
+       the exact letterbox rect, so coordinate mapping never depends on
+       naturalWidth / object-fit guesswork. */
+    #liveCanvas, #liveShot {
+      position: absolute; left: 0; top: 0;
+      width: 100%; height: 100%;
+      object-fit: fill;
+      display: block; background: #05070d;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      pointer-events: none;
+      z-index: 2;
+    }
+    #liveCanvas[hidden], #liveShot[hidden] { display: none; }
+    /* Transparent hit target above EVERYTHING in the screen. Pointer input is
+       bound here, never to the image, so a stalled/blank frame still accepts
+       taps. */
+    #touchLayer {
+      position: absolute; inset: 0; z-index: 8;
+      touch-action: none; cursor: crosshair;
+      background: transparent;
+      user-select: none; -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent; outline: none;
+    }
+    #touchLayer:focus-visible { outline: 1.5px solid #5B8CFF; outline-offset: -2px; }
+    .punch, .phone-empty { pointer-events: none; }
+    .device-screen { touch-action: none; }
+
+    /* ── Desktop bezel rail ──
+       The Android navigation controls belong to the phone, not a toolbar below it.
+       The hot zone starts at the outside bezel edge, so it never steals taps from
+       #touchLayer. On coarse pointers it becomes the familiar visible nav row. */
+    .device-wrap {
+      position: relative;
+      width: min(420px, 92vw);
+      height: min(calc(100dvh - 172px), 840px);
+      flex: 0 0 auto;
+    }
+    .device-wrap > .device {
+      width: 100%; height: 100%; max-width: none; aspect-ratio: auto;
+    }
+    .nav-rail-zone {
+      position: absolute;
+      top: 16%; bottom: 16%; right: -60px; width: 60px;
+      z-index: 30;
+      pointer-events: auto;
+    }
+    .nav-rail-hint {
+      position: absolute; left: 0; top: 50%;
+      width: 3px; height: 56px; border-radius: 999px;
+      transform: translateY(-50%);
+      background: rgba(91,140,255,.5);
+      box-shadow: 0 0 12px rgba(91,140,255,.2);
+      transition: opacity 120ms ease;
+    }
+    .navbar {
+      position: absolute; top: 50%; right: 0;
+      width: 52px; padding: 4px;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      border: 1px solid rgba(148,163,184,.18);
+      border-radius: 27px;
+      background: rgba(18,24,40,.94);
+      box-shadow: 0 10px 30px rgba(0,0,0,.42), 0 0 0 1px rgba(255,255,255,.03);
+      backdrop-filter: blur(14px);
+      opacity: 0; pointer-events: none;
+      transform: translate(40px, -50%);
+      transition: opacity 120ms ease-in, transform 120ms ease-in;
+    }
+    .nav-rail-zone:hover .navbar,
+    .nav-rail-zone:focus-within .navbar {
+      opacity: 1; pointer-events: auto; transform: translate(0, -50%);
+      transition: opacity 200ms var(--spring), transform 200ms var(--spring);
+    }
+    .nav-rail-zone:hover .nav-rail-hint,
+    .nav-rail-zone:focus-within .nav-rail-hint { opacity: 0; }
+    .navbar button {
+      flex: 0 0 44px; width: 44px; height: 44px;
+      border-radius: 22px; cursor: pointer;
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--fg); font-size: 15px; line-height: 1;
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      transition: background .12s, transform .08s, border-color .12s;
+    }
+    .navbar button:hover { background: rgba(255,255,255,0.09); border-color: rgba(255,255,255,0.2); }
+    .navbar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .navbar button:active { transform: scale(0.95); background: rgba(91,140,255,0.28); }
+    .navbar button span.lbl {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .navbar, .nav-rail-hint { transition-duration: 1ms; }
+      .navbar { transform: translate(0, -50%); }
+    }
+    @media (hover: none), (pointer: coarse), (max-width: 720px) {
+      .device-wrap { height: calc(min(calc(100dvh - 172px), 840px) + 52px); padding-bottom: 52px; }
+      .nav-rail-zone {
+        position: absolute; top: auto; right: 0; bottom: 0; left: 0;
+        width: auto; height: 44px;
+      }
+      .nav-rail-hint { display: none; }
+      .navbar {
+        position: static; width: 100%; height: 44px; padding: 0;
+        flex-direction: row; justify-content: center; gap: 10px;
+        border: 0; border-radius: 0; background: transparent;
+        box-shadow: none; backdrop-filter: none;
+        opacity: 1; pointer-events: auto; transform: none;
+        transition: none;
+      }
+      .navbar button { flex: 1 1 0; max-width: 116px; border-radius: 12px; }
+      .navbar button span.lbl {
+        position: static; width: auto; height: auto; padding: 0; margin: 0;
+        overflow: visible; clip: auto; white-space: normal;
+        font-size: 11px; color: var(--muted);
+      }
+    }
+    #pressRipple {
+      position: absolute; width: 28px; height: 28px; margin: -14px 0 0 -14px;
+      border-radius: 50%; pointer-events: none; z-index: 5;
+      background: rgba(91,140,255,0.45);
+      border: 2px solid rgba(255,255,255,0.85);
+      box-shadow: 0 0 16px rgba(91,140,255,0.7);
+      opacity: 0; transform: scale(0.4);
+      transition: opacity .18s, transform .18s;
+    }
+    #pressRipple.show {
+      opacity: 1; transform: scale(1);
+    }
+    #tapHint {
+      position: absolute; left: 10px; bottom: 10px; z-index: 4;
+      font-size: 10px; color: rgba(255,255,255,0.55);
+      background: rgba(0,0,0,0.45); padding: 3px 8px; border-radius: 999px;
+      pointer-events: none; letter-spacing: 0.02em;
+    }
+    .phone-empty {
+      position: absolute; inset: 0; display: grid; place-items: center;
+      color: var(--muted); font-size: 13px; text-align: center; padding: 32px;
+      background: linear-gradient(180deg, #0a0e18, #05070c);
+      z-index: 1;
+    }
+    .phone-empty.hidden { display: none; }
+    .phone-empty strong { display: block; color: var(--fg); margin-bottom: 6px; font-size: 15px; }
+
+    /* Continuity is a transient phone-surface state, not a desktop tray. */
+    #continuityDrop {
+      position: absolute; inset: 12px; z-index: 24; display: grid; place-items: center;
+      border: 1.5px dashed rgba(91,140,255,.75); border-radius: 28px;
+      background: radial-gradient(circle at 50% 42%, rgba(91,140,255,.22), rgba(8,12,22,.78));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.05), 0 0 46px rgba(91,140,255,.18);
+      opacity: 0; transform: scale(.985); pointer-events: none;
+      transition: opacity 140ms ease, transform 180ms var(--spring);
+    }
+    #continuityDrop.open { opacity: 1; transform: scale(1); }
+    .continuity-card { display: flex; flex-direction: column; align-items: center; gap: 7px;
+      padding: 18px 22px; border-radius: 20px; background: rgba(18,24,40,.88);
+      border: 1px solid rgba(255,255,255,.12); text-align: center; backdrop-filter: blur(14px); }
+    .continuity-mark { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
+      color: #091020; background: #5B8CFF; font-size: 20px; font-weight: 700; }
+    .continuity-card strong { font-size: 15px; color: var(--fg); }
+    .continuity-card small { max-width: 220px; color: var(--muted); font-size: 11px; line-height: 1.35; }
+    .device-screen.continuity-over #touchLayer { cursor: copy; }
+    @media (prefers-reduced-motion: reduce) { #continuityDrop { transition-duration: 1ms; } }
+
+    .device-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      width: min(420px, 92vw);
+      font-size: 11px; color: var(--muted);
+      padding: 0 4px;
+    }
+    .live-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+      font-size: 10px;
+    }
+    .live-badge .blink {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--ok);
+      box-shadow: 0 0 8px rgba(52,211,153,0.7);
+      animation: blink 1.4s infinite;
+    }
+    .live-badge.off .blink { background: var(--muted); box-shadow: none; animation: none; }
+    /* Instrumented-but-quiet telemetry: transport, fps, kbps, tap-to-pixels. */
+    #streamHud {
+      font-variant-numeric: tabular-nums; font-size: 10px; letter-spacing: 0.02em;
+      color: var(--muted); opacity: 0.85; white-space: nowrap;
+    }
+    #streamHud .lat { color: var(--ok); }
+    #streamHud .warn { color: var(--warn); }
+
+    /* ── Ask INSIDE bezel (⌘K) — vision: never a side panel ── */
+    #askHint {
+      position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%);
+      z-index: 6; pointer-events: none;
+      font-size: 12px; font-weight: 500; letter-spacing: 0.01em;
+      color: rgba(238,241,247,0.85);
+      background: rgba(12,14,20,0.72);
+      border: 1px solid rgba(37,42,53,0.9);
+      padding: 8px 14px; border-radius: 999px;
+      white-space: nowrap;
+      opacity: 0; transition: opacity .4s ease;
+    }
+    #askHint.show { opacity: 1; }
+    #askHint.hide { opacity: 0; }
+
+    /* Ask and narration share one dock. The dock stays mounted so the bezel
+       skin can travel continuously from the pill to the narration band. */
+    #askOverlay {
+      position: absolute; inset: 0; z-index: 11;
+      background: linear-gradient(180deg, rgba(11,13,18,0.55) 0%, rgba(11,13,18,0.18) 42%, rgba(11,13,18,0.72) 100%);
+      opacity: 0; pointer-events: none;
+      transition: opacity 180ms ease;
+    }
+    #askOverlay.open { opacity: 1; pointer-events: auto; }
+    .device-screen.ask-focus {
+      box-shadow: inset 0 0 0 1.5px #5B8CFF, 0 0 0 1px rgba(91,140,255,0.35);
+    }
+
+    #askDock {
+      position: absolute; left: 0; right: 0; bottom: 0; z-index: 12;
+      height: 48px; opacity: 0; transform: translateY(8px);
+      pointer-events: none; isolation: isolate;
+      transition: opacity 160ms ease, transform 260ms var(--spring),
+        bottom 260ms var(--spring), height 260ms var(--spring);
+    }
+    #askDock[data-mode="ask"], #askDock[data-mode="narrating"] {
+      opacity: 1; transform: translateY(0); pointer-events: auto;
+    }
+    #askDock[data-mode="ask"] { bottom: 34px; height: 52px; }
+    #askDock::before, #askDock::after {
+      content: ""; position: absolute; inset: 0; z-index: 0;
+      pointer-events: none; transition: inset 260ms var(--spring), border-radius 260ms var(--spring),
+        border-color 200ms ease, background-color 220ms ease, box-shadow 220ms ease, opacity 200ms ease;
+    }
+    #askDock::before {
+      inset: 0 10px; border: 1.5px solid #5B8CFF; border-radius: 24px;
+      background: #191D26; box-shadow: 0 0 32px rgba(91,140,255,0.22);
+    }
+    #askDock::after {
+      opacity: 0; background: linear-gradient(transparent, rgba(18,21,28,0.96) 28%);
+    }
+    #askDock[data-mode="narrating"]::before {
+      inset: 0; border-color: transparent; border-radius: 0;
+      background-color: transparent; box-shadow: none;
+    }
+    #askDock[data-mode="narrating"]::after { opacity: 1; }
+
+    #askForm, #narrationStrip {
+      position: relative; z-index: 1; width: 100%; height: 100%;
+      display: flex; align-items: center; gap: 8px;
+      transition: opacity 140ms ease, transform 180ms var(--spring);
+    }
+    #askForm { padding: 0 18px 0 24px; }
+    #askDock[data-mode="narrating"] #askForm,
+    #askDock[data-mode="hidden"] #askForm {
+      opacity: 0; transform: translateY(5px); pointer-events: none;
+    }
+    #askDock[data-mode="ask"] #askForm { opacity: 1; transform: translateY(0); }
+    #askBar {
+      display: flex; align-items: center; gap: 8px;
+      width: 100%; height: 52px; padding: 0;
+    }
+    #askBar .smark {
+      width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0;
+      background: #5B8CFF; color: #0a1020;
+      display: grid; place-items: center;
+      font-weight: 700; font-size: 12px;
+    }
+    #askQ {
+      flex: 1; border: 0; outline: none; background: transparent;
+      color: #EEF1F7; font: inherit; font-size: 17px; min-width: 0;
+    }
+    #askQ::placeholder { color: #636B7D; }
+    #askGo {
+      appearance: none; border: 0; cursor: pointer; flex-shrink: 0;
+      width: 36px; height: 36px; border-radius: 18px;
+      background: #5B8CFF; color: #fff;
+      font: inherit; font-weight: 650; font-size: 14px;
+      display: grid; place-items: center;
+    }
+    #askGo:disabled { opacity: .45; cursor: wait; }
+    #askEscHint {
+      position: absolute; left: 0; right: 0; top: 56px; z-index: 2;
+      font-size: 10px; color: #636B7D; text-align: center;
+      margin: 0; letter-spacing: 0.02em;
+      opacity: 0; transform: translateY(-3px); transition: opacity 120ms ease, transform 160ms ease;
+      pointer-events: none;
+    }
+    #askDock[data-mode="ask"] #askEscHint { opacity: 1; transform: translateY(0); }
+
+    #narrationStrip {
+      position: absolute; left: 0; top: 0; padding: 0 12px;
+      gap: 10px; opacity: 0; transform: translateY(5px); pointer-events: none;
+    }
+    #askDock[data-mode="narrating"] #narrationStrip {
+      opacity: 1; transform: translateY(0); pointer-events: auto;
+    }
+    #narrationStrip .pulse {
+      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+      background: #5B8CFF; animation: narPulse 1.2s ease-in-out infinite;
+    }
+    @keyframes narPulse { 50% { opacity: .35; transform: scale(.85); } }
+    #narrationText {
+      flex: 1; font-size: 13px; font-weight: 450; color: #9BA3B4;
+      line-height: 1.3; min-width: 0;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      transition: opacity .2s;
+    }
+    #narrationShare, #narrationStop {
+      appearance: none; border: 1px solid #252A35; background: #191D26;
+      height: 36px; border-radius: 10px;
+      font-size: 12px; font-weight: 600; cursor: pointer; flex-shrink: 0;
+      padding: 0 10px; color: #EEF1F7;
+    }
+    #narrationShare { color: #5B8CFF; border-color: rgba(91,140,255,.35); }
+    #narrationStop {
+      color: #FF5C6B; width: 36px; padding: 0; font-size: 14px;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #askDock, #askDock::before, #askDock::after, #askForm, #narrationStrip, #askEscHint, #askOverlay {
+        transition-duration: 1ms !important;
+      }
+    }
+    #replayToast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      z-index: 60; display: none; gap: 10px; align-items: center;
+      background: #191D26; border: 1px solid #252A35; border-radius: 14px;
+      padding: 10px 14px; font-size: 13px; color: #EEF1F7;
+      box-shadow: 0 12px 40px rgba(0,0,0,.45);
+    }
+    #replayToast.open { display: flex; }
+    #replayToast a { color: #5B8CFF; font-weight: 600; }
+
+
+    /* Replay: a calm, in-bezel trust surface. It never becomes a desktop side panel. */
+    #replayLayer { position:absolute; inset:0; z-index:15; display:flex; flex-direction:column; color:var(--text-1); background:rgba(11,13,18,.98); }
+    #replayLayer[hidden] { display:none; }
+    .replay-header { display:flex; align-items:center; gap:8px; min-height:54px; padding:10px 10px 8px; border-bottom:1px solid var(--hairline); background:rgba(18,21,28,.96); }
+    .replay-back { appearance:none; border:0; background:transparent; color:var(--text-1); width:40px; height:40px; border-radius:20px; font-size:28px; line-height:1; cursor:pointer; }
+    .replay-back:hover { background:rgba(255,255,255,.07); }
+    .replay-heading { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+    .replay-heading strong { font-size:16px; font-weight:600; }
+    .replay-heading span { color:var(--text-3); font-size:10px; }
+    .replay-revoke { appearance:none; border:1px solid rgba(255,92,107,.36); background:rgba(255,92,107,.08); color:#FF8D98; border-radius:10px; min-height:36px; padding:0 10px; font:inherit; font-size:11px; font-weight:600; cursor:pointer; }
+    .replay-revoke:hover { background:rgba(255,92,107,.16); }
+    .replay-revoke:disabled { opacity:.55; cursor:wait; }
+    .replay-intro { display:flex; flex-direction:column; gap:3px; padding:14px 16px 10px; }
+    .replay-intro strong { font-size:16px; font-weight:600; }
+    .replay-intro span { color:var(--text-2); font-size:11px; line-height:1.4; }
+    .replay-preview { position:relative; margin:0 16px 10px; min-height:142px; max-height:190px; border:1px solid var(--hairline); border-radius:16px; overflow:hidden; background:linear-gradient(145deg,#111725,#080a10); display:grid; place-items:center; }
+    #replayPreviewImage { display:block; max-width:100%; max-height:190px; width:auto; height:auto; object-fit:contain; }
+    #replayPreviewEmpty { display:flex; flex-direction:column; align-items:center; gap:8px; color:var(--text-3); font-size:11px; }
+    .replay-preview-mark { width:32px; height:32px; border-radius:10px; display:grid; place-items:center; background:var(--accent); color:#091020; font-size:15px; font-weight:700; }
+    .replay-preview-watermark { position:absolute; right:10px; bottom:8px; color:var(--accent); font-size:11px; font-weight:700; opacity:.8; }
+    .replay-scrubber { display:flex; align-items:center; gap:7px; padding:0 14px 8px; }
+    .replay-scrubber button { appearance:none; border:0; background:transparent; color:var(--text-2); width:30px; height:30px; border-radius:8px; font-size:13px; cursor:pointer; }
+    .replay-scrubber button:hover { background:rgba(255,255,255,.07); color:var(--text-1); }
+    #replayRange { flex:1; min-width:0; accent-color:var(--accent); cursor:pointer; }
+    #replayPosition { min-width:38px; color:var(--text-3); font-size:10px; text-align:right; font-variant-numeric:tabular-nums; }
+    .replay-events { flex:1; min-height:76px; overflow:auto; padding:0 10px 8px; scrollbar-width:thin; }
+    .replay-event { appearance:none; width:100%; display:flex; align-items:center; gap:9px; padding:7px 7px; margin:2px 0; border:1px solid transparent; border-radius:12px; background:transparent; color:var(--text-2); text-align:left; cursor:pointer; }
+    .replay-event:hover { background:rgba(255,255,255,.045); }
+    .replay-event.selected { border-color:rgba(91,140,255,.45); background:rgba(91,140,255,.10); color:var(--text-1); }
+    .replay-event.undone { opacity:.55; }
+    .replay-thumb { width:38px; height:52px; flex:0 0 38px; border-radius:7px; border:1px solid var(--hairline); object-fit:cover; background:#0a0d15; }
+    .replay-thumb.empty { display:grid; place-items:center; color:var(--text-3); font-size:11px; }
+    .replay-event-copy { flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+    .replay-event-label { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; line-height:1.25; }
+    .replay-event-meta { color:var(--text-3); font-size:10px; }
+    .replay-event-check { color:var(--ok); font-size:12px; }
+    .replay-footer { display:flex; align-items:center; gap:7px; padding:9px 12px 12px; border-top:1px solid var(--hairline); background:var(--surface-1); }
+    .replay-footer button { appearance:none; border:1px solid var(--hairline); background:var(--surface-2); color:var(--text-1); border-radius:10px; min-height:36px; padding:0 11px; font:inherit; font-size:11px; font-weight:600; cursor:pointer; }
+    .replay-footer button:hover:not(:disabled) { border-color:rgba(91,140,255,.45); }
+    .replay-footer button:disabled { opacity:.38; cursor:not-allowed; }
+    .replay-footer .replay-play { width:38px; padding:0; color:var(--accent); }
+    .replay-footer #replayShare { margin-left:auto; color:var(--accent); border-color:rgba(91,140,255,.35); }
+    .replay-revoke-note { margin:0; padding:0 16px 14px; color:var(--ok); font-size:11px; text-align:center; }
+
+    /* Live presence orb: an in-bezel presence object, never an outside chat panel. */
+    #liveLayer { position:absolute; inset:0; z-index:13; display:none; color:var(--text-1); }
+    #liveLayer[data-state="idle"], #liveLayer[data-state="listening"],
+    #liveLayer[data-state="thinking"], #liveLayer[data-state="speaking"],
+    #liveLayer[data-state="paused"], #liveLayer[data-state="docked"] { display:block; }
+    #liveLayer[data-state="docked"] { z-index:10; pointer-events:none; }
+    #liveScrim { position:absolute; inset:0; background:radial-gradient(120% 90% at 50% 40%,rgba(11,13,18,.55),rgba(11,13,18,.86)); backdrop-filter:blur(8px); opacity:1; transition:opacity 160ms ease; }
+    #liveLayer[data-state="docked"] #liveScrim { opacity:0; }
+    #liveOrb { appearance:none; position:absolute; left:50%; top:42%; width:160px; height:160px; padding:0; border:0; border-radius:50%; cursor:pointer; background:transparent; transform:translate(-50%,-50%) scale(var(--orb-scale,1)); transition:transform 280ms var(--spring),left 280ms var(--spring),top 280ms var(--spring); pointer-events:auto; }
+    #liveLayer[data-state="docked"] #liveOrb { left:40px; top:40px; --orb-scale:.30; }
+    .orb-core { position:absolute; inset:12%; border-radius:50%; background:radial-gradient(circle at 35% 30%,#7FA3FF,#5B8CFF 42%,var(--live-violet) 100%); box-shadow:inset 10px 10px 22px rgba(255,255,255,.22),inset -12px -16px 30px rgba(16,18,54,.36); animation:orbBreathe 2.4s ease-in-out infinite; }
+    .orb-glow { position:absolute; inset:8%; border-radius:50%; box-shadow:0 0 64px 8px rgba(91,140,255,.32); }
+    .orb-ring { position:absolute; inset:4%; border:2px solid var(--warm); border-radius:50%; transform:scale(calc(1 + var(--orb-level,0) * .18)); transition:transform 80ms linear,border-color 120ms ease; }
+    #liveLayer[data-state="speaking"] .orb-ring, #liveLayer[data-state="docked"] .orb-ring { border-color:var(--accent); animation:orbRipple 1.65s ease-out infinite; }
+    #liveLayer[data-state="thinking"] #liveOrb { --orb-scale:.75; }
+    #liveLayer[data-state="thinking"] .orb-core { animation:orbShimmer 1.1s linear infinite; }
+    #liveLayer[data-state="paused"] .orb-core { filter:saturate(.45); opacity:.72; }
+    #liveLayer[data-state="docked"] .orb-core { animation:none; }
+    @keyframes orbBreathe { 0%,100% { transform:scale(1); } 50% { transform:scale(1.04); } }
+    @keyframes orbRipple { 0% { transform:scale(1); opacity:.9; } 100% { transform:scale(1.35); opacity:0; } }
+    @keyframes orbShimmer { 0% { opacity:.72; transform:translateX(-4%); } 50% { opacity:1; transform:translateX(4%); } 100% { opacity:.72; transform:translateX(-4%); } }
+    .orb-s { position:absolute; inset:35%; width:30%; height:30%; fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; opacity:.9; }
+    #liveCaption { position:absolute; left:18px; right:18px; top:62%; margin:0; min-height:20px; text-align:center; color:var(--text-2); font-size:15px; line-height:20px; font-weight:450; text-shadow:0 1px 3px rgba(0,0,0,.6); opacity:1; transition:opacity 200ms ease; }
+    #liveControls { position:absolute; left:0; right:0; bottom:24px; display:flex; justify-content:center; align-items:center; gap:12px; transition:opacity 160ms ease; }
+    #liveLayer[data-state="docked"] #liveControls { opacity:0; }
+    #liveControls button { appearance:none; width:48px; height:48px; border-radius:50%; border:1px solid var(--hairline); background:var(--surface-2); color:var(--text-1); font:inherit; font-size:18px; cursor:pointer; }
+    #liveControls #liveStop { width:64px; height:64px; background:var(--accent); color:#fff; font-size:22px; border-color:rgba(255,255,255,.2); }
+    #liveTranscriptSheet { position:absolute; left:0; right:0; bottom:0; max-height:58%; padding:18px 16px 22px; background:var(--surface-1); border-top:1px solid var(--hairline); border-radius:20px 20px 0 0; transform:translateY(100%); transition:transform 200ms var(--spring); overflow:auto; z-index:2; }
+    #liveTranscriptSheet.open { transform:translateY(0); }
+    #liveTranscriptGrip { width:42px; height:4px; border-radius:4px; background:var(--text-3); margin:0 auto 12px; cursor:pointer; }
+    #liveTranscriptList { margin:0; padding:0 0 0 20px; color:var(--text-2); font-size:13px; line-height:1.5; }
+    #liveTranscriptList li { margin:0 0 8px; }
+    #liveLayer[data-state="docked"] #liveTranscriptSheet { transform:translateY(100%); }
+    @media (prefers-reduced-motion: reduce) { #liveLayer * { animation:none !important; transition-duration:100ms !important; } }
+
+    /* Needs-you handoff: the phone stays the stage, never a side panel. */
+    #needsYouLayer { position:absolute; inset:0; z-index:18; display:none; color:var(--text-1); pointer-events:auto; }
+    #needsYouLayer.open { display:block; }
+    #needsYouScrim { position:absolute; inset:0; background:rgba(7,9,14,.56); backdrop-filter:blur(2px); }
+    #needsYouTopPill { position:absolute; top:16px; left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:8px; height:40px; padding:0 15px; border:1px solid rgba(91,140,255,.58); border-radius:20px; background:rgba(25,29,38,.96); box-shadow:0 8px 28px rgba(0,0,0,.35),0 0 24px rgba(91,140,255,.18); white-space:nowrap; font-size:11px; font-weight:650; z-index:1; animation:needsYouDrop 360ms var(--spring) both; }
+    #needsYouTopPill .needs-you-mark { width:22px; height:22px; border-radius:7px; display:grid; place-items:center; color:#091020; background:var(--accent); font-size:12px; font-weight:800; }
+    #needsYouCountdown { color:var(--text-2); font-variant-numeric:tabular-nums; font-weight:500; }
+    @keyframes needsYouDrop { from { opacity:0; transform:translate(-50%,-14px) scale(.94); } to { opacity:1; transform:translate(-50%,0) scale(1); } }
+    #needsYouTarget { position:absolute; left:50%; top:42%; width:58px; height:58px; transform:translate(-50%,-50%); border:2px solid var(--accent); border-radius:50%; box-shadow:0 0 0 5px rgba(91,140,255,.18),0 0 28px rgba(91,140,255,.55); animation:needsYouPulse 1.4s ease-in-out infinite; pointer-events:none; z-index:1; }
+    #needsYouTarget::after { content:""; position:absolute; inset:14px; border:1px solid rgba(255,255,255,.7); border-radius:50%; }
+    @keyframes needsYouPulse { 50% { box-shadow:0 0 0 11px rgba(91,140,255,.06),0 0 34px rgba(91,140,255,.72); opacity:.78; } }
+    #needsYouPanel { position:absolute; left:12px; right:12px; bottom:14px; z-index:2; display:flex; flex-direction:column; gap:9px; padding:16px; border:1px solid rgba(148,163,184,.18); border-radius:18px; background:rgba(18,21,28,.97); box-shadow:0 18px 42px rgba(0,0,0,.48); animation:needsYouRise 300ms var(--spring) both; }
+    @keyframes needsYouRise { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+    #needsYouPanel h2 { margin:0; font-size:17px; line-height:1.2; letter-spacing:-.02em; }
+    #needsYouPanel p { margin:0; color:var(--text-2); font-size:12px; line-height:1.45; }
+    #needsYouMeta { color:var(--text-3) !important; font-size:10px !important; }
+    #needsYouActions { display:flex; gap:8px; align-items:center; margin-top:2px; }
+    #needsYouPrimary, #needsYouSecondary { min-height:40px; border-radius:11px; padding:0 13px; font:inherit; font-size:12px; font-weight:650; cursor:pointer; }
+    #needsYouPrimary { flex:1; border:1px solid rgba(91,140,255,.55); background:var(--accent); color:#fff; }
+    #needsYouSecondary { border:1px solid var(--hairline); background:var(--surface-2); color:var(--text-2); }
+    #needsYouPrimary:focus-visible, #needsYouSecondary:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+    #needsYouLayer.resuming #needsYouPrimary { opacity:.65; cursor:wait; }
+    @media (prefers-reduced-motion: reduce) { #needsYouTopPill, #needsYouPanel, #needsYouTarget { animation:none; } }
+
+    @media (max-width: 560px) {
+      .topbar { padding: 0 10px; height: 48px; }
+      .brand span { display: none; }
+      .device { border-radius: 36px; padding: 10px; }
+      .device-screen { border-radius: 28px; }
+      #liveOrb { width:128px; height:128px; }
+      #liveLayer[data-state="docked"] #liveOrb { width:160px; height:160px; left:40px; top:40px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">S</div>
+      <h1>Strlix</h1>
+      <span>Cloud Phone</span>
+    </div>
+    <div class="top-right">
+      <button type="button" id="liveBtn" title="Live voice on this laptop"><span class="pulse"></span>Live</button>
+      <button type="button" class="ghost-btn" id="replayBtn" title="Review what Strlix did">Replay</button>
+      <select id="topLang" aria-label="Language"></select>
+      <span class="pill"><span class="dot" id="adbDot"></span><span id="adbLabel">ADB …</span></span>
+      <button type="button" class="ghost-btn" id="refreshShot" title="Fresh screenshot">↻</button>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div class="device-wrap" id="deviceWrap">
+      <div class="device" id="device">
+      <div class="device-screen">
+        <div class="punch" aria-hidden="true"></div>
+        <canvas id="liveCanvas" hidden></canvas>
+        <img id="liveShot" alt="Phone screen" draggable="false" hidden />
+        <div id="pressRipple" aria-hidden="true"></div>
+        <div id="tapHint">Tap, swipe, or drop files</div>
+        <div id="askHint">Press ⌘K / Ctrl+K to ask</div>
+        <div class="phone-empty" id="phoneEmpty">
+          <div>
+            <strong>Connecting to your phone…</strong>
+            Live preview appears when ADB is connected.
+          </div>
+        </div>
+        <div id="touchLayer" role="application" tabindex="0" aria-label="Phone screen — tap, swipe, paste, or drop to control"></div>
+        <div id="continuityDrop" aria-hidden="true">
+          <div class="continuity-card">
+            <span class="continuity-mark" aria-hidden="true">↓</span>
+            <strong id="continuityDropTitle">Drop into phone</strong>
+            <small id="continuityDropMeta">Files land in Downloads · text goes to the focused field</small>
+          </div>
+        </div>
+        <section id="replayLayer" hidden aria-hidden="true" aria-label="Replay timeline">
+          <header class="replay-header">
+            <button type="button" class="replay-back" id="replayClose" aria-label="Close Replay">‹</button>
+            <div class="replay-heading"><strong>Replay</strong><span id="replayWhen">This session</span></div>
+            <button type="button" class="replay-revoke" id="replayRevoke" title="Turn off Strlix phone control">Turn off</button>
+          </header>
+          <div class="replay-intro"><strong id="replaySummary">Nothing yet</strong><span>Everything Strlix does is recorded here.</span></div>
+          <div class="replay-preview" id="replayPreview" aria-live="polite">
+            <img id="replayPreviewImage" alt="Screenshot Strlix saw at this step" hidden />
+            <div id="replayPreviewEmpty"><span class="replay-preview-mark">S</span><span>Select a step to see the screen</span></div>
+            <span class="replay-preview-watermark" aria-hidden="true">S</span>
+          </div>
+          <div class="replay-scrubber">
+            <button type="button" id="replayPrev" aria-label="Previous step">⏮</button>
+            <input id="replayRange" type="range" min="0" max="0" value="0" step="1" aria-label="Replay position" />
+            <button type="button" id="replayNext" aria-label="Next step">⏭</button>
+            <span id="replayPosition">0 / 0</span>
+          </div>
+          <div class="replay-events" id="replayEvents" role="list" aria-label="Recorded steps"></div>
+          <footer class="replay-footer">
+            <button type="button" id="replayPlay" class="replay-play" aria-label="Play replay">▶</button>
+            <button type="button" id="replayUndo" class="replay-undo" disabled>Undo</button>
+            <button type="button" id="replayShare">Share</button>
+          </footer>
+          <p class="replay-revoke-note" id="replayRevokeNote" hidden>Strlix control is off. Your phone stays yours.</p>
+        </section>
+        <div id="liveLayer" data-state="closed" aria-hidden="true">
+          <div id="liveScrim"></div>
+          <button type="button" id="liveOrb" aria-label="Strlix Live">
+            <span class="orb-glow"></span><span class="orb-core"></span><span class="orb-ring"></span>
+            <svg class="orb-s" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l10-7z"/></svg>
+          </button>
+          <p id="liveCaption" aria-live="polite">Go on, I’m here</p>
+          <div id="liveControls">
+            <button type="button" id="liveKeyboard" aria-label="Type instead">⌨</button>
+            <button type="button" id="liveStop" aria-label="End Live">⏹</button>
+            <button type="button" id="liveMute" aria-pressed="false" aria-label="Mute mic">🔇</button>
+          </div>
+          <section id="liveTranscriptSheet" hidden aria-label="Live transcript">
+            <div id="liveTranscriptGrip" role="button" tabindex="0" aria-expanded="false"></div>
+            <ol id="liveTranscriptList"></ol>
+          </section>
+        </div>
+        <section id="needsYouLayer" data-kind="login" hidden aria-hidden="true" aria-live="assertive" aria-label="Needs your help">
+          <div id="needsYouScrim"></div>
+          <div id="needsYouTopPill"><span class="needs-you-mark" aria-hidden="true">S</span><span id="needsYouPillText">Needs you</span><span id="needsYouCountdown">10s</span></div>
+          <div id="needsYouTarget" aria-hidden="true"></div>
+          <div id="needsYouPanel">
+            <h2 id="needsYouTitle">Verify it’s you</h2>
+            <p id="needsYouCopy">Strlix is paused on the sign-in screen. Complete this one step and I’ll take it from there.</p>
+            <p id="needsYouMeta">The exact screen is highlighted. Nothing runs while you’re deciding.</p>
+            <div id="needsYouActions"><button type="button" id="needsYouPrimary">I’m here</button><button type="button" id="needsYouSecondary">Not now</button></div>
+          </div>
+        </section>
+        <div id="askOverlay" aria-hidden="true"></div>
+        <div id="askDock" data-mode="hidden" aria-hidden="true" aria-label="Ask Strlix">
+          <form id="askForm">
+            <div id="askBar">
+              <span class="smark" aria-hidden="true">S</span>
+              <input id="askQ" placeholder="Ask Strlix…" autocomplete="off" />
+              <button id="askGo" type="submit" title="Send">↑</button>
+            </div>
+          </form>
+          <div id="narrationStrip" aria-live="polite">
+            <span class="pulse" aria-hidden="true"></span>
+            <span id="narrationText">Working…</span>
+            <button type="button" id="narrationShare" title="Share replay GIF">Share</button>
+            <button type="button" id="narrationStop" title="Dismiss">✕</button>
+          </div>
+          <div id="askEscHint" aria-hidden="true">Esc to close · Enter to send</div>
+        </div>
+      </div>
+      </div>
+      <div class="nav-rail-zone" aria-label="Phone navigation controls">
+        <span class="nav-rail-hint" aria-hidden="true"></span>
+        <nav class="navbar" aria-label="Phone navigation">
+          <button type="button" data-key="BACK" aria-label="Back" title="Back">◀<span class="lbl">Back</span></button>
+          <button type="button" data-key="HOME" aria-label="Home" title="Home">●<span class="lbl">Home</span></button>
+          <button type="button" data-key="APP_SWITCH" aria-label="Recent apps" title="Recent apps">■<span class="lbl">Recents</span></button>
+        </nav>
+      </div>
+    </div>
+    <div class="device-footer">
+      <span class="live-badge off" id="streamBadge"><span class="blink"></span> Preview</span>
+      <span id="streamHud" title="transport · frame rate · bitrate · tap-to-pixels"></span>
+      <span id="shotStamp">—</span>
+    </div>
+  </div>
+
+  <div id="replayToast" role="status"><span id="replayToastMsg">Replay ready</span><a id="replayToastLink" href="#" target="_blank" rel="noopener">Open GIF</a></div>
+
+  <script>
+    // ═══════════════════════════════════════════════════════════════════
+    //  Live viewer + touch control
+    //  Transport: WebSocket binary JPEG  →  MJPEG  →  polled /adb/preview
+    //  Coordinate mapping is derived from the DEVICE aspect (/adb/size), never
+    //  from img.naturalWidth — an MJPEG <img> reports 0 until its first frame
+    //  decodes, which used to make every early tap a silent no-op.
+    // ═══════════════════════════════════════════════════════════════════
+    const liveCanvas = document.getElementById('liveCanvas');
+    const liveShot = document.getElementById('liveShot');
+    const touchLayer = document.getElementById('touchLayer');
+    const screenEl = document.querySelector('.device-screen');
+    const phoneEmpty = document.getElementById('phoneEmpty');
+    const shotStamp = document.getElementById('shotStamp');
+    const streamBadge = document.getElementById('streamBadge');
+    const streamHud = document.getElementById('streamHud');
+    const pressRipple = document.getElementById('pressRipple');
+    const tapHint = document.getElementById('tapHint');
+    const askOverlay = document.getElementById('askOverlay');
+    const askDock = document.getElementById('askDock');
+    const askForm = document.getElementById('askForm');
+    const askEscHint = document.getElementById('askEscHint');
+    const askHint = document.getElementById('askHint');
+    const narrationStrip = document.getElementById('narrationStrip');
+    const narrationText = document.getElementById('narrationText');
+    const ctx = liveCanvas.getContext('2d', { alpha: false, desynchronized: true });
+
+    let history = [];
+    let connected = false;
+    let deviceW = 1080, deviceH = 2400;
+    let viewRect = { left: 0, top: 0, width: 0, height: 0, scale: 1 };
+    let transport = 'ws';          // h264 | ws | mjpeg | poll
+    let streamWs = null;
+    let lastInputAt = 0;           // for the tap-to-pixels readout
+    let wsFailures = 0;
+    let pendingMeta = null;
+    let lastDrawnVersion = 0;
+    let firstFrameAt = 0;
+    let pollBusy = false;
+    let pollTimer = null;
+    let interactiveUntil = 0;
+
+    // ---- layout: exact letterbox rect for the device aspect ----
+    function layoutView() {
+      const sr = screenEl.getBoundingClientRect();
+      if (!sr.width || !sr.height || !deviceW || !deviceH) return;
+      const scale = Math.min(sr.width / deviceW, sr.height / deviceH);
+      const w = deviceW * scale, h = deviceH * scale;
+      viewRect = { left: (sr.width - w) / 2, top: (sr.height - h) / 2, width: w, height: h, scale };
+      for (const el of [liveCanvas, liveShot]) {
+        el.style.left = viewRect.left + 'px';
+        el.style.top = viewRect.top + 'px';
+        el.style.width = w + 'px';
+        el.style.height = h + 'px';
+      }
+    }
+    window.addEventListener('resize', layoutView);
+    if (window.ResizeObserver) new ResizeObserver(layoutView).observe(screenEl);
+    layoutView();
+
+    function setDeviceSize(w, h) {
+      if (!w || !h) return;
+      if (w === deviceW && h === deviceH) return;
+      deviceW = w; deviceH = h;
+      layoutView();
+    }
+
+    function markLive(label) {
+      connected = true;
+      phoneEmpty.classList.add('hidden');
+      streamBadge.classList.remove('off');
+      // Keep the blinking dot; update the visible label.
+      const _lbl = streamBadge.childNodes[streamBadge.childNodes.length-1];
+      if (_lbl && _lbl.nodeType === 3) {
+        _lbl.textContent = transport === 'h264' ? ' Live · H.264' : ' Live';
+      }
+      if (tapHint && firstFrameAt) tapHint.style.display = 'none';
+      if (!firstFrameAt) firstFrameAt = Date.now();
+      document.getElementById('adbDot').className = 'dot ok';
+      document.getElementById('adbLabel').textContent = 'Phone on';
+      if (label) shotStamp.textContent = label;
+    }
+
+    // ═══════════ Transport 0: H.264 / WebCodecs (preferred) ═══════════
+    //  Device H.264 (scrcpy-server preferred, screenrecord fallback) → /ws/h264 → VideoDecoder.
+    //  ~15-30fps for ~800kbps instead of ~3fps of JPEG, and the encoder only
+    //  emits when the screen actually changes.
+    //  The JPEG socket below stays up until the first H.264 frame paints, so a
+    //  browser without WebCodecs — or a device without screenrecord — never
+    //  sees a blank phone. Anything that goes wrong here falls back, silently.
+    const H264_OK = typeof window.VideoDecoder === 'function'
+                 && typeof window.EncodedVideoChunk === 'function';
+    const AU_HEADER_BYTES = 16;   // u8 ver | u8 flags | u16 pad | u32 seq | f64 ts_us
+    const h264 = {
+      ws: null, dec: null, codec: null, needKey: true,
+      frames: 0, bytes: 0, failures: 0, giveUp: !H264_OK,
+      connectedAt: 0, lastFrameAt: 0, fps: 0, kbps: 0, window: [],
+      latency: null, watchdog: null, closing: false,
+      // AU arrival times keyed by timestamp, so we can separate "the device
+      // was slow" from "decoding was slow" instead of guessing.
+      arrivals: new Map(), decodeMs: null, paintMs: null, droppedLate: 0,
+      catchup: null, pokes: 0,
+    };
+
+    function h264Connect() {
+      if (h264.giveUp || h264.ws) return;
+      let ws;
+      try {
+        const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+        ws = new WebSocket(proto + '://' + location.host + '/ws/h264');
+      } catch (e) { h264Fail('construct: ' + e.message); return; }
+      ws.binaryType = 'arraybuffer';
+      h264.ws = ws;
+      h264.closing = false;
+      h264.connectedAt = Date.now();
+      ws.onmessage = (ev) => {
+        if (typeof ev.data === 'string') {
+          let m; try { m = JSON.parse(ev.data); } catch (_) { return; }
+          h264Control(m);
+        } else {
+          h264Feed(ev.data);
+        }
+      };
+      ws.onerror = () => {};
+      ws.onclose = (ev) => {
+        h264.ws = null;
+        h264TeardownDecoder();
+        if (h264.closing) return;                 // our own close (hidden tab)
+        if (ev.code === 1013) { h264Fail('server: ' + (ev.reason || 'capacity')); return; }
+        if (transport === 'h264') {
+          // We were live on H.264 — try once more before dropping to JPEG.
+          h264.failures += 1;
+          if (h264.failures <= 3) { setTimeout(h264Connect, 500 * h264.failures); return; }
+          transport = 'ws';
+          connectStreamWs();
+        }
+        h264Fail('closed ' + ev.code);
+      };
+      // No first frame in time ⇒ this path is not going to work here.
+      clearTimeout(h264.watchdog);
+      h264.watchdog = setTimeout(() => {
+        if (!h264.frames) h264Fail('no frame in 9s');
+      }, 9000);
+    }
+
+    function h264Control(m) {
+      if (m.type === 'hello') {
+        if (m.device_width && m.device_height) setDeviceSize(m.device_width, m.device_height);
+        h264Configure(m.codec || 'avc1.42E01E');
+      } else if (m.type === 'ping') {
+        h264Send({ type: 'pong' });               // keeps our viewer slot alive
+      } else if (m.type === 'bye') {
+        // Server is out of viewer slots (or H.264 is off): stop retrying.
+        h264Fail(m.reason || 'server declined');
+      } else if (m.type === 'stall' && !h264.frames) {
+        shotStamp.textContent = 'h264 starting…';
+      }
+    }
+
+    function h264Send(obj) {
+      try { if (h264.ws && h264.ws.readyState === 1) h264.ws.send(JSON.stringify(obj)); }
+      catch (_) {}
+    }
+
+    async function h264Configure(codec) {
+      if (h264.dec && h264.codec === codec && h264.dec.state === 'configured') return;
+      h264TeardownDecoder();
+      const config = { codec, optimizeForLatency: true, hardwareAcceleration: 'no-preference' };
+      try {
+        if (window.VideoDecoder.isConfigSupported) {
+          const probe = await window.VideoDecoder.isConfigSupported(config);
+          if (probe && probe.supported === false) { h264Fail('codec ' + codec + ' unsupported'); return; }
+        }
+        const dec = new window.VideoDecoder({
+          output: (frame) => { try { h264Paint(frame); } finally { frame.close(); } },
+          error: (e) => h264DecoderError(e),
+        });
+        dec.configure(config);
+        h264.dec = dec;
+        h264.codec = codec;
+        h264.needKey = true;
+      } catch (e) { h264Fail('configure: ' + e.message); }
+    }
+
+    function h264Feed(buf) {
+      const dec = h264.dec;
+      if (!dec || dec.state !== 'configured' || buf.byteLength <= AU_HEADER_BYTES) return;
+      const dv = new DataView(buf);
+      const key = (dv.getUint8(1) & 1) === 1;
+      const ts = dv.getFloat64(8, true);
+      if (h264.needKey && !key) return;            // decoding deltas first = garbage
+      // Do not let the decoder queue grow — late P-frames only add glass latency.
+      if (!key && typeof dec.decodeQueueSize === 'number' && dec.decodeQueueSize > 1) {
+        h264.droppedLate += 1;
+        return;
+      }
+      try {
+        dec.decode(new window.EncodedVideoChunk({
+          type: key ? 'key' : 'delta',
+          timestamp: ts,
+          data: new Uint8Array(buf, AU_HEADER_BYTES),
+        }));
+        h264.needKey = false;
+        if (h264.arrivals.size > 240) h264.arrivals.clear();
+        h264.arrivals.set(ts, performance.now());
+        h264.bytes += buf.byteLength - AU_HEADER_BYTES;
+        h264.window.push([performance.now(), buf.byteLength - AU_HEADER_BYTES]);
+      } catch (e) { h264DecoderError(e); }
+    }
+
+    function h264DecoderError(e) {
+      // Lost reference frames (dropped AUs, restored tab): only an IDR fixes it.
+      h264.needKey = true;
+      h264Send({ type: 'keyframe' });
+      if (h264.dec && h264.dec.state === 'closed') h264Configure(h264.codec || 'avc1.42E01E');
+      shotStamp.textContent = 'video resync…';
+    }
+
+    function h264Paint(frame) {
+      const w = frame.displayWidth || frame.codedWidth;
+      const h = frame.displayHeight || frame.codedHeight;
+      if (!w || !h) return;
+      if (liveCanvas.width !== w || liveCanvas.height !== h) {
+        liveCanvas.width = w; liveCanvas.height = h;
+      }
+      liveCanvas.hidden = false;
+      liveShot.hidden = true;
+      const tDecoded = performance.now();
+      const arrivedAt = h264.arrivals.get(frame.timestamp);
+      if (arrivedAt != null) {
+        h264.decodeMs = Math.round(tDecoded - arrivedAt);
+        h264.arrivals.delete(frame.timestamp);
+      }
+      ctx.drawImage(frame, 0, 0, w, h);
+      // paintMs = time from decoded callback to next animation frame (compositor).
+      requestAnimationFrame(() => {
+        h264.paintMs = Math.round(performance.now() - tDecoded);
+      });
+      h264.frames += 1;
+      h264.lastFrameAt = Date.now();
+      if (h264.frames === 1) adoptH264();
+      if (lastInputAt) { h264.latency = Math.round(performance.now() - lastInputAt); lastInputAt = 0; }
+      markLive(null);
+      h264Hud();
+    }
+
+    /** First decoded frame: H.264 owns the canvas, JPEG transports stand down. */
+    function adoptH264() {
+      transport = 'h264';
+      h264.failures = 0;
+      clearTimeout(h264.watchdog);
+      try { if (streamWs) streamWs.close(1000, 'h264 adopted'); } catch (_) {}
+      streamWs = null;
+      clearTimeout(pollTimer);
+      liveShot.onerror = null;
+      liveShot.onload = null;
+      liveShot.removeAttribute('src');
+      liveShot.hidden = true;
+      if (tapHint) tapHint.style.display = 'none';
+    }
+
+    const jpegHud = { window: [] };
+
+    /** Shared telemetry readout: whichever transport is painting, report it. */
+    function h264Hud() {
+      const now = performance.now();
+      const win = transport === 'h264' ? h264.window : jpegHud.window;
+      while (win.length && now - win[0][0] > 3000) win.shift();
+      const span = win.length ? Math.max(500, now - win[0][0]) : 1000;
+      const fps = win.length / (span / 1000);
+      const kbps = (win.reduce((a, x) => a + x[1], 0) * 8 / 1000) / (span / 1000);
+      if (transport === 'h264') { h264.fps = fps; h264.kbps = kbps; }
+      const bits = [
+        transport === 'h264' ? 'H.264' : (transport === 'ws' ? 'JPEG/ws' : transport.toUpperCase()),
+        fps.toFixed(0) + 'fps',
+        Math.round(kbps) + 'kbps',
+      ];
+      let html = bits.join(' · ');
+      if (h264.latency != null) {
+        const cls = h264.latency < 400 ? 'lat' : 'warn';
+        html += ' · <span class="' + cls + '">⌁ ' + h264.latency + 'ms</span>';
+      }
+      streamHud.innerHTML = html;
+      streamHud.title = 'transport ' + transport
+        + ' · decode ' + (h264.decodeMs == null ? '—' : h264.decodeMs + 'ms')
+        + ' · paint ' + (h264.paintMs == null ? '—' : h264.paintMs + 'ms')
+        + ' · frames ' + h264.frames
+        + (h264.droppedLate ? ' · drop ' + h264.droppedLate : '')
+        + (h264.pokes ? ' · jpeg pokes ' + h264.pokes : '');
+    }
+
+    /** Bridge the one case where JPEG beats video.
+     *
+     *  A keypress that produces no animation (HOME onto a settled launcher)
+     *  can leave the device encoder quiet for most of a second, while the JPEG
+     *  broker would have force-captured the new screen in ~300ms. So: after an
+     *  input, if no access unit has arrived in a while, paint exactly one
+     *  cached JPEG frame over the canvas. The next real video frame replaces
+     *  it. Costs one screencap per stalled input, never runs a second stream.
+     */
+    function h264CatchUp() {
+      if (transport !== 'h264') return;
+      clearTimeout(h264.catchup);
+      h264.catchup = setTimeout(async () => {
+        if (transport !== 'h264') return;
+        if (Date.now() - h264.lastFrameAt < 400) return;      // video kept up
+        try {
+          const r = await fetch('/adb/preview?t=' + Date.now(), { cache: 'no-store' });
+          if (!r.ok) return;
+          const buf = await r.arrayBuffer();
+          if (transport !== 'h264' || Date.now() - h264.lastFrameAt < 400) return;
+          const bm = window.createImageBitmap
+            ? await createImageBitmap(new Blob([buf], { type: 'image/jpeg' }))
+            : null;
+          if (!bm) return;
+          // Keep the canvas at the video's geometry so the next decoded frame
+          // lands pixel-for-pixel on top of this one.
+          ctx.drawImage(bm, 0, 0, liveCanvas.width, liveCanvas.height);
+          if (bm.close) bm.close();
+          h264.pokes += 1;
+          if (lastInputAt) { h264.latency = Math.round(performance.now() - lastInputAt); lastInputAt = 0; }
+          markLive(null);
+          h264Hud();
+        } catch (_) {}
+      }, 420);
+    }
+
+    function h264TeardownDecoder() {
+      const dec = h264.dec;
+      h264.dec = null;
+      h264.needKey = true;
+      if (dec && dec.state !== 'closed') { try { dec.close(); } catch (_) {} }
+    }
+
+    function h264Close(why) {
+      h264.closing = true;
+      clearTimeout(h264.watchdog);
+      try { if (h264.ws) h264.ws.close(1000, why || 'client'); } catch (_) {}
+      h264.ws = null;
+      h264TeardownDecoder();
+    }
+
+    /** Give up on H.264 for this page load and let the JPEG ladder carry on. */
+    function h264Fail(why) {
+      clearTimeout(h264.watchdog);
+      h264TeardownDecoder();
+      try { if (h264.ws) h264.ws.close(); } catch (_) {}
+      h264.ws = null;
+      h264.giveUp = true;
+      if (transport === 'h264') { transport = 'ws'; connectStreamWs(); }
+      streamHud.innerHTML = 'JPEG fallback';
+      setTimeout(h264Hud, 1200);
+      console.info('[strlix] h264 unavailable → JPEG fallback:', why);
+    }
+
+    // ───────────── Transport 1: WebSocket binary JPEG (fastest) ─────────────
+    function connectStreamWs() {
+      if (transport !== 'ws') return;
+      if (streamWs && (streamWs.readyState === 0 || streamWs.readyState === 1)) return;
+      let ws;
+      try {
+        const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+        ws = new WebSocket(proto + '://' + location.host + '/ws/stream');
+      } catch (e) { fallbackToMjpeg('ws construct failed'); return; }
+      ws.binaryType = 'arraybuffer';
+      streamWs = ws;
+      ws.onopen = () => { wsFailures = 0; };
+      ws.onmessage = (ev) => {
+        if (typeof ev.data === 'string') {
+          let m; try { m = JSON.parse(ev.data); } catch (_) { return; }
+          if (m.type === 'frame') {
+            pendingMeta = m;
+            setDeviceSize(m.device_width, m.device_height);
+          } else if (m.type === 'hello') {
+            setDeviceSize(m.device_width, m.device_height);
+          } else if (m.type === 'stall') {
+            shotStamp.textContent = 'stream stalled' + (m.error ? ' · ' + m.error : '');
+          }
+          return;
+        }
+        const meta = pendingMeta; pendingMeta = null;
+        drawJpeg(ev.data, meta);
+      };
+      ws.onerror = () => {};
+      ws.onclose = (ev) => {
+        streamWs = null;
+        if (transport !== 'ws') return;
+        wsFailures += 1;
+        if (wsFailures >= 3 || ev.code === 1013) { fallbackToMjpeg('ws closed ' + ev.code); return; }
+        setTimeout(connectStreamWs, 400 * wsFailures);
+      };
+    }
+
+    function drawJpeg(buf, meta) {
+      if (transport === 'h264') return;   // video owns the canvas now
+      const version = meta ? meta.version : 0;
+      const blob = new Blob([buf], { type: 'image/jpeg' });
+      const paint = (src, w, h) => {
+        if (version && version < lastDrawnVersion) return;   // out-of-order decode
+        lastDrawnVersion = version || lastDrawnVersion;
+        if (liveCanvas.width !== w || liveCanvas.height !== h) {
+          liveCanvas.width = w; liveCanvas.height = h;
+        }
+        liveCanvas.hidden = false;
+        liveShot.hidden = true;
+        ctx.drawImage(src, 0, 0, w, h);
+        jpegHud.window.push([performance.now(), buf.byteLength || 0]);
+        if (lastInputAt) { h264.latency = Math.round(performance.now() - lastInputAt); lastInputAt = 0; }
+        markLive(new Date().toLocaleTimeString());
+        h264Hud();
+      };
+      if (window.createImageBitmap) {
+        createImageBitmap(blob).then((bm) => {
+          paint(bm, bm.width, bm.height);
+          if (bm.close) bm.close();
+        }).catch(() => {});
+      } else {
+        const url = URL.createObjectURL(blob);
+        const im = new Image();
+        im.onload = () => { paint(im, im.naturalWidth, im.naturalHeight); URL.revokeObjectURL(url); };
+        im.onerror = () => URL.revokeObjectURL(url);
+        im.src = url;
+      }
+    }
+
+    // ───────────── Transport 2: MJPEG <img> ─────────────
+    function fallbackToMjpeg(why) {
+      if (transport === 'poll' || transport === 'h264') return;
+      transport = 'mjpeg';
+      try { if (streamWs) streamWs.close(); } catch (_) {}
+      streamWs = null;
+      shotStamp.textContent = 'mjpeg fallback';
+      startMjpeg();
+    }
+    function startMjpeg() {
+      if (transport !== 'mjpeg') return;
+      liveCanvas.hidden = true;
+      liveShot.hidden = false;
+      liveShot.onload = () => markLive('live · mjpeg');
+      liveShot.onerror = () => { transport = 'poll'; liveShot.onload = null; schedulePoll(); };
+      liveShot.src = '/adb/mjpeg?t=' + Date.now();
+      layoutView();
+    }
+
+    // ───────────── Transport 3: polled /adb/preview ─────────────
+    async function grabPreview(force) {
+      if (pollBusy && !force) return;
+      pollBusy = true;
+      try {
+        const r = await fetch('/adb/preview?t=' + Date.now(), { cache: 'no-store' });
+        if (!r.ok) throw new Error('preview ' + r.status);
+        setDeviceSize(
+          parseInt(r.headers.get('X-Device-Width') || '', 10),
+          parseInt(r.headers.get('X-Device-Height') || '', 10)
+        );
+        const buf = await r.arrayBuffer();
+        liveCanvas.hidden = false;
+        liveShot.hidden = true;
+        drawJpeg(buf, null);
+      } catch (err) {
+        if (!lastDrawnVersion && !firstFrameAt) shotStamp.textContent = 'Waiting for ADB…';
+      } finally {
+        pollBusy = false;
+      }
+    }
+    function pollDelay() { return Date.now() < interactiveUntil ? 300 : 700; }
+    function schedulePoll() {
+      clearTimeout(pollTimer);
+      if (transport !== 'poll') return;
+      if (document.visibilityState !== 'visible') {
+        pollTimer = setTimeout(schedulePoll, 1200);
+        return;
+      }
+      grabPreview(false).finally(() => { pollTimer = setTimeout(schedulePoll, pollDelay()); });
+    }
+
+    // Legacy name used by Ask / Live voice callbacks
+    async function grabShot() { nudgeStream(); if (transport === 'poll') return grabPreview(true); }
+
+    /** Ask the server to capture immediately (used right after an input). */
+    function nudgeStream() {
+      // On H.264 the encoder already pushes a frame the moment the screen
+      // changes — nudging would start a second, pointless capture pipeline.
+      if (transport === 'h264') return;
+      if (streamWs && streamWs.readyState === 1) {
+        try { streamWs.send(JSON.stringify({ type: 'nudge' })); return; } catch (_) {}
+      }
+      fetch('/adb/stream/nudge', { method: 'POST' }).catch(() => {});
+    }
+
+    function startStream() {
+      // Try video first; the JPEG ladder keeps running underneath until the
+      // first decoded frame arrives, so there is never a blank phone.
+      h264Connect();
+      if (transport === 'h264') return;
+      if (transport === 'ws') connectStreamWs();
+      else if (transport === 'mjpeg') startMjpeg();
+      else schedulePoll();
+    }
+    function stopStream() {
+      h264Close('hidden');
+      try { if (streamWs) streamWs.close(); } catch (_) {}
+      streamWs = null;
+      if (transport === 'mjpeg') { liveShot.onerror = null; liveShot.removeAttribute('src'); }
+      clearTimeout(pollTimer);
+    }
+
+    /** Legacy: Ask/voice used to push a saved demo/*.png. The live stream is
+     *  strictly fresher than a saved screenshot, so just force a capture. */
+    function setLive(url, label) {
+      nudgeStream();
+      if (label) shotStamp.textContent = label;
+    }
+    function showPreviewFrame() { /* superseded by the canvas path */ }
+
+    // ───────────── Needs-you handoff ─────────────
+    // Human-only steps pause the task without hiding the phone. The backend
+    // can broadcast {type:"needs_you", kind, app, target, deep_link}; the
+    // public hook makes all variants deterministic to review.
+    const needsYouLayer = document.getElementById('needsYouLayer');
+    const needsYouTitle = document.getElementById('needsYouTitle');
+    const needsYouCopy = document.getElementById('needsYouCopy');
+    const needsYouMeta = document.getElementById('needsYouMeta');
+    const needsYouPillText = document.getElementById('needsYouPillText');
+    const needsYouCountdown = document.getElementById('needsYouCountdown');
+    const needsYouTarget = document.getElementById('needsYouTarget');
+    const needsYouPrimary = document.getElementById('needsYouPrimary');
+    const needsYouSecondary = document.getElementById('needsYouSecondary');
+    let needsYouActive = false, needsYouTimer = null, needsYouDeadline = 0, needsYouPayload = null;
+    const NEEDS_YOU_COPY = {
+      login: { pill:'Needs you', title:'Verify it’s you', copy:'Strlix is paused on the sign-in screen. Complete this one step and I’ll take it from there.', meta:'Your password stays on the phone. Nothing runs while you’re deciding.', primary:'I’m here' },
+      captcha: { pill:'Needs you', title:'One quick check', copy:'This site needs a CAPTCHA. Complete it on the highlighted screen and Strlix will resume automatically.', meta:'CAPTCHAs are always yours to solve — Strlix won’t guess.', primary:'Open the check' },
+      permission: { pill:'Needs you', title:'Allow one thing', copy:'To do that on your phone, Strlix needs the permission highlighted below.', meta:'It only acts while you’re watching. You can turn it off any time.', primary:'Show me the switch' },
+      payment: { pill:'Needs you', title:'Approve the payment', copy:'The payment screen is ready. Check the amount, then approve it yourself.', meta:'Strlix will stay paused until you finish.', primary:'I’m here' },
+      default: { pill:'Needs you', title:'You’re needed for 10 seconds', copy:'Strlix is paused on the exact step that needs you. Complete it and I’ll take it from there.', meta:'Nothing runs while you’re deciding.', primary:'I’m here' },
+    };
+    function needsYouKind(payload) { return String(payload?.kind || payload?.reason || 'default').toLowerCase().replace(/[^a-z]/g,'') || 'default'; }
+    function showNeedsYou(payload = {}) {
+      const kind = needsYouKind(payload), copy = NEEDS_YOU_COPY[kind] || NEEDS_YOU_COPY.default;
+      needsYouPayload = { ...payload, kind }; needsYouActive = true;
+      needsYouLayer.dataset.kind = kind; needsYouLayer.hidden = false; needsYouLayer.classList.add('open'); needsYouLayer.setAttribute('aria-hidden','false'); needsYouLayer.classList.remove('resuming');
+      needsYouPillText.textContent = copy.pill; needsYouTitle.textContent = payload.title || copy.title; needsYouCopy.textContent = payload.message || copy.copy; needsYouMeta.textContent = payload.meta || (payload.app ? `${copy.meta} · ${payload.app}` : copy.meta); needsYouPrimary.textContent = payload.primary || copy.primary;
+      const target = payload.target || {}, tx = Number.isFinite(Number(target.x)) ? Number(target.x) : .5, ty = Number.isFinite(Number(target.y)) ? Number(target.y) : .42;
+      needsYouTarget.style.left = `${Math.max(0, Math.min(1, tx)) * 100}%`; needsYouTarget.style.top = `${Math.max(0, Math.min(1, ty)) * 100}%`;
+      const seconds = Math.max(1, Number(payload.seconds || 10)); needsYouDeadline = Date.now() + seconds * 1000; clearInterval(needsYouTimer);
+      const tick = () => { needsYouCountdown.textContent = Math.max(0, Math.ceil((needsYouDeadline - Date.now()) / 1000)) + 's'; }; tick(); needsYouTimer = setInterval(tick, 250);
+      setNarration('Strlix needs you for a moment — ' + (payload.app || kind) + '.', { deferMode:true });
+      try { needsYouPrimary.focus({ preventScroll:true }); } catch (_) { needsYouPrimary.focus(); }
+    }
+    function hideNeedsYou(resumed = false) {
+      if (!needsYouActive) return; needsYouActive = false; clearInterval(needsYouTimer); needsYouTimer = null; needsYouLayer.classList.remove('open','resuming'); needsYouLayer.hidden = true; needsYouLayer.setAttribute('aria-hidden','true');
+      setNarration(resumed ? 'Thanks — resuming.' : 'Paused. I’ll wait here.', { deferMode:false }); if (resumed) nudgeStream(); needsYouPayload = null;
+    }
+    needsYouPrimary.addEventListener('click', () => {
+      if (!needsYouActive) return; const link = needsYouPayload?.deep_link || needsYouPayload?.deepLink; if (link) { try { window.open(link, '_blank', 'noopener'); } catch (_) {} }
+      needsYouLayer.classList.add('resuming'); setNarration('Complete the highlighted step — I’ll resume automatically.', { deferMode:true }); window.dispatchEvent(new CustomEvent('strlix:needs-you:ack', { detail: needsYouPayload || {} }));
+    });
+    needsYouSecondary.addEventListener('click', () => hideNeedsYou(false));
+    window.__strlixNeedsYou = { show: showNeedsYou, hide: hideNeedsYou, demo(kind = 'login') { showNeedsYou({ kind, app: kind === 'permission' ? 'Android settings' : kind === 'captcha' ? 'Chrome' : 'the app', target:{x:.5,y:.4} }); }, get active() { return needsYouActive; } };
+
+    let askHintShown = false;
+    function showAskHintOnce() {
+      if (askHintShown || !askHint) return;
+      askHintShown = true;
+      askHint.classList.add('show');
+      setTimeout(() => { askHint.classList.add('hide'); askHint.classList.remove('show'); }, 4000);
+    }
+    const demoNeedsYou = new URLSearchParams(location.search).get('needs-you');
+    if (demoNeedsYou) setTimeout(() => window.__strlixNeedsYou.demo(demoNeedsYou), 900);
+
+    // Hook: first live frame reveals ⌘K hint
+    const _markLive = markLive;
+    markLive = function(label) {
+      _markLive(label);
+      showAskHintOnce();
+    };
+
+    function updateNarrationLine(line) {
+      if (!narrationText) return;
+      clearTimeout(updateNarrationLine._timer);
+      narrationText.style.opacity = '0';
+      updateNarrationLine._timer = setTimeout(() => {
+        narrationText.textContent = line || 'Working…';
+        narrationText.style.opacity = '1';
+      }, 120);
+    }
+    function setNarration(line, options = {}) {
+      if (!narrationStrip) return;
+      if (options.generation != null && (options.generation !== askGen || narrationDismissed)) return;
+      updateNarrationLine(line);
+      if (!options.deferMode && !askOpen) setDockMode('narrating');
+    }
+    function hideNarration() {
+      narrationDismissed = true;
+      askGen += 1;
+      setDockMode('hidden');
+    }
+
+    async function refreshHealth() {
+      const adbDot = document.getElementById('adbDot');
+      const adbLabel = document.getElementById('adbLabel');
+      try {
+        const r = await fetch('/health');
+        const j = await r.json();
+        const state = (j.adb_state || '').toString();
+        connected = state === 'device' || state.includes('device');
+        const err = state.startsWith('error') || state === '';
+        adbDot.className = 'dot ' + (connected ? 'ok' : err ? 'err' : 'warn');
+        adbLabel.textContent = connected ? 'Phone on' : ('Phone ' + (state || 'offline'));
+        if (!connected) streamBadge.classList.add('off');
+        if (j.stream && j.stream.device) setDeviceSize(j.stream.device[0], j.stream.device[1]);
+      } catch (e) {
+        connected = false;
+        adbDot.className = 'dot err';
+        adbLabel.textContent = 'Offline';
+        streamBadge.classList.add('off');
+      }
+    }
+
+    async function refreshSize() {
+      try {
+        const r = await fetch('/adb/size');
+        const j = await r.json();
+        if (j && j.width && j.height) setDeviceSize(j.width, j.height);
+      } catch (_) {}
+    }
+
+    // ───────────── Pointer → device coordinates ─────────────
+    const EDGE_TOL = 40;  // device px of slack into the letterbox bars
+    function clientToDevice(clientX, clientY) {
+      const sr = screenEl.getBoundingClientRect();
+      if (!sr.width || !sr.height) return null;
+      if (!viewRect.width) layoutView();
+      if (!viewRect.width || !viewRect.scale) return null;
+      const ix = (clientX - sr.left - viewRect.left) / viewRect.scale;
+      const iy = (clientY - sr.top - viewRect.top) / viewRect.scale;
+      if (ix < -EDGE_TOL || iy < -EDGE_TOL || ix > deviceW + EDGE_TOL || iy > deviceH + EDGE_TOL) {
+        return null;
+      }
+      return {
+        x: Math.max(0, Math.min(deviceW - 1, Math.round(ix))),
+        y: Math.max(0, Math.min(deviceH - 1, Math.round(iy))),
+      };
+    }
+
+    function showRipple(clientX, clientY) {
+      const sr = screenEl.getBoundingClientRect();
+      pressRipple.style.left = (clientX - sr.left) + 'px';
+      pressRipple.style.top = (clientY - sr.top) + 'px';
+      pressRipple.classList.remove('show');
+      void pressRipple.offsetWidth;
+      pressRipple.classList.add('show');
+      clearTimeout(showRipple._t);
+      showRipple._t = setTimeout(() => pressRipple.classList.remove('show'), 280);
+    }
+
+    // ───────────── Pointer control (mouse + touch + pen) ─────────────
+    let ptrDown = null;
+    const SWIPE_PX = 14;
+
+    function onPtrDown(ev) {
+      if (ev.pointerType === 'mouse' && ev.button !== 0) return;
+      const pt = clientToDevice(ev.clientX, ev.clientY);
+      if (!pt) return;
+      ev.preventDefault();
+      try { touchLayer.focus({ preventScroll: true }); } catch (_) {}
+      try { touchLayer.setPointerCapture(ev.pointerId); } catch (_) {}
+      ptrDown = { id: ev.pointerId, ...pt, cx: ev.clientX, cy: ev.clientY, t: Date.now() };
+      showRipple(ev.clientX, ev.clientY);
+      interactiveUntil = Date.now() + 5000;
+    }
+
+    function onPtrUp(ev) {
+      if (!ptrDown || ptrDown.id !== ev.pointerId) return;
+      ev.preventDefault();
+      const start = ptrDown;
+      ptrDown = null;
+      try { touchLayer.releasePointerCapture(ev.pointerId); } catch (_) {}
+      const end = clientToDevice(ev.clientX, ev.clientY) || { x: start.x, y: start.y };
+      showRipple(ev.clientX, ev.clientY);
+      interactiveUntil = Date.now() + 5000;
+      const clientDist = Math.hypot(ev.clientX - start.cx, ev.clientY - start.cy);
+      const dt = Date.now() - start.t;
+
+      // Fire-and-forget: never block the UI on the ADB round-trip.
+      if (clientDist < SWIPE_PX) {
+        const label = 'Tap at ' + start.x + ',' + start.y;
+        shotStamp.textContent = 'tap ' + start.x + ',' + start.y;
+        const event = replayRecordInput(label, 'tap', { x: start.x, y: start.y });
+        sendInput('/adb/tap', { x: start.x, y: start.y }, 'tap ' + start.x + ',' + start.y, event);
+      } else {
+        const dur = Math.max(80, Math.min(800, dt));
+        const body = { x1: start.x, y1: start.y, x2: end.x, y2: end.y, duration_ms: dur };
+        const label = 'Swipe ' + start.x + ',' + start.y + ' → ' + end.x + ',' + end.y;
+        shotStamp.textContent = 'swipe ' + start.x + ',' + start.y + ' → ' + end.x + ',' + end.y;
+        const event = replayRecordInput(label, 'swipe', body);
+        sendInput('/adb/swipe', body, 'swipe → ' + end.x + ',' + end.y, event);
+      }
+    }
+
+    function sendInput(url, body, label, replayEvent = null) {
+      const t0 = performance.now();
+      lastInputAt = t0;
+      if (replayEvent) {
+        // The first thumbnail is what the user saw before the input; these
+        // delayed refreshes become the per-tap confirmation frame.
+        setTimeout(() => replayRefreshEvent(replayEvent), 300);
+        setTimeout(() => replayRefreshEvent(replayEvent), 850);
+      }
+      // Optimistic: wake the producer immediately so the opened app appears ASAP.
+      nudgeStream();
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        keepalive: true,
+      }).then((r) => {
+        const ms = Math.round(performance.now() - t0);
+        if (!r.ok) { shotStamp.textContent = label + ' ✗ ' + r.status; return; }
+        shotStamp.textContent = label + ' · ' + ms + 'ms';
+        if (transport === 'h264') { h264CatchUp(); return; }
+        nudgeStream();
+        if (transport === 'poll') {
+          grabPreview(true);
+          setTimeout(() => grabPreview(true), 280);
+          setTimeout(() => grabPreview(true), 600);
+        } else if (transport === 'mjpeg') {
+          // Some browsers stall MJPEG decode after a long idle; soft-kick.
+          setTimeout(() => { if (transport === 'mjpeg') startMjpeg(); }, 900);
+        }
+      }).catch(() => { shotStamp.textContent = label + ' ✗ offline'; });
+    }
+
+    function onPtrCancel(ev) {
+      if (ptrDown && ptrDown.id === ev.pointerId) ptrDown = null;
+    }
+    touchLayer.addEventListener('pointerdown', onPtrDown);
+    touchLayer.addEventListener('pointerup', onPtrUp);
+    touchLayer.addEventListener('pointercancel', onPtrCancel);
+    touchLayer.addEventListener('dragstart', (e) => e.preventDefault());
+    touchLayer.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    // ───────────── Continuity: host files/text ↔ phone ─────────────
+    // Files are pushed to /sdcard/Download. Text uses the optional Strlix
+    // clipboard receiver and an explicit ADB input fallback on older devices.
+    const continuityDrop = document.getElementById('continuityDrop');
+    const continuityDropTitle = document.getElementById('continuityDropTitle');
+    const continuityDropMeta = document.getElementById('continuityDropMeta');
+    let continuityDragDepth = 0;
+    let continuityBusy = false;
+    const CONTINUITY_MAX_FILE = 50 * 1024 * 1024;
+    const CONTINUITY_MAX_TEXT = 100000;
+
+    function continuityAllowed() {
+      const replay = document.getElementById('replayLayer');
+      const live = document.getElementById('liveLayer');
+      return !continuityBusy && !(replay && !replay.hidden) && (!live || live.dataset.state === 'closed');
+    }
+    function continuityHasPayload(dt) {
+      return !!(dt && (dt.files?.length || dt.types?.includes('text/plain')));
+    }
+    function setContinuityDrop(open, title, meta) {
+      if (!continuityDrop) return;
+      if (title) continuityDropTitle.textContent = title;
+      if (meta) continuityDropMeta.textContent = meta;
+      continuityDrop.classList.toggle('open', !!open);
+      screenEl.classList.toggle('continuity-over', !!open);
+    }
+    function continuityStatus(text) {
+      shotStamp.textContent = text;
+      clearTimeout(continuityStatus._timer);
+      continuityStatus._timer = setTimeout(() => { if (shotStamp.textContent === text) shotStamp.textContent = '—'; }, 5000);
+    }
+    async function continuityJson(response) {
+      let body = {};
+      try { body = await response.json(); } catch (_) {}
+      if (!response.ok) throw new Error(body.detail || body.message || ('HTTP ' + response.status));
+      return body;
+    }
+    async function sendContinuityText(text, paste = true) {
+      const value = String(text || '').slice(0, CONTINUITY_MAX_TEXT);
+      if (!value) return;
+      continuityBusy = true;
+      try {
+        const r = await fetch('/adb/clipboard', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({text: value, paste}) });
+        const j = await continuityJson(r);
+        continuityStatus(j.fallback === 'typed' ? 'Text inserted · clipboard helper unavailable' : 'Text sent to phone');
+      } catch (_) {
+        continuityStatus('Text could not reach phone');
+      } finally { continuityBusy = false; }
+    }
+    async function sendContinuityFile(file) {
+      if (!file || file.size > CONTINUITY_MAX_FILE) {
+        continuityStatus('File too large · 50 MiB limit');
+        return;
+      }
+      continuityBusy = true;
+      const data = new FormData();
+      data.append('file', file, file.name || 'dropped-file');
+      try {
+        const j = await continuityJson(await fetch('/adb/push', { method: 'POST', body: data }));
+        continuityStatus('Sent to Downloads · ' + (j.name || file.name));
+      } catch (_) {
+        continuityStatus('File could not reach phone');
+      } finally { continuityBusy = false; }
+    }
+    screenEl.addEventListener('dragenter', (ev) => {
+      if (!continuityAllowed() || !continuityHasPayload(ev.dataTransfer)) return;
+      ev.preventDefault(); continuityDragDepth += 1;
+      const hasFiles = ev.dataTransfer.files?.length;
+      setContinuityDrop(true, hasFiles ? 'Drop files into phone' : 'Drop text into phone', hasFiles ? 'Files land in Downloads' : 'Text is pasted into the focused field');
+    });
+    screenEl.addEventListener('dragover', (ev) => {
+      if (!continuityAllowed() || !continuityHasPayload(ev.dataTransfer)) return;
+      ev.preventDefault(); ev.dataTransfer.dropEffect = 'copy';
+    });
+    screenEl.addEventListener('dragleave', () => {
+      if (!continuityDragDepth) return;
+      continuityDragDepth -= 1;
+      if (!continuityDragDepth) setContinuityDrop(false);
+    });
+    screenEl.addEventListener('drop', async (ev) => {
+      if (!continuityAllowed() || !continuityHasPayload(ev.dataTransfer)) return;
+      ev.preventDefault(); continuityDragDepth = 0; setContinuityDrop(false);
+      const files = Array.from(ev.dataTransfer.files || []);
+      if (files.length) {
+        for (const file of files.slice(0, 4)) await sendContinuityFile(file);
+        return;
+      }
+      const text = ev.dataTransfer.getData('text/plain');
+      if (text) await sendContinuityText(text, true);
+    });
+    document.addEventListener('paste', (ev) => {
+      const target = ev.target;
+      if (target && target.closest && target.closest('input, textarea, [contenteditable="true"]')) return;
+      if (document.activeElement !== touchLayer && Date.now() > interactiveUntil) return;
+      const text = ev.clipboardData?.getData('text/plain');
+      if (!text) return;
+      ev.preventDefault(); sendContinuityText(text, true);
+    }, true);
+    document.addEventListener('keydown', async (ev) => {
+      const key = ev.key.toLowerCase();
+      const meta = ev.metaKey || ev.ctrlKey;
+      if (!meta || !ev.shiftKey || key !== 'c' || (document.activeElement !== touchLayer && Date.now() > interactiveUntil)) return;
+      ev.preventDefault();
+      try {
+        const j = await continuityJson(await fetch('/adb/clipboard', {cache: 'no-store'}));
+        if (!navigator.clipboard?.writeText) throw new Error('browser clipboard unavailable');
+        await navigator.clipboard.writeText(j.text || '');
+        continuityStatus('Phone clipboard copied');
+      } catch (_) { continuityStatus('Phone clipboard unavailable'); }
+    });
+
+    // ───────────── Nav bar (BACK / HOME / RECENTS) ─────────────
+    document.querySelector('.navbar').addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-key]');
+      if (!b) return;
+      const keycode = b.dataset.key;
+      interactiveUntil = Date.now() + 5000;
+      const event = replayRecordInput('Pressed ' + keycode.toLowerCase(), 'key', { keycode });
+      sendInput('/adb/key', { keycode }, keycode.toLowerCase(), event);
+    });
+
+    // ───────────── Boot ─────────────
+    refreshHealth();
+    refreshSize();
+    setInterval(refreshHealth, 12000);
+    setInterval(refreshSize, 60000);
+    startStream();
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        startStream();
+        // A restored tab has a cold decoder; ask for an IDR rather than
+        // decoding deltas against frames it no longer holds.
+        h264.needKey = true;
+        h264Send({ type: 'keyframe' });
+        nudgeStream();
+      } else {
+        // Keep the shared producer warm for a bit — other tabs / tunnels may
+        // still be watching. Only drop OUR subscription.
+        stopStream();
+      }
+    });
+
+    document.getElementById('refreshShot').addEventListener('click', async () => {
+      const btn = document.getElementById('refreshShot');
+      btn.disabled = true;
+      nudgeStream();
+      if (transport === 'h264') { h264.needKey = true; h264Send({ type: 'keyframe' }); }
+      else if (transport === 'poll') await grabPreview(true);
+      else if (transport === 'mjpeg') startMjpeg();
+      else connectStreamWs();
+      setTimeout(() => { btn.disabled = false; }, 250);
+    });
+
+    // Ask INSIDE bezel (⌘K / Ctrl+K). Ask and narration share one dock.
+    let askOpen = false;
+    let askBusy = false;
+    let askGen = 0;
+    let narrationDismissed = false;
+    function setDockMode(mode) {
+      const next = mode === 'ask' || mode === 'narrating' ? mode : 'hidden';
+      if (!askDock || askDock.dataset.mode === next) return;
+      askDock.dataset.mode = next;
+      const asking = next === 'ask';
+      const narrating = next === 'narrating';
+      askOverlay.classList.toggle('open', asking);
+      askOverlay.setAttribute('aria-hidden', asking ? 'false' : 'true');
+      askDock.setAttribute('aria-hidden', next === 'hidden' ? 'true' : 'false');
+      askForm.inert = !asking;
+      narrationStrip.inert = !narrating;
+      askEscHint.hidden = !asking;
+      askEscHint.setAttribute('aria-hidden', asking ? 'false' : 'true');
+      if (!asking) document.getElementById('askQ').blur();
+    }
+    function openAsk() {
+      askOpen = true;
+      narrationDismissed = false;
+      setDockMode('ask');
+      screenEl.classList.add('ask-focus');
+      if (askHint) { askHint.classList.add('hide'); askHint.classList.remove('show'); }
+      const q = document.getElementById('askQ');
+      q.value = '';
+      setTimeout(() => q.focus(), 30);
+    }
+    function closeAsk() {
+      askOpen = false;
+      screenEl.classList.remove('ask-focus');
+      document.getElementById('askQ').blur();
+      setDockMode(askBusy && !narrationDismissed ? 'narrating' : 'hidden');
+    }
+    document.addEventListener('keydown', (e) => {
+      const meta = e.metaKey || e.ctrlKey;
+      if (meta && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        if (askOpen) closeAsk(); else openAsk();
+        return;
+      }
+      if (e.key === 'Escape' && askOpen) {
+        e.preventDefault();
+        closeAsk();
+      }
+    });
+    // Click scrim (not the bar) to dismiss
+    askOverlay.addEventListener('click', (e) => {
+      if (e.target === askOverlay) closeAsk();
+    });
+    document.getElementById('narrationStop').addEventListener('click', hideNarration);
+    document.getElementById('narrationShare').addEventListener('click', shareReplayGif);
+
+    function humanizeTool(t) {
+      if (!t || typeof t !== 'object') return null;
+      const name = t.name || t.tool || '';
+      const args = t.args || {};
+      if (name === 'a11y_launch') return 'Opening ' + (args.app || args.package || 'app') + '…';
+      if (name === 'a11y_tap') return 'Tapping ' + (args.label || args.text || 'on screen') + '…';
+      if (name === 'a11y_type') return 'Typing…';
+      if (name === 'a11y_swipe' || name === 'a11y_scroll') return 'Scrolling…';
+      if (name === 'a11y_key') return 'Pressing ' + (args.key || 'key') + '…';
+      if (name === 'adb_tap') return 'Tapped the phone';
+      if (name === 'adb_type') return 'Typed into the phone';
+      if (name === 'adb_swipe') return 'Scrolled the phone';
+      if (name === 'adb_key') return 'Pressed ' + (args.keycode || 'key');
+      if (name === 'local_done') return 'Done';
+      return name ? ('Working: ' + name.replace(/^a11y_/, '')) : null;
+    }
+
+    async function sendAsk(message) {
+      if (!message || askBusy) return;
+      askBusy = true;
+      const gen = ++askGen;
+      narrationDismissed = false;
+      document.getElementById('askQ').value = '';
+      const btn = document.getElementById('askGo');
+      btn.disabled = true;
+      // Paint the first narration line before moving the shared dock so the
+      // pill's content crossfades into the strip instead of flashing blank.
+      setNarration('On it…', { generation: gen, deferMode: true });
+      closeAsk();
+      replayStartCapture(message);
+      replayAddStep(message);
+      try {
+        const r = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message, history }),
+        });
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.detail || j.error || JSON.stringify(j));
+        history = j.history || history;
+        if (j.needs_you) showNeedsYou(j.needs_you === true ? {} : j.needs_you);
+        const tools = j.tools || j.steps || [];
+        if (Array.isArray(tools) && tools.length) {
+          let i = 0;
+          const tick = () => {
+            if (i >= tools.length || gen !== askGen || narrationDismissed) return;
+            const tool = tools[i];
+            const line = humanizeTool(tool) || ('Step ' + (i + 1));
+            const event = replayRecordTool(tool, line);
+            setNarration(line, { generation: gen });
+            if (event) {
+              setTimeout(() => replayRefreshEvent(event), 320);
+              setTimeout(() => replayRefreshEvent(event), 900);
+            }
+            i += 1;
+            if (i < tools.length) setTimeout(tick, 700);
+            else setTimeout(() => setNarration(j.reply || 'Done', { generation: gen }), 500);
+          };
+          tick();
+        } else {
+          setNarration(j.reply || 'Done', { generation: gen });
+        }
+        for (const s of (j.screenshots || [])) {
+          const name = (s.path || '').split('/').pop();
+          setLive('/demo/' + name + '?t=' + Date.now(), name);
+        }
+        if (typeof grabShot === 'function') grabShot();
+        else if (typeof nudgeStream === 'function') nudgeStream();
+        setTimeout(() => replayStopCapture(), 1800);
+      } catch (err) {
+        setNarration('Couldn’t run that — ' + (err.message || 'error'), { generation: gen });
+      } finally {
+        askBusy = false;
+        btn.disabled = false;
+      }
+    }
+
+    document.getElementById('askForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      sendAsk(document.getElementById('askQ').value.trim());
+    });
+
+    // ---- Language ----
+    const LANG_KEY = 'strlix.live.language';
+    const topLang = document.getElementById('topLang');
+    let liveLanguage = localStorage.getItem(LANG_KEY) || '';
+    const LANG_FALLBACKS = [
+      {id:'en-US', name:'English', native:'English'},
+      {id:'hi-IN', name:'Hindi', native:'हिन्दी'},
+      {id:'es-ES', name:'Spanish', native:'Español'},
+      {id:'fr-FR', name:'French', native:'Français'},
+      {id:'zh-CN', name:'Mandarin', native:'中文'},
+      {id:'ar-SA', name:'Arabic', native:'العربية'},
+      {id:'pt-BR', name:'Portuguese', native:'Português'},
+      {id:'ja-JP', name:'Japanese', native:'日本語'},
+    ];
+    function matchDeviceLang(list) {
+      const nav = (navigator.language || 'en-US').replace('_','-');
+      const ids = list.map(x => x.id);
+      if (ids.includes(nav)) return nav;
+      const primary = nav.split('-')[0].toLowerCase();
+      const map = {en:'en-US',hi:'hi-IN',es:'es-ES',fr:'fr-FR',zh:'zh-CN',ar:'ar-SA',pt:'pt-BR',ja:'ja-JP'};
+      if (map[primary] && ids.includes(map[primary])) return map[primary];
+      const hit = list.find(x => x.id.toLowerCase().startsWith(primary + '-'));
+      return hit ? hit.id : 'en-US';
+    }
+    function fillLangSelect(list) {
+      topLang.innerHTML = '';
+      for (const L of list) {
+        const opt = document.createElement('option');
+        opt.value = L.id;
+        opt.textContent = L.name;
+        topLang.appendChild(opt);
+      }
+      if (!liveLanguage || ![...topLang.options].some(o => o.value === liveLanguage)) {
+        liveLanguage = matchDeviceLang(list);
+      }
+      topLang.value = liveLanguage;
+      localStorage.setItem(LANG_KEY, liveLanguage);
+    }
+    fillLangSelect(LANG_FALLBACKS);
+    topLang.addEventListener('change', () => {
+      liveLanguage = topLang.value;
+      localStorage.setItem(LANG_KEY, liveLanguage);
+      if (recognition) { try { recognition.lang = liveLanguage; } catch(_){} }
+      setLiveServer(liveOpen);
+    });
+    fetch('/voice/languages').then(r => r.json()).then(j => {
+      if (j && j.languages && j.languages.length) fillLangSelect(j.languages);
+    }).catch(() => {});
+
+    // ---- Replay log: per-action screenshots, scrub, undo, and revoke ----
+    const replay = {
+      steps: [], frames: [], events: [], title: 'Phone activity', capturing: false,
+      timer: null, selected: -1, playing: false, playTimer: null,
+      undoBusy: false, revoked: false,
+    };
+    const replayLayer = document.getElementById('replayLayer');
+    const replayEventsEl = document.getElementById('replayEvents');
+    const replayRange = document.getElementById('replayRange');
+    const replayPreviewImage = document.getElementById('replayPreviewImage');
+    const replayPreviewEmpty = document.getElementById('replayPreviewEmpty');
+    const replaySummary = document.getElementById('replaySummary');
+    const replayPosition = document.getElementById('replayPosition');
+    const replayPlay = document.getElementById('replayPlay');
+    const replayUndo = document.getElementById('replayUndo');
+    const replayRevoke = document.getElementById('replayRevoke');
+    const replayRevokeNote = document.getElementById('replayRevokeNote');
+
+    function replayPersist() {
+      try {
+        // Screenshots intentionally stay in memory: localStorage is for the index,
+        // never a surprise multi-megabyte image cache.
+        localStorage.setItem('strlix.replay.latest', JSON.stringify({
+          title: replay.title,
+          events: replay.events.map((event) => ({
+            id: event.id, kind: event.kind, label: event.label, at: event.at,
+            undoable: !!event.undoable, undone: !!event.undone,
+          })),
+          at: Date.now(),
+        }));
+      } catch (_) {}
+    }
+    function replayReset(title) {
+      replay.stop();
+      replay.steps = []; replay.frames = []; replay.events = [];
+      replay.title = title || 'Strlix replay'; replay.selected = -1;
+      replay.revoked = false;
+      if (replayLayer && !replayLayer.hidden) renderReplay();
+    }
+    function replayEnsureSession() {
+      if (!replay.title) replay.title = 'Phone activity';
+    }
+    function replaySnapshot(width = 220) {
+      try {
+        let source = null, sw = 0, sh = 0;
+        if (liveCanvas && !liveCanvas.hidden && liveCanvas.width > 8) {
+          source = liveCanvas; sw = liveCanvas.width; sh = liveCanvas.height;
+        } else if (liveShot && !liveShot.hidden && liveShot.naturalWidth) {
+          source = liveShot; sw = liveShot.naturalWidth; sh = liveShot.naturalHeight;
+        }
+        if (!source || !sw || !sh) return null;
+        const c = document.createElement('canvas');
+        c.width = width; c.height = Math.max(1, Math.round(sh * (width / sw)));
+        c.getContext('2d').drawImage(source, 0, 0, c.width, c.height);
+        return c.toDataURL('image/jpeg', 0.64);
+      } catch (_) { return null; }
+    }
+    function captureReplayFrame() {
+      const data = replaySnapshot(360);
+      if (data) { replay.frames.push(data); if (replay.frames.length > 24) replay.frames.shift(); }
+      return data;
+    }
+    function replayAddEvent(line, options = {}) {
+      replayEnsureSession();
+      const label = String(line || '').trim().slice(0, 120);
+      if (!label) return null;
+      const last = replay.events[replay.events.length - 1];
+      if (last && last.label === label && last.kind === (options.kind || 'step')) return last;
+      const event = {
+        id: 'replay-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7),
+        kind: options.kind || 'step', label, at: Date.now(),
+        screenshot: options.screenshot || replaySnapshot(),
+        undoable: !!options.undoable, undo: options.undo || null, undone: false,
+      };
+      replay.events.push(event);
+      if (replay.events.length > 36) replay.events.shift();
+      replay.selected = replay.events.length - 1;
+      replayPersist();
+      if (replayLayer && !replayLayer.hidden) renderReplay();
+      return event;
+    }
+    function replayAddStep(line) {
+      const s = String(line || '').trim();
+      if (!s) return null;
+      if (!replay.steps.length || replay.steps[replay.steps.length - 1] !== s) {
+        replay.steps.push(s.slice(0, 120));
+        if (replay.steps.length > 36) replay.steps.shift();
+      }
+      return replayAddEvent(s, { kind: 'step' });
+    }
+    function replayRecordInput(label, kind, details = {}) {
+      const vertical = kind === 'swipe' && Math.abs((details.y2 || 0) - (details.y1 || 0)) > Math.abs((details.x2 || 0) - (details.x1 || 0));
+      const undo = vertical ? {
+        kind: 'swipe', x1: details.x2, y1: details.y2, x2: details.x1, y2: details.y1,
+        duration_ms: details.duration_ms || 300,
+      } : null;
+      return replayAddEvent(label, {
+        kind, ...details, screenshot: replaySnapshot(), undoable: !!undo, undo,
+      });
+    }
+    function replayRecordTool(tool, line) {
+      const name = tool && (tool.name || tool.tool);
+      const args = (tool && tool.args) || {};
+      if (name === 'adb_swipe') return replayRecordInput(line, 'swipe', {
+        x1: args.x1, y1: args.y1, x2: args.x2, y2: args.y2, duration_ms: args.duration_ms || 300,
+      });
+      if (name === 'adb_tap' || name === 'a11y_tap') return replayRecordInput(line, 'tap', {x: args.x, y: args.y});
+      if (name === 'adb_key' || name === 'a11y_key') return replayRecordInput(line, 'key', {keycode: args.keycode || args.key || 'key'});
+      return replayAddEvent(line, {kind: 'action'});
+    }
+    function replayRefreshEvent(event) {
+      if (!event || !replay.events.includes(event)) return;
+      const shot = replaySnapshot();
+      if (shot) event.screenshot = shot;
+      replayPersist();
+      if (replayLayer && !replayLayer.hidden) renderReplay();
+    }
+    function replayStartCapture(title) {
+      replayReset(title);
+      replay.capturing = true;
+      captureReplayFrame();
+      replay.timer = setInterval(captureReplayFrame, 700);
+    }
+    function replayStopCapture() {
+      replay.capturing = false;
+      if (replay.timer) { clearInterval(replay.timer); replay.timer = null; }
+      captureReplayFrame();
+      replayPersist();
+    }
+    replay.stop = function() {
+      replay.capturing = false;
+      if (replay.timer) { clearInterval(replay.timer); replay.timer = null; }
+      if (replay.playTimer) { clearInterval(replay.playTimer); replay.playTimer = null; }
+      replay.playing = false;
+    };
+
+    function replaySelect(index) {
+      if (!replay.events.length) { replay.selected = -1; renderReplay(); return; }
+      replay.selected = Math.max(0, Math.min(replay.events.length - 1, Number(index) || 0));
+      renderReplay();
+    }
+    function replayEventTime(event) {
+      try { return new Date(event.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
+      catch (_) { return ''; }
+    }
+    function renderReplay() {
+      if (!replayLayer) return;
+      const count = replay.events.length;
+      replaySummary.textContent = count ? ('Strlix did ' + count + (count === 1 ? ' thing' : ' things')) : 'Nothing yet';
+      document.getElementById('replayWhen').textContent = replay.title || 'This session';
+      replayRange.max = String(Math.max(0, count - 1));
+      replayRange.value = String(Math.max(0, replay.selected < 0 ? 0 : replay.selected));
+      replayPosition.textContent = count ? ((replay.selected + 1) + ' / ' + count) : '0 / 0';
+      replayEventsEl.replaceChildren();
+      if (!count) {
+        const empty = document.createElement('p');
+        empty.className = 'replay-empty'; empty.textContent = 'Ask Strlix or tap the phone to start a replay.';
+        replayEventsEl.appendChild(empty);
+      }
+      replay.events.forEach((event, index) => {
+        const row = document.createElement('button');
+        row.type = 'button'; row.className = 'replay-event' + (index === replay.selected ? ' selected' : '') + (event.undone ? ' undone' : '');
+        row.setAttribute('role', 'listitem'); row.setAttribute('aria-label', event.label);
+        row.addEventListener('click', () => replaySelect(index));
+        if (event.screenshot) {
+          const img = document.createElement('img'); img.className = 'replay-thumb'; img.alt = ''; img.src = event.screenshot; row.appendChild(img);
+        } else {
+          const thumb = document.createElement('span'); thumb.className = 'replay-thumb empty'; thumb.textContent = 'S'; row.appendChild(thumb);
+        }
+        const copy = document.createElement('span'); copy.className = 'replay-event-copy';
+        const label = document.createElement('span'); label.className = 'replay-event-label'; label.textContent = event.undone ? 'Undid · ' + event.label : event.label;
+        const meta = document.createElement('span'); meta.className = 'replay-event-meta'; meta.textContent = replayEventTime(event) + (event.undoable && !event.undone ? ' · undo available' : '');
+        copy.append(label, meta); row.appendChild(copy);
+        if (event.undone) { const check = document.createElement('span'); check.className = 'replay-event-check'; check.textContent = '✓'; row.appendChild(check); }
+        replayEventsEl.appendChild(row);
+      });
+      const selected = replay.events[replay.selected];
+      if (selected && selected.screenshot) { replayPreviewImage.src = selected.screenshot; replayPreviewImage.hidden = false; replayPreviewEmpty.hidden = true; }
+      else { replayPreviewImage.removeAttribute('src'); replayPreviewImage.hidden = true; replayPreviewEmpty.hidden = false; }
+      replayUndo.disabled = !selected || !selected.undoable || selected.undone || replay.undoBusy || replay.revoked;
+      replayPlay.textContent = replay.playing ? '⏸' : '▶';
+      replayPlay.disabled = count < 2;
+      replayRevoke.disabled = replay.revoked;
+      replayRevoke.textContent = replay.revoked ? 'Off' : 'Turn off';
+      replayRevokeNote.hidden = !replay.revoked;
+    }
+    function openReplay() {
+      replayEnsureSession(); replay.stop(); renderReplay();
+      replayLayer.hidden = false; replayLayer.setAttribute('aria-hidden', 'false');
+      // If Live is already open, keep its presence orb above the sheet and
+      // remove only the Live scrim. STT, AEC, and barge state are untouched.
+      if (typeof liveOpen !== 'undefined' && liveOpen) {
+        liveLayer.style.zIndex = '16';
+        const scrim = document.getElementById('liveScrim'); if (scrim) scrim.style.opacity = '0';
+      }
+    }
+    function closeReplay() {
+      replay.stop(); replayLayer.hidden = true; replayLayer.setAttribute('aria-hidden', 'true');
+      if (typeof liveOpen !== 'undefined' && liveOpen) {
+        liveLayer.style.zIndex = ''; const scrim = document.getElementById('liveScrim'); if (scrim) scrim.style.opacity = '';
+      }
+    }
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && replayLayer && !replayLayer.hidden) {
+        event.preventDefault(); closeReplay();
+      }
+    });
+    function replayStep(delta) { if (replay.events.length) replaySelect(replay.selected + delta); }
+    function toggleReplayPlay() {
+      if (replay.events.length < 2) return;
+      replay.playing = !replay.playing;
+      if (replay.playing) {
+        if (replay.selected >= replay.events.length - 1) replay.selected = -1;
+        replay.playTimer = setInterval(() => {
+          replay.selected += 1;
+          if (replay.selected >= replay.events.length) replay.selected = 0;
+          renderReplay();
+        }, 900);
+      } else if (replay.playTimer) { clearInterval(replay.playTimer); replay.playTimer = null; }
+      renderReplay();
+    }
+    async function undoReplayEvent() {
+      const event = replay.events[replay.selected];
+      if (!event || !event.undoable || event.undone || !event.undo) return;
+      replay.undoBusy = true; renderReplay();
+      try {
+        const r = await fetch('/replay/undo', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(event.undo) });
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.detail || 'Undo unavailable');
+        event.undone = true; replayPersist();
+        setNarration('Undid ' + event.label);
+        nudgeStream();
+      } catch (err) { setNarration('Couldn’t undo that'); }
+      finally { replay.undoBusy = false; renderReplay(); }
+    }
+    async function revokeReplay() {
+      if (replay.revoked) return;
+      replayRevoke.disabled = true;
+      try {
+        const r = await fetch('/replay/revoke', { method: 'POST' });
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.detail || 'Revoke unavailable');
+        replay.revoked = true; replayPersist(); renderReplay();
+        const toast = document.getElementById('replayToast');
+        document.getElementById('replayToastMsg').textContent = 'Strlix control is off';
+        document.getElementById('replayToastLink').style.display = 'none';
+        toast.classList.add('open'); setTimeout(() => toast.classList.remove('open'), 4200);
+      } catch (err) {
+        replayRevoke.disabled = false;
+        setNarration('Couldn’t turn off control');
+      }
+    }
+    document.getElementById('replayBtn').addEventListener('click', openReplay);
+    document.getElementById('replayClose').addEventListener('click', closeReplay);
+    document.getElementById('replayPrev').addEventListener('click', () => replayStep(-1));
+    document.getElementById('replayNext').addEventListener('click', () => replayStep(1));
+    replayRange.addEventListener('input', () => replaySelect(replayRange.value));
+    replayPlay.addEventListener('click', toggleReplayPlay);
+    replayUndo.addEventListener('click', undoReplayEvent);
+    async function shareReplayGif() {
+      replayStopCapture();
+      const toast = document.getElementById('replayToast');
+      const msg = document.getElementById('replayToastMsg');
+      const link = document.getElementById('replayToastLink');
+      if (!replay.frames.length) {
+        try {
+          const r = await fetch('/adb/preview?t=' + Date.now(), { cache: 'no-store' });
+          if (r.ok) {
+            const blob = await r.blob();
+            const buf = await blob.arrayBuffer();
+            let bin = ''; const bytes = new Uint8Array(buf);
+            for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+            replay.frames.push('data:image/jpeg;base64,' + btoa(bin));
+          }
+        } catch (_) {}
+      }
+      if (!replay.frames.length) {
+        msg.textContent = 'No frames yet — run an Ask first'; link.style.display = 'none'; toast.classList.add('open');
+        setTimeout(() => toast.classList.remove('open'), 3200); return;
+      }
+      msg.textContent = 'Exporting GIF…'; link.style.display = 'none'; toast.classList.add('open');
+      try {
+        const r = await fetch('/replay/gif', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ title: replay.title || 'Strlix replay', steps: replay.steps, frames: replay.frames, duration_ms: 420 }),
+        });
+        const j = await r.json(); if (!r.ok) throw new Error(j.detail || JSON.stringify(j));
+        msg.textContent = 'Replay ready · ' + (j.frame_count || replay.frames.length) + ' frames';
+        link.href = j.gif; link.style.display = ''; link.textContent = 'Open GIF';
+      } catch (err) { msg.textContent = 'Share failed: ' + (err.message || err); link.style.display = 'none'; }
+      setTimeout(() => toast.classList.remove('open'), 8000);
+    }
+    document.getElementById('replayShare').addEventListener('click', shareReplayGif);
+    replayRevoke.addEventListener('click', revokeReplay);
+
+    // Hook narration updates into replay steps. Existing Share/GIF capture stays intact.
+    const _setNarration = setNarration;
+    setNarration = function(line, options = {}) {
+      if (options.generation != null && (options.generation !== askGen || narrationDismissed)) return;
+      _setNarration(line, options);
+      replayAddStep(line);
+    };
+
+    // ---- Live Presence Orb + voice (barge-in ≤120ms) ----
+    const liveBtn = document.getElementById('liveBtn');
+    const liveLayer = document.getElementById('liveLayer');
+    const liveOrb = document.getElementById('liveOrb');
+    const liveCaption = document.getElementById('liveCaption');
+    const liveKeyboard = document.getElementById('liveKeyboard');
+    const liveStop = document.getElementById('liveStop');
+    const liveMute = document.getElementById('liveMute');
+    const liveSheet = document.getElementById('liveTranscriptSheet');
+    const liveGrip = document.getElementById('liveTranscriptGrip');
+    const liveList = document.getElementById('liveTranscriptList');
+    let liveOpen = false, liveBusy = false, agentActive = false, ttsPlaying = false, muted = false;
+    let bargeArmed = false, turnGen = 0, liveWs = null, liveAudio = null, recognition = null;
+    let bargeStream = null, bargeCtx = null, bargeSource = null, bargeAnalyser = null, bargeRaf = 0, bargeVoiceMs = 0, bargeLast = 0, bargeFloor = 0.004, bargeTtsAt = 0, bargeRms = 0, bargeThreshold = 0, bargeApm = {}, lastBargeAt = 0, pendingAgentDone = false, lastAudioUrl = null, lastAudioAt = 0;
+    let sttWs = null, sttAudioProcessor = null, sttAudioMute = null, sttStreaming = false, sttStopping = false, sttAvailable = null;
+    let bargeMicPromise = null;
+    const ORB = { CLOSED:'closed', IDLE:'idle', LISTENING:'listening', THINKING:'thinking', SPEAKING:'speaking', DOCKED:'docked', PAUSED:'paused' };
+    let orbState = ORB.CLOSED;
+    function caption(text) { liveCaption.textContent = text || ''; }
+    function addTranscript(text, who) {
+      if (!text) return;
+      const li = document.createElement('li'); li.textContent = (who ? who + ': ' : '') + text;
+      liveList.appendChild(li); liveSheet.scrollTop = liveSheet.scrollHeight;
+    }
+    function setOrb(next) {
+      if (!liveOpen && next !== ORB.CLOSED) return;
+      orbState = next;
+      liveLayer.dataset.state = next;
+      liveLayer.setAttribute('aria-hidden', next === ORB.CLOSED ? 'true' : 'false');
+      if (next !== ORB.DOCKED) liveLayer.style.setProperty('--orb-level', next === ORB.LISTENING ? '.3' : '0');
+    }
+    function setAgentActive(active, line) {
+      agentActive = !!active;
+      if (line) caption(line);
+      if (agentActive) { closeTranscript(); setOrb(ORB.DOCKED); }
+      else if (liveOpen && orbState === ORB.DOCKED) { setOrb(ttsPlaying ? ORB.SPEAKING : ORB.IDLE); if (!ttsPlaying && !liveBusy && !muted) setTimeout(startListeningTurn, 0); }
+    }
+    function setWave(mode) { setOrb(mode === 'speaking' ? ORB.SPEAKING : mode === 'listen' ? ORB.LISTENING : mode === 'thinking' ? ORB.THINKING : ORB.IDLE); }
+    function closeTranscript() { liveSheet.classList.remove('open'); liveSheet.hidden = true; liveGrip.setAttribute('aria-expanded','false'); }
+    function toggleTranscript() { const opening = !liveSheet.classList.contains('open'); if (opening) { liveSheet.hidden = false; requestAnimationFrame(() => liveSheet.classList.add('open')); } else { liveSheet.classList.remove('open'); } liveGrip.setAttribute('aria-expanded', opening ? 'true' : 'false'); }
+    liveSheet.addEventListener('transitionend', () => { if (!liveSheet.classList.contains('open')) liveSheet.hidden = true; });
+    liveGrip.addEventListener('click', toggleTranscript); liveGrip.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleTranscript(); } });
+
+    function stopTtsImmediate(reason) {
+      const t0 = performance.now();
+      try { if (liveAudio) { liveAudio.onended = null; liveAudio.onerror = null; liveAudio.pause(); liveAudio.removeAttribute('src'); try { liveAudio.load(); } catch (_) {} liveAudio = null; } } catch (_) {}
+      ttsPlaying = false; const ms = Math.round(performance.now() - t0);
+      if (reason) caption('Listening…');
+      return ms;
+    }
+    async function ensureBargeMic() {
+      if (bargeAnalyser) return true; if (bargeMicPromise) return bargeMicPromise; if (!navigator.mediaDevices?.getUserMedia) return false;
+      bargeMicPromise=(async()=>{try {
+        bargeStream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1},video:false});
+        bargeCtx = new (window.AudioContext||window.webkitAudioContext)();
+        bargeSource = bargeCtx.createMediaStreamSource(bargeStream);
+        bargeAnalyser=bargeCtx.createAnalyser(); bargeAnalyser.fftSize=512; bargeAnalyser.smoothingTimeConstant=.4; bargeSource.connect(bargeAnalyser);
+        const settings = bargeStream.getAudioTracks()[0]?.getSettings?.() || {};
+        bargeApm = {aec: settings.echoCancellation, ns: settings.noiseSuppression, agc: settings.autoGainControl};
+        return true;
+      } catch (_) { caption('Mic unavailable — use Type instead'); return false; }})();
+      try { return await bargeMicPromise; } finally { bargeMicPromise=null; }
+    }
+    function stopBargeWatch() { bargeArmed=false; bargeVoiceMs=0; bargeLast=0; if(bargeRaf){cancelAnimationFrame(bargeRaf);bargeRaf=0;} }
+    function bargeLoop() {
+      if(!bargeArmed||!ttsPlaying||!bargeAnalyser)return;
+      const now=performance.now(), dt=Math.min(100, Math.max(0, now-(bargeLast||now))); bargeLast=now;
+      const b=new Uint8Array(bargeAnalyser.fftSize);bargeAnalyser.getByteTimeDomainData(b);let sum=0;for(let i=0;i<b.length;i++){const v=(b[i]-128)/128;sum+=v*v;}
+      const rms=Math.sqrt(sum/b.length); bargeRms=rms;
+      if(now-bargeTtsAt<220){bargeRaf=requestAnimationFrame(bargeLoop);return;}
+      if(rms<bargeFloor*2)bargeFloor=bargeFloor*.97+rms*.03;
+      const threshold=Math.max(bargeApm.aec===false ? .09 : .045,bargeFloor*3+.012); bargeThreshold=threshold;
+      bargeVoiceMs+=(rms>threshold)?dt:-dt*1.5;
+      const requiredMs=bargeApm.aec===false?150:90;
+      if(bargeVoiceMs>=requiredMs){doBargeIn('vad');return;} bargeRaf=requestAnimationFrame(bargeLoop);
+    }
+    async function startBargeWatch(){if(!liveOpen||!ttsPlaying)return; if(!await ensureBargeMic())return; if(bargeCtx?.state==='suspended'){try{await bargeCtx.resume();}catch(_){}} bargeArmed=true;bargeVoiceMs=0;if(bargeRaf)cancelAnimationFrame(bargeRaf);bargeRaf=requestAnimationFrame(bargeLoop);}
+    function doBargeIn(reason) {
+      if(!ttsPlaying&&reason!=='talk')return; const now=performance.now();if(now-lastBargeAt<400)return;lastBargeAt=now;stopBargeWatch();stopTtsImmediate(reason||'speech');turnGen+=1;liveBusy=false;setWave('listen');caption('Listening… (interrupted)');
+      try{if(liveWs?.readyState===1)liveWs.send(JSON.stringify({type:'barge',source:'browser',reason:reason||'speech'}));}catch(_){ }
+      fetch('/voice/barge',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source:'browser',reason:reason||'speech'})}).catch(()=>{});startListeningTurn();
+    }
+    function playHostAudio(url){if(!url)return;const now=performance.now();if(url===lastAudioUrl&&now-lastAudioAt<15000)return;lastAudioUrl=url;lastAudioAt=now;stopTtsImmediate(null);bargeTtsAt=performance.now();bargeFloor=.004;bargeLast=bargeTtsAt;liveAudio=new Audio(url);ttsPlaying=true;if(agentActive)setOrb(ORB.DOCKED);else setWave('speaking');caption('Speaking…');liveMute.disabled=false;liveAudio.onended=()=>{ttsPlaying=false;stopBargeWatch();if(pendingAgentDone){pendingAgentDone=false;setAgentActive(false);}else if(!liveBusy){if(agentActive)setAgentActive(false);else setOrb(ORB.IDLE);}};liveAudio.onerror=()=>{ttsPlaying=false;stopBargeWatch();pendingAgentDone=false;setAgentActive(false);};liveAudio.play().then(startBargeWatch).catch(()=>{ttsPlaying=false;setAgentActive(false);});}
+    function connectLiveWs(){if(liveWs&&(liveWs.readyState===0||liveWs.readyState===1))return;const proto=location.protocol==='https:'?'wss':'ws';liveWs=new WebSocket(proto+'://'+location.host+'/ws/live');liveWs.onmessage=ev=>{try{const msg=JSON.parse(ev.data);if(msg.type==='live_state'&&msg.source!=='browser'){if(msg.active&&!liveOpen)enterLive();else if(!msg.active&&liveOpen)leaveLive();return;}if(msg.type==='needs_you'){showNeedsYou(msg);return;}if(msg.type==='needs_you_resolved'||msg.type==='needs_you_done'){hideNeedsYou(true);return;}if(msg.type==='agent'){if(msg.state==='acting')setAgentActive(true,msg.line||'Working…');else if(msg.state==='done'){pendingAgentDone=true;if(!ttsPlaying)setAgentActive(false,msg.line);}return;}if(msg.type==='barge'){if(ttsPlaying)doBargeIn(msg.source||'remote');return;}if(msg.type==='speak'&&msg.audio_url){if(msg.text)caption('Speaking…');playHostAudio(msg.audio_url);}else if(msg.type==='turn'){if(msg.user)addTranscript(msg.user,'You');if(msg.reply){addTranscript(msg.reply,'Strlix');caption(msg.reply);}}else if(msg.type==='transcript'&&msg.text){caption(msg.text);if(msg.final)addTranscript(msg.text,'You');}}catch(_){}};liveWs.onclose=()=>{liveWs=null;if(liveOpen)setTimeout(connectLiveWs,1500);};setInterval(()=>{if(liveWs?.readyState===1)liveWs.send(JSON.stringify({type:'ping'}));},20000);}
+    async function setLiveServer(active){try{await fetch('/voice/live',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({active,source:'browser',language:liveLanguage})});}catch(_){} }
+    function enterLive(){liveOpen=true;closeTranscript();liveList.replaceChildren();liveLayer.dataset.state='idle';setOrb(ORB.IDLE);liveBtn.classList.add('active');liveBtn.innerHTML='<span class="pulse"></span>Leave';caption(sttNote||'Go on, I’m here');connectLiveWs();setLiveServer(true);ensureBargeMic();startListeningTurn();}
+    function leaveLive(){liveOpen=false;setOrb(ORB.CLOSED);liveBtn.classList.remove('active');liveBtn.innerHTML='<span class="pulse"></span>Live';stopBargeWatch();stopRecognition();stopTtsImmediate(null);try{bargeStream?.getTracks().forEach(tr=>tr.stop());}catch(_){}bargeStream=null;bargeSource=null;bargeAnalyser=null;bargeApm={};try{bargeCtx?.close();}catch(_){}bargeCtx=null;setLiveServer(false);}
+    liveBtn.addEventListener('click',()=>liveOpen?leaveLive():enterLive());liveStop.addEventListener('click',leaveLive);liveOrb.addEventListener('click',()=>{if(agentActive)return;if(ttsPlaying){doBargeIn('talk');return;}startListeningTurn();});liveCaption.addEventListener('click',()=>{if(!agentActive)toggleTranscript();});liveKeyboard.addEventListener('click',()=>{leaveLive();setTimeout(()=>{if(typeof openAsk==='function')openAsk();},0);});liveMute.addEventListener('click',()=>{muted=liveMute.getAttribute('aria-pressed')!=='true';liveMute.setAttribute('aria-pressed',muted?'true':'false');liveMute.textContent=muted?'🔈':'🔇';try{bargeStream?.getAudioTracks().forEach(t=>t.enabled=!muted);}catch(_){}if(muted){stopRecognition();stopBargeWatch();setOrb(ORB.PAUSED);caption('Mic muted');}else{setOrb(ORB.IDLE);caption('Listening…');startListeningTurn();}});
+    function downsamplePcm(input, inputRate, outputRate) {
+      if (inputRate === outputRate) return input;
+      const ratio = inputRate / outputRate;
+      const out = new Int16Array(Math.round(input.length / ratio));
+      for (let i = 0; i < out.length; i++) {
+        const start = Math.floor(i * ratio), stop = Math.min(Math.floor((i + 1) * ratio), input.length);
+        let sum = 0; for (let j = start; j < stop; j++) sum += input[j];
+        const sample = stop > start ? sum / (stop - start) : input[start] || 0;
+        out[i] = Math.max(-32768, Math.min(32767, sample < 0 ? sample * 32768 : sample * 32767));
+      }
+      return out;
+    }
+    function stopAzureStt(sendStop = true) {
+      sttStopping = true;
+      try { if (sttWs?.readyState === WebSocket.OPEN && sendStop) sttWs.send(JSON.stringify({type:'stop'})); } catch (_) {}
+      try { sttAudioProcessor?.disconnect(); } catch (_) {}
+      try { sttAudioMute?.disconnect(); } catch (_) {}
+      sttAudioProcessor = null; sttAudioMute = null; sttStreaming = false;
+      try { if (sttWs && sttWs.readyState < WebSocket.CLOSING) sttWs.close(); } catch (_) {}
+      sttWs = null;
+    }
+    async function startAzureStt() {
+      if (sttAvailable === false || !liveOpen || muted) return false;
+      if (!await ensureBargeMic()) return false;
+      stopAzureStt(false); sttStopping = false;
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+      return await new Promise(resolve => {
+        let settled = false;
+        const fail = () => { if (!settled) { settled = true; stopAzureStt(false); resolve(false); } };
+        try { sttWs = new WebSocket(proto + '://' + location.host + '/ws/stt'); } catch (_) { fail(); return; }
+        sttWs.binaryType = 'arraybuffer';
+        sttWs.onopen = () => { try { sttWs.send(JSON.stringify({type:'start',language:liveLanguage})); } catch (_) { fail(); } };
+        sttWs.onmessage = ev => {
+          let msg; try { msg = JSON.parse(ev.data); } catch (_) { return; }
+          if (msg.type === 'ready') {
+            sttStreaming = true; liveBusy = true; setWave('listen'); caption('Listening…');
+            if (!settled) { settled = true; resolve(true); }
+            return;
+          }
+          if (msg.type === 'unavailable') {
+            sttAvailable = false; fail(); return;
+          }
+          if (msg.type === 'error') { if (!sttStreaming) fail(); else caption('Mic error — reconnecting…'); return; }
+          if (msg.type === 'transcript' && msg.text) {
+            caption(msg.text);
+            if (msg.final && !sttStopping) {
+              const finalText = msg.text.trim();
+              if (!finalText) return;
+              if (liveWs?.readyState === WebSocket.OPEN) liveWs.send(JSON.stringify({type:'transcript',text:finalText,final:true,source:'browser'}));
+              stopAzureStt(); runLiveTurn(finalText);
+            }
+          }
+        };
+        sttWs.onerror = () => { if (!sttStreaming) fail(); };
+        sttWs.onclose = () => { if (!sttStreaming && !settled) fail(); };
+        try {
+          sttAudioProcessor = bargeCtx.createScriptProcessor(4096, 1, 1);
+          sttAudioMute = bargeCtx.createGain(); sttAudioMute.gain.value = 0;
+          sttAudioProcessor.onaudioprocess = ev => {
+            if (!sttWs || sttWs.readyState !== WebSocket.OPEN || !sttStreaming || sttStopping) return;
+            const pcm = downsamplePcm(ev.inputBuffer.getChannelData(0), bargeCtx.sampleRate, 16000);
+            if (pcm.length) { try { sttWs.send(pcm.buffer); } catch (_) {} }
+          };
+          bargeSource.connect(sttAudioProcessor); sttAudioProcessor.connect(sttAudioMute); sttAudioMute.connect(bargeCtx.destination);
+        } catch (_) { fail(); }
+      });
+    }
+    function getRecognition(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return null;if(recognition)return recognition;recognition=new SR();recognition.lang=liveLanguage||'en-US';recognition.interimResults=true;recognition.continuous=false;recognition.onstart=()=>{liveBusy=true;setWave('listen');caption('Listening…');};recognition.onresult=ev=>{let interim='',final='';for(let i=ev.resultIndex;i<ev.results.length;i++){const t=ev.results[i][0].transcript;if(ev.results[i].isFinal)final+=t;else interim+=t;}caption(final||interim||'…');if(final){if(liveWs?.readyState===1)liveWs.send(JSON.stringify({type:'transcript',text:final,final:true,source:'browser'}));stopRecognition();runLiveTurn(final.trim());}};recognition.onerror=ev=>{liveBusy=false;if(ev.error!=='aborted')caption('Mic error — use Type instead');setOrb(agentActive?ORB.DOCKED:ORB.IDLE);};recognition.onend=()=>{if(!liveBusy&&!ttsPlaying)setOrb(agentActive?ORB.DOCKED:ORB.IDLE);};return recognition;}
+    function stopRecognition(){stopAzureStt();try{recognition?.stop();}catch(_){}liveBusy=false;}
+    async function startListeningTurn(){
+      if (await startAzureStt()) return;
+      const rec=getRecognition();if(!rec){caption('Browser speech unavailable — use Type instead');return;}try{rec.lang=liveLanguage||'en-US';rec.start();}catch(_){try{rec.stop();}catch(__){}setTimeout(()=>{try{rec.start();}catch(__){caption('Mic unavailable — use Type instead');}},80);}
+    }
+    async function runLiveTurn(message){if(!message)return;const myGen=turnGen;let spoke=false;liveBusy=true;setAgentActive(true,'Working…');caption('Working…');replayStartCapture(message);replayAddStep('Heard: '+message);try{const r=await fetch('/voice/turn',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message,history,speak:true,source:'browser',language:liveLanguage})});const j=await r.json();if(myGen!==turnGen)return;if(!r.ok)throw new Error(j.detail||JSON.stringify(j));history=j.history||history;const reply=j.reply||'(empty)';caption(reply);replayAddStep(reply);const url=j.audio?.url||null;if(url&&myGen===turnGen&&!(liveWs&&liveWs.readyState===1)){spoke=true;playHostAudio(url);}for(const ss of(j.screenshots||[])){const name=(ss.path||'').split('/').pop();setLive('/demo/'+name+'?t='+Date.now(),name);}if(typeof grabShot==='function')grabShot();setTimeout(()=>replayStopCapture(),2500);}catch(err){if(myGen===turnGen){caption('Something went wrong');setAgentActive(false);}}finally{if(myGen===turnGen){liveBusy=false;if(!spoke)setAgentActive(false);}}}
+    
+    liveLayer.addEventListener('keydown',e=>{if(e.key==='Escape'&&liveSheet.classList.contains('open'))closeTranscript();});
+    let sttNote=null;fetch('/voice/status').then(r=>r.json()).then(j=>{sttAvailable=!!j?.stt?.available;sttNote=sttAvailable?'Azure Speech duplex active · 16 kHz PCM':(j?.stt?'Browser mic active · Azure Speech unavailable':null);}).catch(()=>{sttAvailable=null;});
+    window.__strlixOrb={dock:()=>setAgentActive(true,'Working…'),undock:()=>setAgentActive(false),get state(){return orbState;}};
+    window.__strlixLive={playHostAudio,doBargeIn,stopTtsImmediate,startBargeWatch,shareReplayGif,get ttsPlaying(){return ttsPlaying;},get bargeArmed(){return bargeArmed;},get bargeStats(){return {rms:bargeRms,floor:bargeFloor,threshold:bargeThreshold,voiceMs:bargeVoiceMs,apm:{...bargeApm}};}};
+    window.__strlixReplay={open:openReplay,close:closeReplay,addEvent:replayAddEvent,select:replaySelect,share:shareReplayGif,get events(){return replay.events;}};
+
+  </script>
+</body>
+</html>

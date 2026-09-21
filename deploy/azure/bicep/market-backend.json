@@ -1,0 +1,567 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.47.16.16243",
+      "templateHash": "10897423167248481821"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Azure region"
+      }
+    },
+    "postgresLocation": {
+      "type": "string",
+      "defaultValue": "centralus",
+      "metadata": {
+        "description": "Postgres region — eastus2 often blocked on Startups; use centralus"
+      }
+    },
+    "prefix": {
+      "type": "string",
+      "defaultValue": "zevi-strlix",
+      "metadata": {
+        "description": "Name prefix"
+      }
+    },
+    "postgresAdmin": {
+      "type": "string",
+      "defaultValue": "strlixadmin",
+      "metadata": {
+        "description": "Postgres admin login"
+      }
+    },
+    "postgresPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Postgres admin password — store in Key Vault after deploy"
+      }
+    },
+    "bootstrapClientIp": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Bootstrap firewall IPv4 for admin/migrations"
+      }
+    },
+    "lawName": {
+      "type": "string",
+      "defaultValue": "law-zevi-strlix",
+      "metadata": {
+        "description": "Existing Log Analytics workspace name"
+      }
+    }
+  },
+  "variables": {
+    "tags": {
+      "project": "strlix",
+      "component": "market-backend",
+      "scale": "billion-user-foundation",
+      "privacy": "per-user-rls"
+    },
+    "kvName": "[format('kv-{0}', parameters('prefix'))]",
+    "pgName": "[format('psql-{0}', parameters('prefix'))]",
+    "redisName": "[format('redis-{0}', parameters('prefix'))]",
+    "appiName": "[format('appi-{0}', parameters('prefix'))]",
+    "fwRules": "[if(empty(parameters('bootstrapClientIp')), createArray(), createArray(createObject('name', 'BootstrapAdmin', 'startIp', parameters('bootstrapClientIp'), 'endIp', parameters('bootstrapClientIp'))))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "kv",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "name": {
+            "value": "[variables('kvName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[variables('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.47.16.16243",
+              "templateHash": "3247078101185192063"
+            }
+          },
+          "parameters": {
+            "name": {
+              "type": "string",
+              "metadata": {
+                "description": "Key Vault for Strlix secrets (DB, JWT, payment test keys)"
+              }
+            },
+            "location": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {}
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.KeyVault/vaults",
+              "apiVersion": "2023-07-01",
+              "name": "[parameters('name')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "tenantId": "[subscription().tenantId]",
+                "sku": {
+                  "family": "A",
+                  "name": "standard"
+                },
+                "enableRbacAuthorization": true,
+                "enableSoftDelete": true,
+                "enablePurgeProtection": true,
+                "softDeleteRetentionInDays": 90,
+                "publicNetworkAccess": "Enabled",
+                "networkAcls": {
+                  "defaultAction": "Allow",
+                  "bypass": "AzureServices"
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "id": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.KeyVault/vaults', parameters('name'))]"
+            },
+            "name": {
+              "type": "string",
+              "value": "[parameters('name')]"
+            },
+            "uri": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.KeyVault/vaults', parameters('name')), '2023-07-01').vaultUri]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "postgres",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "name": {
+            "value": "[variables('pgName')]"
+          },
+          "location": {
+            "value": "[parameters('postgresLocation')]"
+          },
+          "administratorLogin": {
+            "value": "[parameters('postgresAdmin')]"
+          },
+          "administratorLoginPassword": {
+            "value": "[parameters('postgresPassword')]"
+          },
+          "databaseName": {
+            "value": "strlix"
+          },
+          "storageSizeGB": {
+            "value": 32
+          },
+          "tags": {
+            "value": "[variables('tags')]"
+          },
+          "firewallRules": {
+            "value": "[variables('fwRules')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.47.16.16243",
+              "templateHash": "11132114216592691270"
+            }
+          },
+          "parameters": {
+            "name": {
+              "type": "string",
+              "metadata": {
+                "description": "Postgres Flexible Server for multi-tenant market data + RLS"
+              }
+            },
+            "location": {
+              "type": "string"
+            },
+            "administratorLogin": {
+              "type": "string"
+            },
+            "administratorLoginPassword": {
+              "type": "securestring"
+            },
+            "databaseName": {
+              "type": "string",
+              "defaultValue": "strlix"
+            },
+            "storageSizeGB": {
+              "type": "int",
+              "defaultValue": 32
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {}
+            },
+            "firewallRules": {
+              "type": "array",
+              "defaultValue": []
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.DBforPostgreSQL/flexibleServers",
+              "apiVersion": "2024-08-01",
+              "name": "[parameters('name')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "Standard_B1ms",
+                "tier": "Burstable"
+              },
+              "properties": {
+                "version": "16",
+                "administratorLogin": "[parameters('administratorLogin')]",
+                "administratorLoginPassword": "[parameters('administratorLoginPassword')]",
+                "storage": {
+                  "storageSizeGB": "[parameters('storageSizeGB')]",
+                  "autoGrow": "Disabled"
+                },
+                "backup": {
+                  "backupRetentionDays": 7,
+                  "geoRedundantBackup": "Disabled"
+                },
+                "highAvailability": {
+                  "mode": "Disabled"
+                },
+                "network": {
+                  "publicNetworkAccess": "Enabled"
+                },
+                "authConfig": {
+                  "activeDirectoryAuth": "Disabled",
+                  "passwordAuth": "Enabled"
+                }
+              }
+            },
+            {
+              "type": "Microsoft.DBforPostgreSQL/flexibleServers/configurations",
+              "apiVersion": "2024-08-01",
+              "name": "[format('{0}/{1}', parameters('name'), 'require_secure_transport')]",
+              "properties": {
+                "value": "on",
+                "source": "user-override"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('name'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.DBforPostgreSQL/flexibleServers/databases",
+              "apiVersion": "2024-08-01",
+              "name": "[format('{0}/{1}', parameters('name'), parameters('databaseName'))]",
+              "properties": {
+                "charset": "UTF8",
+                "collation": "en_US.utf8"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('name'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.DBforPostgreSQL/flexibleServers/firewallRules",
+              "apiVersion": "2024-08-01",
+              "name": "[format('{0}/{1}', parameters('name'), 'AllowAzureServices')]",
+              "properties": {
+                "startIpAddress": "0.0.0.0",
+                "endIpAddress": "0.0.0.0"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('name'))]"
+              ]
+            },
+            {
+              "copy": {
+                "name": "extraRules",
+                "count": "[length(parameters('firewallRules'))]"
+              },
+              "type": "Microsoft.DBforPostgreSQL/flexibleServers/firewallRules",
+              "apiVersion": "2024-08-01",
+              "name": "[format('{0}/{1}', parameters('name'), parameters('firewallRules')[copyIndex()].name)]",
+              "properties": {
+                "startIpAddress": "[parameters('firewallRules')[copyIndex()].startIp]",
+                "endIpAddress": "[parameters('firewallRules')[copyIndex()].endIp]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('name'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "id": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('name'))]"
+            },
+            "name": {
+              "type": "string",
+              "value": "[parameters('name')]"
+            },
+            "fqdn": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('name')), '2024-08-01').fullyQualifiedDomainName]"
+            },
+            "databaseName": {
+              "type": "string",
+              "value": "[parameters('databaseName')]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "redis",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "name": {
+            "value": "[variables('redisName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[variables('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.47.16.16243",
+              "templateHash": "16414142281808623224"
+            }
+          },
+          "parameters": {
+            "name": {
+              "type": "string",
+              "metadata": {
+                "description": "Redis for sessions (sess:{user_id}:{jti}) and rate limits"
+              }
+            },
+            "location": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {}
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Cache/redis",
+              "apiVersion": "2024-11-01",
+              "name": "[parameters('name')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "sku": {
+                  "name": "Basic",
+                  "family": "C",
+                  "capacity": 0
+                },
+                "enableNonSslPort": false,
+                "minimumTlsVersion": "1.2",
+                "publicNetworkAccess": "Enabled",
+                "redisConfiguration": {
+                  "maxmemory-policy": "allkeys-lru"
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "id": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Cache/redis', parameters('name'))]"
+            },
+            "name": {
+              "type": "string",
+              "value": "[parameters('name')]"
+            },
+            "hostName": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Cache/redis', parameters('name')), '2024-11-01').hostName]"
+            },
+            "sslPort": {
+              "type": "int",
+              "value": "[reference(resourceId('Microsoft.Cache/redis', parameters('name')), '2024-11-01').sslPort]"
+            },
+            "stub": {
+              "type": "string",
+              "value": "Basic C0: no private endpoints — use TLS+auth; upgrade Premium for PE (phase-2)"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "appinsights",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "name": {
+            "value": "[variables('appiName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "workspaceResourceId": {
+            "value": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('lawName'))]"
+          },
+          "tags": {
+            "value": "[variables('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.47.16.16243",
+              "templateHash": "6052279046581278620"
+            }
+          },
+          "parameters": {
+            "name": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string"
+            },
+            "workspaceResourceId": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {}
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Insights/components",
+              "apiVersion": "2020-02-02",
+              "name": "[parameters('name')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "kind": "web",
+              "properties": {
+                "Application_Type": "web",
+                "WorkspaceResourceId": "[parameters('workspaceResourceId')]",
+                "RetentionInDays": 30,
+                "IngestionMode": "LogAnalytics",
+                "publicNetworkAccessForIngestion": "Enabled",
+                "publicNetworkAccessForQuery": "Enabled"
+              }
+            }
+          ],
+          "outputs": {
+            "id": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Insights/components', parameters('name'))]"
+            },
+            "name": {
+              "type": "string",
+              "value": "[parameters('name')]"
+            },
+            "connectionString": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Insights/components', parameters('name')), '2020-02-02').ConnectionString]"
+            },
+            "instrumentationKey": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Insights/components', parameters('name')), '2020-02-02').InstrumentationKey]"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "keyVaultName": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'kv'), '2025-04-01').outputs.name.value]"
+    },
+    "keyVaultUri": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'kv'), '2025-04-01').outputs.uri.value]"
+    },
+    "postgresFqdn": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'postgres'), '2025-04-01').outputs.fqdn.value]"
+    },
+    "postgresName": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'postgres'), '2025-04-01').outputs.name.value]"
+    },
+    "databaseName": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'postgres'), '2025-04-01').outputs.databaseName.value]"
+    },
+    "redisHost": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'redis'), '2025-04-01').outputs.hostName.value]"
+    },
+    "redisNote": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'redis'), '2025-04-01').outputs.stub.value]"
+    },
+    "appInsightsName": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'appinsights'), '2025-04-01').outputs.name.value]"
+    },
+    "appInsightsConnectionString": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'appinsights'), '2025-04-01').outputs.connectionString.value]"
+    }
+  }
+}

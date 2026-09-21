@@ -1,0 +1,8902 @@
+{
+  "apps": 166,
+  "practices": [
+    {
+      "text": "No login / no cloud \u2014 instant first value",
+      "apps": [
+        "grug"
+      ],
+      "cat": "delight",
+      "id": "BP001"
+    },
+    {
+      "text": "Hand-drawn status bar personality without clutter",
+      "apps": [
+        "grug"
+      ],
+      "cat": "delight",
+      "id": "BP002"
+    },
+    {
+      "text": "Release notes as delight surface",
+      "apps": [
+        "grug"
+      ],
+      "cat": "delight",
+      "id": "BP003"
+    },
+    {
+      "text": "Single-idea focus; zero extraneous chrome",
+      "apps": [
+        "grug"
+      ],
+      "cat": "delight",
+      "id": "BP004"
+    },
+    {
+      "text": "Home Screen widgets extend presence",
+      "apps": [
+        "grug"
+      ],
+      "cat": "delight",
+      "id": "BP005"
+    },
+    {
+      "text": "VoiceOver covers pitch, chords, fret placement",
+      "apps": [
+        "guitar-wiz"
+      ],
+      "cat": "inclusivity",
+      "id": "BP006"
+    },
+    {
+      "text": "Dynamic Type + Increased Contrast supported",
+      "apps": [
+        "guitar-wiz"
+      ],
+      "cat": "inclusivity",
+      "id": "BP007"
+    },
+    {
+      "text": "Differentiate Without Color for chord cues",
+      "apps": [
+        "guitar-wiz"
+      ],
+      "cat": "inclusivity",
+      "id": "BP008"
+    },
+    {
+      "text": "Cross-device SwiftUI toolkit coherence",
+      "apps": [
+        "guitar-wiz"
+      ],
+      "cat": "inclusivity",
+      "id": "BP009"
+    },
+    {
+      "text": "Autonomy-first for musicians with disabilities",
+      "apps": [
+        "guitar-wiz"
+      ],
+      "cat": "inclusivity",
+      "id": "BP010"
+    },
+    {
+      "text": "Easy onboarding to celestial tracking",
+      "apps": [
+        "moonlitt"
+      ],
+      "cat": "interaction",
+      "id": "BP011"
+    },
+    {
+      "text": "Best-in-class Liquid Glass integration",
+      "apps": [
+        "moonlitt"
+      ],
+      "cat": "interaction",
+      "id": "BP012"
+    },
+    {
+      "text": "3D moon path map for photography planning",
+      "apps": [
+        "moonlitt"
+      ],
+      "cat": "interaction",
+      "id": "BP013"
+    },
+    {
+      "text": "Broad platform support incl. Vision Pro",
+      "apps": [
+        "moonlitt"
+      ],
+      "cat": "interaction",
+      "id": "BP014"
+    },
+    {
+      "text": "Sister-app consistency with Sunlitt",
+      "apps": [
+        "moonlitt"
+      ],
+      "cat": "interaction",
+      "id": "BP015"
+    },
+    {
+      "text": "Full-screen charts for dense weather/tide data",
+      "apps": [
+        "tide-guide"
+      ],
+      "cat": "visuals",
+      "id": "BP016"
+    },
+    {
+      "text": "Palette adapts to sky color through the day",
+      "apps": [
+        "tide-guide"
+      ],
+      "cat": "visuals",
+      "id": "BP017"
+    },
+    {
+      "text": "Hour-by-hour forecasts scannable by novices",
+      "apps": [
+        "tide-guide"
+      ],
+      "cat": "visuals",
+      "id": "BP018"
+    },
+    {
+      "text": "Crisp hierarchy of swell/temp layers",
+      "apps": [
+        "tide-guide"
+      ],
+      "cat": "visuals",
+      "id": "BP019"
+    },
+    {
+      "text": "Liquid Glass theming tied to environment",
+      "apps": [
+        "tide-guide"
+      ],
+      "cat": "visuals",
+      "id": "BP020"
+    },
+    {
+      "text": "Novel Apple tech integration for live sports",
+      "apps": [
+        "nba-app"
+      ],
+      "cat": "innovation",
+      "id": "BP021"
+    },
+    {
+      "text": "Spatial/interactive game experiences",
+      "apps": [
+        "nba-app"
+      ],
+      "cat": "innovation",
+      "id": "BP022"
+    },
+    {
+      "text": "Clear live-data hierarchy under pressure",
+      "apps": [
+        "nba-app"
+      ],
+      "cat": "innovation",
+      "id": "BP023"
+    },
+    {
+      "text": "Platform-tailored controls",
+      "apps": [
+        "nba-app"
+      ],
+      "cat": "innovation",
+      "id": "BP024"
+    },
+    {
+      "text": "Brand-cohesive motion language",
+      "apps": [
+        "nba-app"
+      ],
+      "cat": "innovation",
+      "id": "BP025"
+    },
+    {
+      "text": "Minimal UI gets out of the way of news",
+      "apps": [
+        "primary-news"
+      ],
+      "cat": "social-impact",
+      "id": "BP026"
+    },
+    {
+      "text": "Spatial organization without clickbait",
+      "apps": [
+        "primary-news"
+      ],
+      "cat": "social-impact",
+      "id": "BP027"
+    },
+    {
+      "text": "Editor-led curation visible in IA",
+      "apps": [
+        "primary-news"
+      ],
+      "cat": "social-impact",
+      "id": "BP028"
+    },
+    {
+      "text": "Focus on story over chrome",
+      "apps": [
+        "primary-news"
+      ],
+      "cat": "social-impact",
+      "id": "BP029"
+    },
+    {
+      "text": "Thoughtful engagement over sensationalism",
+      "apps": [
+        "primary-news"
+      ],
+      "cat": "social-impact",
+      "id": "BP030"
+    },
+    {
+      "text": "Prioritizes downtime equal to productivity",
+      "apps": [
+        "structured"
+      ],
+      "cat": "productivity",
+      "id": "BP031"
+    },
+    {
+      "text": "Neurodivergent-friendly simple layout",
+      "apps": [
+        "structured"
+      ],
+      "cat": "productivity",
+      "id": "BP032"
+    },
+    {
+      "text": "Foundation Models suggest/pre-fill tasks",
+      "apps": [
+        "structured"
+      ],
+      "cat": "productivity",
+      "id": "BP033"
+    },
+    {
+      "text": "Visually sharp timeline scanning",
+      "apps": [
+        "structured"
+      ],
+      "cat": "productivity",
+      "id": "BP034"
+    },
+    {
+      "text": "Break-finding as first-class feature",
+      "apps": [
+        "structured"
+      ],
+      "cat": "productivity",
+      "id": "BP035"
+    },
+    {
+      "text": "Real-time captions from lived experience design",
+      "apps": [
+        "hearing-buddy"
+      ],
+      "cat": "inclusivity",
+      "id": "BP036"
+    },
+    {
+      "text": "On-device speech-to-text reliability focus",
+      "apps": [
+        "hearing-buddy"
+      ],
+      "cat": "inclusivity",
+      "id": "BP037"
+    },
+    {
+      "text": "Conversation summaries as support, not gimmick",
+      "apps": [
+        "hearing-buddy"
+      ],
+      "cat": "inclusivity",
+      "id": "BP038"
+    },
+    {
+      "text": "Easy buddy metaphor reduces stigma",
+      "apps": [
+        "hearing-buddy"
+      ],
+      "cat": "inclusivity",
+      "id": "BP039"
+    },
+    {
+      "text": "Watch + phone continuity",
+      "apps": [
+        "hearing-buddy"
+      ],
+      "cat": "inclusivity",
+      "id": "BP040"
+    },
+    {
+      "text": "Synchronized broadcast creates shared watching",
+      "apps": [
+        "blippo"
+      ],
+      "cat": "delight",
+      "id": "BP041"
+    },
+    {
+      "text": "Pixel-perfect retro world-building",
+      "apps": [
+        "blippo"
+      ],
+      "cat": "delight",
+      "id": "BP042"
+    },
+    {
+      "text": "Ad-free alternative streaming metaphor",
+      "apps": [
+        "blippo"
+      ],
+      "cat": "delight",
+      "id": "BP043"
+    },
+    {
+      "text": "Channel-surf mental model",
+      "apps": [
+        "blippo"
+      ],
+      "cat": "delight",
+      "id": "BP044"
+    },
+    {
+      "text": "DIY aesthetic as coherent system",
+      "apps": [
+        "blippo"
+      ],
+      "cat": "delight",
+      "id": "BP045"
+    },
+    {
+      "text": "Spatial blob physics that invite play",
+      "apps": [
+        "metaballs"
+      ],
+      "cat": "delight",
+      "id": "BP046"
+    },
+    {
+      "text": "Lighting-reactive materials",
+      "apps": [
+        "metaballs"
+      ],
+      "cat": "delight",
+      "id": "BP047"
+    },
+    {
+      "text": "Export USDZ into other workflows",
+      "apps": [
+        "metaballs"
+      ],
+      "cat": "delight",
+      "id": "BP048"
+    },
+    {
+      "text": "Poke/pull affordances obvious",
+      "apps": [
+        "metaballs"
+      ],
+      "cat": "delight",
+      "id": "BP049"
+    },
+    {
+      "text": "visionOS canvas as playground",
+      "apps": [
+        "metaballs"
+      ],
+      "cat": "delight",
+      "id": "BP050"
+    },
+    {
+      "text": "Narrative hides puzzle complexity",
+      "apps": [
+        "seat-taken"
+      ],
+      "cat": "games",
+      "id": "BP051"
+    },
+    {
+      "text": "No timers \u2014 low anxiety play",
+      "apps": [
+        "seat-taken"
+      ],
+      "cat": "games",
+      "id": "BP052"
+    },
+    {
+      "text": "Tap ambient objects for playful responses",
+      "apps": [
+        "seat-taken"
+      ],
+      "cat": "games",
+      "id": "BP053"
+    },
+    {
+      "text": "UI Easter eggs reward exploration",
+      "apps": [
+        "seat-taken"
+      ],
+      "cat": "games",
+      "id": "BP054"
+    },
+    {
+      "text": "Cartoon presentation lowers barrier",
+      "apps": [
+        "seat-taken"
+      ],
+      "cat": "games",
+      "id": "BP055"
+    },
+    {
+      "text": "HDR-popping retro combat visuals",
+      "apps": [
+        "ball-x-pit"
+      ],
+      "cat": "games",
+      "id": "BP056"
+    },
+    {
+      "text": "Satisfying collision feedback",
+      "apps": [
+        "ball-x-pit"
+      ],
+      "cat": "games",
+      "id": "BP057"
+    },
+    {
+      "text": "Simple verb (fling balls) deep systems",
+      "apps": [
+        "ball-x-pit"
+      ],
+      "cat": "games",
+      "id": "BP058"
+    },
+    {
+      "text": "Chaotic readability on small screens",
+      "apps": [
+        "ball-x-pit"
+      ],
+      "cat": "games",
+      "id": "BP059"
+    },
+    {
+      "text": "Roguelite loops with clear run goals",
+      "apps": [
+        "ball-x-pit"
+      ],
+      "cat": "games",
+      "id": "BP060"
+    },
+    {
+      "text": "Per-nozzle haptic differentiation",
+      "apps": [
+        "powerwash"
+      ],
+      "cat": "games",
+      "id": "BP061"
+    },
+    {
+      "text": "Zen cleaning as core loop",
+      "apps": [
+        "powerwash"
+      ],
+      "cat": "games",
+      "id": "BP062"
+    },
+    {
+      "text": "Narrative left-turns keep surprise",
+      "apps": [
+        "powerwash"
+      ],
+      "cat": "games",
+      "id": "BP063"
+    },
+    {
+      "text": "Cross-Apple-platform availability",
+      "apps": [
+        "powerwash"
+      ],
+      "cat": "games",
+      "id": "BP064"
+    },
+    {
+      "text": "Satisfaction from visible progress state",
+      "apps": [
+        "powerwash"
+      ],
+      "cat": "games",
+      "id": "BP065"
+    },
+    {
+      "text": "SwiftUI prototyping accessible to designers",
+      "apps": [
+        "play-proto"
+      ],
+      "cat": "creative",
+      "id": "BP066"
+    },
+    {
+      "text": "Realtime Mac\u2194iPhone sync",
+      "apps": [
+        "play-proto"
+      ],
+      "cat": "creative",
+      "id": "BP067"
+    },
+    {
+      "text": "Powerful yet navigable IA",
+      "apps": [
+        "play-proto"
+      ],
+      "cat": "creative",
+      "id": "BP068"
+    },
+    {
+      "text": "Collaboration without heavyweight tools",
+      "apps": [
+        "play-proto"
+      ],
+      "cat": "creative",
+      "id": "BP069"
+    },
+    {
+      "text": "Interactive prototypes as first-class",
+      "apps": [
+        "play-proto"
+      ],
+      "cat": "creative",
+      "id": "BP070"
+    },
+    {
+      "text": "Platform-tailored shopping interactions",
+      "apps": [
+        "taobao"
+      ],
+      "cat": "commerce",
+      "id": "BP071"
+    },
+    {
+      "text": "Dense catalog with clear paths",
+      "apps": [
+        "taobao"
+      ],
+      "cat": "commerce",
+      "id": "BP072"
+    },
+    {
+      "text": "Vision Pro 3D model commerce cues",
+      "apps": [
+        "taobao"
+      ],
+      "cat": "commerce",
+      "id": "BP073"
+    },
+    {
+      "text": "Effortless controls for high-frequency buys",
+      "apps": [
+        "taobao"
+      ],
+      "cat": "commerce",
+      "id": "BP074"
+    },
+    {
+      "text": "Region-scale information architecture",
+      "apps": [
+        "taobao"
+      ],
+      "cat": "commerce",
+      "id": "BP075"
+    },
+    {
+      "text": "50-language TTS accessibility",
+      "apps": [
+        "speechify"
+      ],
+      "cat": "inclusivity",
+      "id": "BP076"
+    },
+    {
+      "text": "Listening transforms reading friction",
+      "apps": [
+        "speechify"
+      ],
+      "cat": "inclusivity",
+      "id": "BP077"
+    },
+    {
+      "text": "Clear playback controls",
+      "apps": [
+        "speechify"
+      ],
+      "cat": "inclusivity",
+      "id": "BP078"
+    },
+    {
+      "text": "Inclusive by default not addon",
+      "apps": [
+        "speechify"
+      ],
+      "cat": "inclusivity",
+      "id": "BP079"
+    },
+    {
+      "text": "Cross-content ingestion UX",
+      "apps": [
+        "speechify"
+      ],
+      "cat": "inclusivity",
+      "id": "BP080"
+    },
+    {
+      "text": "2D\u21923D with Pencil/touch",
+      "apps": [
+        "feather-3d"
+      ],
+      "cat": "creative",
+      "id": "BP081"
+    },
+    {
+      "text": "Skill-level progressive disclosure",
+      "apps": [
+        "feather-3d"
+      ],
+      "cat": "creative",
+      "id": "BP082"
+    },
+    {
+      "text": "Spatial drawing affordances",
+      "apps": [
+        "feather-3d"
+      ],
+      "cat": "creative",
+      "id": "BP083"
+    },
+    {
+      "text": "Creativity-first empty canvas",
+      "apps": [
+        "feather-3d"
+      ],
+      "cat": "creative",
+      "id": "BP084"
+    },
+    {
+      "text": "iPad interaction mastery",
+      "apps": [
+        "feather-3d"
+      ],
+      "cat": "creative",
+      "id": "BP085"
+    },
+    {
+      "text": "Memorable caption/word play delight",
+      "apps": [
+        "capwords"
+      ],
+      "cat": "delight",
+      "id": "BP086"
+    },
+    {
+      "text": "Apple tech enhanced engagement",
+      "apps": [
+        "capwords"
+      ],
+      "cat": "delight",
+      "id": "BP087"
+    },
+    {
+      "text": "Satisfying micro-feedback",
+      "apps": [
+        "capwords"
+      ],
+      "cat": "delight",
+      "id": "BP088"
+    },
+    {
+      "text": "Focused single-job craft",
+      "apps": [
+        "capwords"
+      ],
+      "cat": "delight",
+      "id": "BP089"
+    },
+    {
+      "text": "Shareable output moments",
+      "apps": [
+        "capwords"
+      ],
+      "cat": "delight",
+      "id": "BP090"
+    },
+    {
+      "text": "Crisis info hierarchy under stress",
+      "apps": [
+        "watch-duty"
+      ],
+      "cat": "social-impact",
+      "id": "BP091"
+    },
+    {
+      "text": "Trustworthy alerts over noise",
+      "apps": [
+        "watch-duty"
+      ],
+      "cat": "social-impact",
+      "id": "BP092"
+    },
+    {
+      "text": "Map + status clarity",
+      "apps": [
+        "watch-duty"
+      ],
+      "cat": "social-impact",
+      "id": "BP093"
+    },
+    {
+      "text": "Community safety mental model",
+      "apps": [
+        "watch-duty"
+      ],
+      "cat": "social-impact",
+      "id": "BP094"
+    },
+    {
+      "text": "Low-friction critical path",
+      "apps": [
+        "watch-duty"
+      ],
+      "cat": "social-impact",
+      "id": "BP095"
+    },
+    {
+      "text": "Impulse-path: hungry\u2192order minimized",
+      "apps": [
+        "doordash"
+      ],
+      "cat": "food",
+      "id": "BP096"
+    },
+    {
+      "text": "Time-aware recommendations",
+      "apps": [
+        "doordash"
+      ],
+      "cat": "food",
+      "id": "BP097"
+    },
+    {
+      "text": "Multi-signal restaurant cards",
+      "apps": [
+        "doordash"
+      ],
+      "cat": "food",
+      "id": "BP098"
+    },
+    {
+      "text": "Checkout speed as design goal",
+      "apps": [
+        "doordash"
+      ],
+      "cat": "food",
+      "id": "BP099"
+    },
+    {
+      "text": "Contextual home intelligence",
+      "apps": [
+        "doordash"
+      ],
+      "cat": "food",
+      "id": "BP100"
+    },
+    {
+      "text": "Visual merchandising of food photos",
+      "apps": [
+        "ubereats"
+      ],
+      "cat": "food",
+      "id": "BP101"
+    },
+    {
+      "text": "Category organization as window shopping",
+      "apps": [
+        "ubereats"
+      ],
+      "cat": "food",
+      "id": "BP102"
+    },
+    {
+      "text": "Browse pleasure over pure utility",
+      "apps": [
+        "ubereats"
+      ],
+      "cat": "food",
+      "id": "BP103"
+    },
+    {
+      "text": "Clear delivery ETA hierarchy",
+      "apps": [
+        "ubereats"
+      ],
+      "cat": "food",
+      "id": "BP104"
+    },
+    {
+      "text": "Merchant brand within platform",
+      "apps": [
+        "ubereats"
+      ],
+      "cat": "food",
+      "id": "BP105"
+    },
+    {
+      "text": "Streamlined menu customization",
+      "apps": [
+        "grubhub"
+      ],
+      "cat": "food",
+      "id": "BP106"
+    },
+    {
+      "text": "Ordering flow progressive disclosure",
+      "apps": [
+        "grubhub"
+      ],
+      "cat": "food",
+      "id": "BP107"
+    },
+    {
+      "text": "Modifier UX without overwhelm",
+      "apps": [
+        "grubhub"
+      ],
+      "cat": "food",
+      "id": "BP108"
+    },
+    {
+      "text": "Clear cart state",
+      "apps": [
+        "grubhub"
+      ],
+      "cat": "food",
+      "id": "BP109"
+    },
+    {
+      "text": "Repeat-order shortcuts",
+      "apps": [
+        "grubhub"
+      ],
+      "cat": "food",
+      "id": "BP110"
+    },
+    {
+      "text": "Social feed for payments",
+      "apps": [
+        "venmo"
+      ],
+      "cat": "fintech",
+      "id": "BP111"
+    },
+    {
+      "text": "Casual money movement tone",
+      "apps": [
+        "venmo"
+      ],
+      "cat": "fintech",
+      "id": "BP112"
+    },
+    {
+      "text": "Public/private payment privacy controls",
+      "apps": [
+        "venmo"
+      ],
+      "cat": "fintech",
+      "id": "BP113"
+    },
+    {
+      "text": "Emoji/note as social glue",
+      "apps": [
+        "venmo"
+      ],
+      "cat": "fintech",
+      "id": "BP114"
+    },
+    {
+      "text": "Contact-first send flow",
+      "apps": [
+        "venmo"
+      ],
+      "cat": "fintech",
+      "id": "BP115"
+    },
+    {
+      "text": "Vibrant non-boring banking colors",
+      "apps": [
+        "monzo"
+      ],
+      "cat": "fintech",
+      "id": "BP116"
+    },
+    {
+      "text": "Instant spend notifications",
+      "apps": [
+        "monzo"
+      ],
+      "cat": "fintech",
+      "id": "BP117"
+    },
+    {
+      "text": "Spending insights visualizations",
+      "apps": [
+        "monzo"
+      ],
+      "cat": "fintech",
+      "id": "BP118"
+    },
+    {
+      "text": "Pots/goals mental model",
+      "apps": [
+        "monzo"
+      ],
+      "cat": "fintech",
+      "id": "BP119"
+    },
+    {
+      "text": "Modern card controls",
+      "apps": [
+        "monzo"
+      ],
+      "cat": "fintech",
+      "id": "BP120"
+    },
+    {
+      "text": "Goal-based portfolio UI",
+      "apps": [
+        "betterment"
+      ],
+      "cat": "fintech",
+      "id": "BP121"
+    },
+    {
+      "text": "Complex investing made scannable",
+      "apps": [
+        "betterment"
+      ],
+      "cat": "fintech",
+      "id": "BP122"
+    },
+    {
+      "text": "Clear data viz over tables",
+      "apps": [
+        "betterment"
+      ],
+      "cat": "fintech",
+      "id": "BP123"
+    },
+    {
+      "text": "Progress toward goals",
+      "apps": [
+        "betterment"
+      ],
+      "cat": "fintech",
+      "id": "BP124"
+    },
+    {
+      "text": "Calm risk communication",
+      "apps": [
+        "betterment"
+      ],
+      "cat": "fintech",
+      "id": "BP125"
+    },
+    {
+      "text": "Category-first browse discovery",
+      "apps": [
+        "airbnb"
+      ],
+      "cat": "travel",
+      "id": "BP126"
+    },
+    {
+      "text": "Full-bleed aspirational photography",
+      "apps": [
+        "airbnb"
+      ],
+      "cat": "travel",
+      "id": "BP127"
+    },
+    {
+      "text": "Wishlists as lightweight save",
+      "apps": [
+        "airbnb"
+      ],
+      "cat": "travel",
+      "id": "BP128"
+    },
+    {
+      "text": "Map+list dual mode",
+      "apps": [
+        "airbnb"
+      ],
+      "cat": "travel",
+      "id": "BP129"
+    },
+    {
+      "text": "Host trust signals near CTA",
+      "apps": [
+        "airbnb"
+      ],
+      "cat": "travel",
+      "id": "BP130"
+    },
+    {
+      "text": "Handles extreme information density",
+      "apps": [
+        "booking"
+      ],
+      "cat": "travel",
+      "id": "BP131"
+    },
+    {
+      "text": "Filter power without paralysis",
+      "apps": [
+        "booking"
+      ],
+      "cat": "travel",
+      "id": "BP132"
+    },
+    {
+      "text": "Scarcity/availability honesty patterns",
+      "apps": [
+        "booking"
+      ],
+      "cat": "travel",
+      "id": "BP133"
+    },
+    {
+      "text": "Compare clarity",
+      "apps": [
+        "booking"
+      ],
+      "cat": "travel",
+      "id": "BP134"
+    },
+    {
+      "text": "Mobile booking confidence",
+      "apps": [
+        "booking"
+      ],
+      "cat": "travel",
+      "id": "BP135"
+    },
+    {
+      "text": "Price calendar for flexible dates",
+      "apps": [
+        "skyscanner"
+      ],
+      "cat": "travel",
+      "id": "BP136"
+    },
+    {
+      "text": "Complex comparison made actionable",
+      "apps": [
+        "skyscanner"
+      ],
+      "cat": "travel",
+      "id": "BP137"
+    },
+    {
+      "text": "Clear leg hierarchy",
+      "apps": [
+        "skyscanner"
+      ],
+      "cat": "travel",
+      "id": "BP138"
+    },
+    {
+      "text": "Everywhere/anytime search modes",
+      "apps": [
+        "skyscanner"
+      ],
+      "cat": "travel",
+      "id": "BP139"
+    },
+    {
+      "text": "Price alert feedback",
+      "apps": [
+        "skyscanner"
+      ],
+      "cat": "travel",
+      "id": "BP140"
+    },
+    {
+      "text": "Natural language task capture",
+      "apps": [
+        "todoist"
+      ],
+      "cat": "productivity",
+      "id": "BP141"
+    },
+    {
+      "text": "Gets out of the way",
+      "apps": [
+        "todoist"
+      ],
+      "cat": "productivity",
+      "id": "BP142"
+    },
+    {
+      "text": "Smart scheduling suggestions",
+      "apps": [
+        "todoist"
+      ],
+      "cat": "productivity",
+      "id": "BP143"
+    },
+    {
+      "text": "Karma/light gamification optional",
+      "apps": [
+        "todoist"
+      ],
+      "cat": "productivity",
+      "id": "BP144"
+    },
+    {
+      "text": "Fast add from anywhere",
+      "apps": [
+        "todoist"
+      ],
+      "cat": "productivity",
+      "id": "BP145"
+    },
+    {
+      "text": "Database power with progressive disclosure",
+      "apps": [
+        "airtable"
+      ],
+      "cat": "productivity",
+      "id": "BP146"
+    },
+    {
+      "text": "Mobile-friendly spreadsheet paradigms",
+      "apps": [
+        "airtable"
+      ],
+      "cat": "productivity",
+      "id": "BP147"
+    },
+    {
+      "text": "Views switch without relearning",
+      "apps": [
+        "airtable"
+      ],
+      "cat": "productivity",
+      "id": "BP148"
+    },
+    {
+      "text": "Rich field types visible",
+      "apps": [
+        "airtable"
+      ],
+      "cat": "productivity",
+      "id": "BP149"
+    },
+    {
+      "text": "Collaboration presence cues",
+      "apps": [
+        "airtable"
+      ],
+      "cat": "productivity",
+      "id": "BP150"
+    },
+    {
+      "text": "Multi-purpose tabs clearly separated",
+      "apps": [
+        "linkedin"
+      ],
+      "cat": "social",
+      "id": "BP151"
+    },
+    {
+      "text": "Professional feed vs jobs vs network",
+      "apps": [
+        "linkedin"
+      ],
+      "cat": "social",
+      "id": "BP152"
+    },
+    {
+      "text": "Profile as living resume",
+      "apps": [
+        "linkedin"
+      ],
+      "cat": "social",
+      "id": "BP153"
+    },
+    {
+      "text": "Messaging without losing context",
+      "apps": [
+        "linkedin"
+      ],
+      "cat": "social",
+      "id": "BP154"
+    },
+    {
+      "text": "Dense but scannable cards",
+      "apps": [
+        "linkedin"
+      ],
+      "cat": "social",
+      "id": "BP155"
+    },
+    {
+      "text": "Barcode + recent meals speed logging",
+      "apps": [
+        "myfitnesspal"
+      ],
+      "cat": "health",
+      "id": "BP156"
+    },
+    {
+      "text": "Tedious task made quick",
+      "apps": [
+        "myfitnesspal"
+      ],
+      "cat": "health",
+      "id": "BP157"
+    },
+    {
+      "text": "Smart food search",
+      "apps": [
+        "myfitnesspal"
+      ],
+      "cat": "health",
+      "id": "BP158"
+    },
+    {
+      "text": "Daily summary dashboard",
+      "apps": [
+        "myfitnesspal"
+      ],
+      "cat": "health",
+      "id": "BP159"
+    },
+    {
+      "text": "Habit streaks light touch",
+      "apps": [
+        "myfitnesspal"
+      ],
+      "cat": "health",
+      "id": "BP160"
+    },
+    {
+      "text": "Coaching UI not just trackers",
+      "apps": [
+        "noom"
+      ],
+      "cat": "health",
+      "id": "BP161"
+    },
+    {
+      "text": "Daily lessons cadence",
+      "apps": [
+        "noom"
+      ],
+      "cat": "health",
+      "id": "BP162"
+    },
+    {
+      "text": "Progress celebrations",
+      "apps": [
+        "noom"
+      ],
+      "cat": "health",
+      "id": "BP163"
+    },
+    {
+      "text": "Gentle nudge copy tone",
+      "apps": [
+        "noom"
+      ],
+      "cat": "health",
+      "id": "BP164"
+    },
+    {
+      "text": "Behavior-change framing",
+      "apps": [
+        "noom"
+      ],
+      "cat": "health",
+      "id": "BP165"
+    },
+    {
+      "text": "Biometrics \u2192 actionable summaries",
+      "apps": [
+        "whoop"
+      ],
+      "cat": "health",
+      "id": "BP166"
+    },
+    {
+      "text": "Clean recovery/strain hierarchy",
+      "apps": [
+        "whoop"
+      ],
+      "cat": "health",
+      "id": "BP167"
+    },
+    {
+      "text": "Avoids data overwhelm",
+      "apps": [
+        "whoop"
+      ],
+      "cat": "health",
+      "id": "BP168"
+    },
+    {
+      "text": "Day/night glanceability",
+      "apps": [
+        "whoop"
+      ],
+      "cat": "health",
+      "id": "BP169"
+    },
+    {
+      "text": "Hardware+app continuity",
+      "apps": [
+        "whoop"
+      ],
+      "cat": "health",
+      "id": "BP170"
+    },
+    {
+      "text": "Unique-item discovery curation",
+      "apps": [
+        "etsy"
+      ],
+      "cat": "commerce",
+      "id": "BP171"
+    },
+    {
+      "text": "Strong imagery primacy",
+      "apps": [
+        "etsy"
+      ],
+      "cat": "commerce",
+      "id": "BP172"
+    },
+    {
+      "text": "Personalization of handmade catalog",
+      "apps": [
+        "etsy"
+      ],
+      "cat": "commerce",
+      "id": "BP173"
+    },
+    {
+      "text": "Seller story near buy",
+      "apps": [
+        "etsy"
+      ],
+      "cat": "commerce",
+      "id": "BP174"
+    },
+    {
+      "text": "Favorites collections",
+      "apps": [
+        "etsy"
+      ],
+      "cat": "commerce",
+      "id": "BP175"
+    },
+    {
+      "text": "Social feed \u00d7 shopping merge",
+      "apps": [
+        "depop"
+      ],
+      "cat": "commerce",
+      "id": "BP176"
+    },
+    {
+      "text": "Instagram-like browse for retail",
+      "apps": [
+        "depop"
+      ],
+      "cat": "commerce",
+      "id": "BP177"
+    },
+    {
+      "text": "Seller profiles as brands",
+      "apps": [
+        "depop"
+      ],
+      "cat": "commerce",
+      "id": "BP178"
+    },
+    {
+      "text": "Like/comment engagement loops",
+      "apps": [
+        "depop"
+      ],
+      "cat": "commerce",
+      "id": "BP179"
+    },
+    {
+      "text": "Youth-culture visual tone",
+      "apps": [
+        "depop"
+      ],
+      "cat": "commerce",
+      "id": "BP180"
+    },
+    {
+      "text": "Bid/ask market transparency",
+      "apps": [
+        "stockx"
+      ],
+      "cat": "commerce",
+      "id": "BP181"
+    },
+    {
+      "text": "Stock-market metaphor for retail",
+      "apps": [
+        "stockx"
+      ],
+      "cat": "commerce",
+      "id": "BP182"
+    },
+    {
+      "text": "Authentication trust UI",
+      "apps": [
+        "stockx"
+      ],
+      "cat": "commerce",
+      "id": "BP183"
+    },
+    {
+      "text": "Price graph literacy",
+      "apps": [
+        "stockx"
+      ],
+      "cat": "commerce",
+      "id": "BP184"
+    },
+    {
+      "text": "Size/condition clarity",
+      "apps": [
+        "stockx"
+      ],
+      "cat": "commerce",
+      "id": "BP185"
+    },
+    {
+      "text": "Editorial magazine product pages",
+      "apps": [
+        "zara"
+      ],
+      "cat": "commerce",
+      "id": "BP186"
+    },
+    {
+      "text": "Minimalist luxury fast-fashion",
+      "apps": [
+        "zara"
+      ],
+      "cat": "commerce",
+      "id": "BP187"
+    },
+    {
+      "text": "Image-led storytelling",
+      "apps": [
+        "zara"
+      ],
+      "cat": "commerce",
+      "id": "BP188"
+    },
+    {
+      "text": "Sparse chrome",
+      "apps": [
+        "zara"
+      ],
+      "cat": "commerce",
+      "id": "BP189"
+    },
+    {
+      "text": "Lookbook \u2192 PDP path",
+      "apps": [
+        "zara"
+      ],
+      "cat": "commerce",
+      "id": "BP190"
+    },
+    {
+      "text": "Women-first interaction rules in UI",
+      "apps": [
+        "bumble"
+      ],
+      "cat": "social",
+      "id": "BP191"
+    },
+    {
+      "text": "Time-limited match urgency",
+      "apps": [
+        "bumble"
+      ],
+      "cat": "social",
+      "id": "BP192"
+    },
+    {
+      "text": "Verification trust badges",
+      "apps": [
+        "bumble"
+      ],
+      "cat": "social",
+      "id": "BP193"
+    },
+    {
+      "text": "Prompt-led profiles",
+      "apps": [
+        "bumble"
+      ],
+      "cat": "social",
+      "id": "BP194"
+    },
+    {
+      "text": "Safety tools visible",
+      "apps": [
+        "bumble"
+      ],
+      "cat": "social",
+      "id": "BP195"
+    },
+    {
+      "text": "Learning path visualization",
+      "apps": [
+        "coursera"
+      ],
+      "cat": "education",
+      "id": "BP196"
+    },
+    {
+      "text": "Progress tracking for long courses",
+      "apps": [
+        "coursera"
+      ],
+      "cat": "education",
+      "id": "BP197"
+    },
+    {
+      "text": "Mobile lecture continuity",
+      "apps": [
+        "coursera"
+      ],
+      "cat": "education",
+      "id": "BP198"
+    },
+    {
+      "text": "Credential motivation surfaces",
+      "apps": [
+        "coursera"
+      ],
+      "cat": "education",
+      "id": "BP199"
+    },
+    {
+      "text": "Module chunking",
+      "apps": [
+        "coursera"
+      ],
+      "cat": "education",
+      "id": "BP200"
+    },
+    {
+      "text": "15-minute read format",
+      "apps": [
+        "blinkist"
+      ],
+      "cat": "education",
+      "id": "BP201"
+    },
+    {
+      "text": "Beautiful text-on-mobile reading",
+      "apps": [
+        "blinkist"
+      ],
+      "cat": "education",
+      "id": "BP202"
+    },
+    {
+      "text": "Library management clarity",
+      "apps": [
+        "blinkist"
+      ],
+      "cat": "education",
+      "id": "BP203"
+    },
+    {
+      "text": "Audio/text mode switch",
+      "apps": [
+        "blinkist"
+      ],
+      "cat": "education",
+      "id": "BP204"
+    },
+    {
+      "text": "Finish celebration",
+      "apps": [
+        "blinkist"
+      ],
+      "cat": "education",
+      "id": "BP205"
+    },
+    {
+      "text": "Sub-50ms local-first feel; no spinners",
+      "apps": [
+        "linear"
+      ],
+      "cat": "productivity",
+      "id": "BP206"
+    },
+    {
+      "text": "Keyboard-first command palette",
+      "apps": [
+        "linear"
+      ],
+      "cat": "productivity",
+      "id": "BP207"
+    },
+    {
+      "text": "Dark-first contrast hierarchy",
+      "apps": [
+        "linear"
+      ],
+      "cat": "productivity",
+      "id": "BP208"
+    },
+    {
+      "text": "Native-feeling GitHub/Slack integrations",
+      "apps": [
+        "linear"
+      ],
+      "cat": "productivity",
+      "id": "BP209"
+    },
+    {
+      "text": "Opinionated IA over configurability",
+      "apps": [
+        "linear"
+      ],
+      "cat": "productivity",
+      "id": "BP210"
+    },
+    {
+      "text": "Checkout clarity and trust copy",
+      "apps": [
+        "stripe"
+      ],
+      "cat": "fintech",
+      "id": "BP211"
+    },
+    {
+      "text": "Docs-as-product navigation",
+      "apps": [
+        "stripe"
+      ],
+      "cat": "fintech",
+      "id": "BP212"
+    },
+    {
+      "text": "Dashboard metric scannability",
+      "apps": [
+        "stripe"
+      ],
+      "cat": "fintech",
+      "id": "BP213"
+    },
+    {
+      "text": "Test-mode obviousness",
+      "apps": [
+        "stripe"
+      ],
+      "cat": "fintech",
+      "id": "BP214"
+    },
+    {
+      "text": "Error messages that teach",
+      "apps": [
+        "stripe"
+      ],
+      "cat": "fintech",
+      "id": "BP215"
+    },
+    {
+      "text": "Multiplayer cursors presence",
+      "apps": [
+        "figma"
+      ],
+      "cat": "creative",
+      "id": "BP216"
+    },
+    {
+      "text": "Infinite canvas zoom performance",
+      "apps": [
+        "figma"
+      ],
+      "cat": "creative",
+      "id": "BP217"
+    },
+    {
+      "text": "Component/variant systems UX",
+      "apps": [
+        "figma"
+      ],
+      "cat": "creative",
+      "id": "BP218"
+    },
+    {
+      "text": "Comment pins in context",
+      "apps": [
+        "figma"
+      ],
+      "cat": "creative",
+      "id": "BP219"
+    },
+    {
+      "text": "Share link permissions clarity",
+      "apps": [
+        "figma"
+      ],
+      "cat": "creative",
+      "id": "BP220"
+    },
+    {
+      "text": "Blocks as universal editing model",
+      "apps": [
+        "notion"
+      ],
+      "cat": "productivity",
+      "id": "BP221"
+    },
+    {
+      "text": "Empty-state templates that teach",
+      "apps": [
+        "notion"
+      ],
+      "cat": "productivity",
+      "id": "BP222"
+    },
+    {
+      "text": "Slash-command discovery",
+      "apps": [
+        "notion"
+      ],
+      "cat": "productivity",
+      "id": "BP223"
+    },
+    {
+      "text": "Database\u2194doc hybrid",
+      "apps": [
+        "notion"
+      ],
+      "cat": "productivity",
+      "id": "BP224"
+    },
+    {
+      "text": "Sidebar workspace nesting",
+      "apps": [
+        "notion"
+      ],
+      "cat": "productivity",
+      "id": "BP225"
+    },
+    {
+      "text": "Now Playing as persistent dock",
+      "apps": [
+        "spotify"
+      ],
+      "cat": "streaming",
+      "id": "BP226"
+    },
+    {
+      "text": "Personalized home shelves",
+      "apps": [
+        "spotify"
+      ],
+      "cat": "streaming",
+      "id": "BP227"
+    },
+    {
+      "text": "Crossfade/queue transparency",
+      "apps": [
+        "spotify"
+      ],
+      "cat": "streaming",
+      "id": "BP228"
+    },
+    {
+      "text": "Shareable playlist identity",
+      "apps": [
+        "spotify"
+      ],
+      "cat": "streaming",
+      "id": "BP229"
+    },
+    {
+      "text": "Offline download state clarity",
+      "apps": [
+        "spotify"
+      ],
+      "cat": "streaming",
+      "id": "BP230"
+    },
+    {
+      "text": "Stories ring affordance",
+      "apps": [
+        "instagram"
+      ],
+      "cat": "social",
+      "id": "BP231"
+    },
+    {
+      "text": "Vertical full-bleed content",
+      "apps": [
+        "instagram"
+      ],
+      "cat": "social",
+      "id": "BP232"
+    },
+    {
+      "text": "Double-tap like microinteraction",
+      "apps": [
+        "instagram"
+      ],
+      "cat": "social",
+      "id": "BP233"
+    },
+    {
+      "text": "Creation from camera tab",
+      "apps": [
+        "instagram"
+      ],
+      "cat": "social",
+      "id": "BP234"
+    },
+    {
+      "text": "Explore grid discovery",
+      "apps": [
+        "instagram"
+      ],
+      "cat": "social",
+      "id": "BP235"
+    },
+    {
+      "text": "For You full-screen immersion",
+      "apps": [
+        "tiktok"
+      ],
+      "cat": "social",
+      "id": "BP236"
+    },
+    {
+      "text": "Swipe-up next content velocity",
+      "apps": [
+        "tiktok"
+      ],
+      "cat": "social",
+      "id": "BP237"
+    },
+    {
+      "text": "Sound-on default with clarity",
+      "apps": [
+        "tiktok"
+      ],
+      "cat": "social",
+      "id": "BP238"
+    },
+    {
+      "text": "Create entry always present",
+      "apps": [
+        "tiktok"
+      ],
+      "cat": "social",
+      "id": "BP239"
+    },
+    {
+      "text": "Comment drawer over content",
+      "apps": [
+        "tiktok"
+      ],
+      "cat": "social",
+      "id": "BP240"
+    },
+    {
+      "text": "Miniplayer continuity",
+      "apps": [
+        "youtube"
+      ],
+      "cat": "streaming",
+      "id": "BP241"
+    },
+    {
+      "text": "Chapter scrubbing",
+      "apps": [
+        "youtube"
+      ],
+      "cat": "streaming",
+      "id": "BP242"
+    },
+    {
+      "text": "Shorts vs long-form modes",
+      "apps": [
+        "youtube"
+      ],
+      "cat": "streaming",
+      "id": "BP243"
+    },
+    {
+      "text": "Subscribe/notify controls",
+      "apps": [
+        "youtube"
+      ],
+      "cat": "streaming",
+      "id": "BP244"
+    },
+    {
+      "text": "Quality/bandwidth picker",
+      "apps": [
+        "youtube"
+      ],
+      "cat": "streaming",
+      "id": "BP245"
+    },
+    {
+      "text": "Billboard hero + rows IA",
+      "apps": [
+        "netflix"
+      ],
+      "cat": "streaming",
+      "id": "BP246"
+    },
+    {
+      "text": "Profile kids/adult separation",
+      "apps": [
+        "netflix"
+      ],
+      "cat": "streaming",
+      "id": "BP247"
+    },
+    {
+      "text": "Continue Watching resume",
+      "apps": [
+        "netflix"
+      ],
+      "cat": "streaming",
+      "id": "BP248"
+    },
+    {
+      "text": "Preview autoplay muted",
+      "apps": [
+        "netflix"
+      ],
+      "cat": "streaming",
+      "id": "BP249"
+    },
+    {
+      "text": "My List lightweight save",
+      "apps": [
+        "netflix"
+      ],
+      "cat": "streaming",
+      "id": "BP250"
+    },
+    {
+      "text": "Servers/channels IA",
+      "apps": [
+        "discord"
+      ],
+      "cat": "social",
+      "id": "BP251"
+    },
+    {
+      "text": "Voice states visible",
+      "apps": [
+        "discord"
+      ],
+      "cat": "social",
+      "id": "BP252"
+    },
+    {
+      "text": "Nitro upsell without blocking core",
+      "apps": [
+        "discord"
+      ],
+      "cat": "social",
+      "id": "BP253"
+    },
+    {
+      "text": "Slash commands in chat",
+      "apps": [
+        "discord"
+      ],
+      "cat": "social",
+      "id": "BP254"
+    },
+    {
+      "text": "Thread side conversations",
+      "apps": [
+        "discord"
+      ],
+      "cat": "social",
+      "id": "BP255"
+    },
+    {
+      "text": "Channel + DM mental model",
+      "apps": [
+        "slack"
+      ],
+      "cat": "productivity",
+      "id": "BP256"
+    },
+    {
+      "text": "Huddles lightweight voice",
+      "apps": [
+        "slack"
+      ],
+      "cat": "productivity",
+      "id": "BP257"
+    },
+    {
+      "text": "Emoji react density",
+      "apps": [
+        "slack"
+      ],
+      "cat": "productivity",
+      "id": "BP258"
+    },
+    {
+      "text": "Saved/later triage",
+      "apps": [
+        "slack"
+      ],
+      "cat": "productivity",
+      "id": "BP259"
+    },
+    {
+      "text": "Search modifiers power",
+      "apps": [
+        "slack"
+      ],
+      "cat": "productivity",
+      "id": "BP260"
+    },
+    {
+      "text": "End-to-end lock cues",
+      "apps": [
+        "whatsapp"
+      ],
+      "cat": "social",
+      "id": "BP261"
+    },
+    {
+      "text": "Status lightweight stories",
+      "apps": [
+        "whatsapp"
+      ],
+      "cat": "social",
+      "id": "BP262"
+    },
+    {
+      "text": "Voice note waveform UX",
+      "apps": [
+        "whatsapp"
+      ],
+      "cat": "social",
+      "id": "BP263"
+    },
+    {
+      "text": "Chat wallpaper identity",
+      "apps": [
+        "whatsapp"
+      ],
+      "cat": "social",
+      "id": "BP264"
+    },
+    {
+      "text": "Read receipts subtle",
+      "apps": [
+        "whatsapp"
+      ],
+      "cat": "social",
+      "id": "BP265"
+    },
+    {
+      "text": "Folders for chat triage",
+      "apps": [
+        "telegram"
+      ],
+      "cat": "social",
+      "id": "BP266"
+    },
+    {
+      "text": "Saved Messages personal cloud",
+      "apps": [
+        "telegram"
+      ],
+      "cat": "social",
+      "id": "BP267"
+    },
+    {
+      "text": "Channels broadcast model",
+      "apps": [
+        "telegram"
+      ],
+      "cat": "social",
+      "id": "BP268"
+    },
+    {
+      "text": "Secret chat visual distinction",
+      "apps": [
+        "telegram"
+      ],
+      "cat": "social",
+      "id": "BP269"
+    },
+    {
+      "text": "Fast media gallery",
+      "apps": [
+        "telegram"
+      ],
+      "cat": "social",
+      "id": "BP270"
+    },
+    {
+      "text": "Map-centric request",
+      "apps": [
+        "uber"
+      ],
+      "cat": "mobility",
+      "id": "BP271"
+    },
+    {
+      "text": "Fare upfront certainty",
+      "apps": [
+        "uber"
+      ],
+      "cat": "mobility",
+      "id": "BP272"
+    },
+    {
+      "text": "Driver ETA animation",
+      "apps": [
+        "uber"
+      ],
+      "cat": "mobility",
+      "id": "BP273"
+    },
+    {
+      "text": "Safety toolkit visible",
+      "apps": [
+        "uber"
+      ],
+      "cat": "mobility",
+      "id": "BP274"
+    },
+    {
+      "text": "Multi-stop trip editing",
+      "apps": [
+        "uber"
+      ],
+      "cat": "mobility",
+      "id": "BP275"
+    },
+    {
+      "text": "Fee transparency before send",
+      "apps": [
+        "wise"
+      ],
+      "cat": "fintech",
+      "id": "BP276"
+    },
+    {
+      "text": "Mid-market rate education",
+      "apps": [
+        "wise"
+      ],
+      "cat": "fintech",
+      "id": "BP277"
+    },
+    {
+      "text": "Recipient details checklist",
+      "apps": [
+        "wise"
+      ],
+      "cat": "fintech",
+      "id": "BP278"
+    },
+    {
+      "text": "Transfer tracker stages",
+      "apps": [
+        "wise"
+      ],
+      "cat": "fintech",
+      "id": "BP279"
+    },
+    {
+      "text": "Borderless account clarity",
+      "apps": [
+        "wise"
+      ],
+      "cat": "fintech",
+      "id": "BP280"
+    },
+    {
+      "text": "Streak + owl urgency",
+      "apps": [
+        "duolingo"
+      ],
+      "cat": "education",
+      "id": "BP281"
+    },
+    {
+      "text": "Bite-sized lesson cards",
+      "apps": [
+        "duolingo"
+      ],
+      "cat": "education",
+      "id": "BP282"
+    },
+    {
+      "text": "Hearts/lives friction balance",
+      "apps": [
+        "duolingo"
+      ],
+      "cat": "education",
+      "id": "BP283"
+    },
+    {
+      "text": "Leaderboards social",
+      "apps": [
+        "duolingo"
+      ],
+      "cat": "education",
+      "id": "BP284"
+    },
+    {
+      "text": "Celebrate correct with motion",
+      "apps": [
+        "duolingo"
+      ],
+      "cat": "education",
+      "id": "BP285"
+    },
+    {
+      "text": "Illustration-led calm brand",
+      "apps": [
+        "headspace"
+      ],
+      "cat": "health",
+      "id": "BP286"
+    },
+    {
+      "text": "Session length chooser",
+      "apps": [
+        "headspace"
+      ],
+      "cat": "health",
+      "id": "BP287"
+    },
+    {
+      "text": "Course vs single session",
+      "apps": [
+        "headspace"
+      ],
+      "cat": "health",
+      "id": "BP288"
+    },
+    {
+      "text": "Sleep/focus modes",
+      "apps": [
+        "headspace"
+      ],
+      "cat": "health",
+      "id": "BP289"
+    },
+    {
+      "text": "Progress without shame",
+      "apps": [
+        "headspace"
+      ],
+      "cat": "health",
+      "id": "BP290"
+    },
+    {
+      "text": "Activity cards social proof",
+      "apps": [
+        "strava"
+      ],
+      "cat": "health",
+      "id": "BP291"
+    },
+    {
+      "text": "Segment leaderboards",
+      "apps": [
+        "strava"
+      ],
+      "cat": "health",
+      "id": "BP292"
+    },
+    {
+      "text": "Map polyline beauty",
+      "apps": [
+        "strava"
+      ],
+      "cat": "health",
+      "id": "BP293"
+    },
+    {
+      "text": "Kudos micro-ack",
+      "apps": [
+        "strava"
+      ],
+      "cat": "health",
+      "id": "BP294"
+    },
+    {
+      "text": "Relative effort clarity",
+      "apps": [
+        "strava"
+      ],
+      "cat": "health",
+      "id": "BP295"
+    },
+    {
+      "text": "Webby-winning visual design/function",
+      "apps": [
+        "oura"
+      ],
+      "cat": "health",
+      "id": "BP296"
+    },
+    {
+      "text": "Ring data \u2192 simple scores",
+      "apps": [
+        "oura"
+      ],
+      "cat": "health",
+      "id": "BP297"
+    },
+    {
+      "text": "Readiness as hero metric",
+      "apps": [
+        "oura"
+      ],
+      "cat": "health",
+      "id": "BP298"
+    },
+    {
+      "text": "Intuitive redesign hierarchy",
+      "apps": [
+        "oura"
+      ],
+      "cat": "health",
+      "id": "BP299"
+    },
+    {
+      "text": "Best UI award patterns",
+      "apps": [
+        "oura"
+      ],
+      "cat": "health",
+      "id": "BP300"
+    },
+    {
+      "text": "Artifacts side panel",
+      "apps": [
+        "claude-app"
+      ],
+      "cat": "ai",
+      "id": "BP301"
+    },
+    {
+      "text": "Projects memory scoping",
+      "apps": [
+        "claude-app"
+      ],
+      "cat": "ai",
+      "id": "BP302"
+    },
+    {
+      "text": "Clean prose-first chat",
+      "apps": [
+        "claude-app"
+      ],
+      "cat": "ai",
+      "id": "BP303"
+    },
+    {
+      "text": "Tool use visible but calm",
+      "apps": [
+        "claude-app"
+      ],
+      "cat": "ai",
+      "id": "BP304"
+    },
+    {
+      "text": "Style controls",
+      "apps": [
+        "claude-app"
+      ],
+      "cat": "ai",
+      "id": "BP305"
+    },
+    {
+      "text": "Model picker progressive",
+      "apps": [
+        "chatgpt"
+      ],
+      "cat": "ai",
+      "id": "BP306"
+    },
+    {
+      "text": "Voice mode orb presence",
+      "apps": [
+        "chatgpt"
+      ],
+      "cat": "ai",
+      "id": "BP307"
+    },
+    {
+      "text": "Custom GPTs directory",
+      "apps": [
+        "chatgpt"
+      ],
+      "cat": "ai",
+      "id": "BP308"
+    },
+    {
+      "text": "Canvas/editing surfaces",
+      "apps": [
+        "chatgpt"
+      ],
+      "cat": "ai",
+      "id": "BP309"
+    },
+    {
+      "text": "Memory toggles",
+      "apps": [
+        "chatgpt"
+      ],
+      "cat": "ai",
+      "id": "BP310"
+    },
+    {
+      "text": "Cited answers as default",
+      "apps": [
+        "perplexity"
+      ],
+      "cat": "ai",
+      "id": "BP311"
+    },
+    {
+      "text": "Focus/collection modes",
+      "apps": [
+        "perplexity"
+      ],
+      "cat": "ai",
+      "id": "BP312"
+    },
+    {
+      "text": "Follow-up chips",
+      "apps": [
+        "perplexity"
+      ],
+      "cat": "ai",
+      "id": "BP313"
+    },
+    {
+      "text": "Source drawer trust",
+      "apps": [
+        "perplexity"
+      ],
+      "cat": "ai",
+      "id": "BP314"
+    },
+    {
+      "text": "Threads vs search hybrid",
+      "apps": [
+        "perplexity"
+      ],
+      "cat": "ai",
+      "id": "BP315"
+    },
+    {
+      "text": "AI in editor not chat-only",
+      "apps": [
+        "cursor-ide"
+      ],
+      "cat": "devtools",
+      "id": "BP316"
+    },
+    {
+      "text": "Tab autocomplete feel",
+      "apps": [
+        "cursor-ide"
+      ],
+      "cat": "devtools",
+      "id": "BP317"
+    },
+    {
+      "text": "Composer multi-file",
+      "apps": [
+        "cursor-ide"
+      ],
+      "cat": "devtools",
+      "id": "BP318"
+    },
+    {
+      "text": "Diff review UX",
+      "apps": [
+        "cursor-ide"
+      ],
+      "cat": "devtools",
+      "id": "BP319"
+    },
+    {
+      "text": "Model routing controls",
+      "apps": [
+        "cursor-ide"
+      ],
+      "cat": "devtools",
+      "id": "BP320"
+    },
+    {
+      "text": "Launcher as OS extension",
+      "apps": [
+        "raycast"
+      ],
+      "cat": "productivity",
+      "id": "BP321"
+    },
+    {
+      "text": "Extensions store",
+      "apps": [
+        "raycast"
+      ],
+      "cat": "productivity",
+      "id": "BP322"
+    },
+    {
+      "text": "Snippets/AI commands",
+      "apps": [
+        "raycast"
+      ],
+      "cat": "productivity",
+      "id": "BP323"
+    },
+    {
+      "text": "Window management",
+      "apps": [
+        "raycast"
+      ],
+      "cat": "productivity",
+      "id": "BP324"
+    },
+    {
+      "text": "Clipboard history",
+      "apps": [
+        "raycast"
+      ],
+      "cat": "productivity",
+      "id": "BP325"
+    },
+    {
+      "text": "Spaces for context",
+      "apps": [
+        "arc-browser"
+      ],
+      "cat": "browsers",
+      "id": "BP326"
+    },
+    {
+      "text": "Split view tabs",
+      "apps": [
+        "arc-browser"
+      ],
+      "cat": "browsers",
+      "id": "BP327"
+    },
+    {
+      "text": "Little Arc quick windows",
+      "apps": [
+        "arc-browser"
+      ],
+      "cat": "browsers",
+      "id": "BP328"
+    },
+    {
+      "text": "Boosts page restyle",
+      "apps": [
+        "arc-browser"
+      ],
+      "cat": "browsers",
+      "id": "BP329"
+    },
+    {
+      "text": "Command bar navigation",
+      "apps": [
+        "arc-browser"
+      ],
+      "cat": "browsers",
+      "id": "BP330"
+    },
+    {
+      "text": "Embed \u2192 fullscreen phone metaphor",
+      "apps": [
+        "appetize"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP331"
+    },
+    {
+      "text": "Seconds-to-stream start",
+      "apps": [
+        "appetize"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP332"
+    },
+    {
+      "text": "Kiosk/allowlist controls",
+      "apps": [
+        "appetize"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP333"
+    },
+    {
+      "text": "UI hierarchy for agents",
+      "apps": [
+        "appetize"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP334"
+    },
+    {
+      "text": "Published tier minutes honesty",
+      "apps": [
+        "appetize"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP335"
+    },
+    {
+      "text": "Device card \u2192 immersive session",
+      "apps": [
+        "browserstack"
+      ],
+      "cat": "device-farm",
+      "id": "BP336"
+    },
+    {
+      "text": "Floating toolbar secondary to device",
+      "apps": [
+        "browserstack"
+      ],
+      "cat": "device-farm",
+      "id": "BP337"
+    },
+    {
+      "text": "Switch device mid-session",
+      "apps": [
+        "browserstack"
+      ],
+      "cat": "device-farm",
+      "id": "BP338"
+    },
+    {
+      "text": "DevTools as drawers not takeover",
+      "apps": [
+        "browserstack"
+      ],
+      "cat": "device-farm",
+      "id": "BP339"
+    },
+    {
+      "text": "Local testing tunnel path",
+      "apps": [
+        "browserstack"
+      ],
+      "cat": "device-farm",
+      "id": "BP340"
+    },
+    {
+      "text": "Real vs virtual tabs",
+      "apps": [
+        "sauce"
+      ],
+      "cat": "device-farm",
+      "id": "BP341"
+    },
+    {
+      "text": "Filter by OEM/OS",
+      "apps": [
+        "sauce"
+      ],
+      "cat": "device-farm",
+      "id": "BP342"
+    },
+    {
+      "text": "Live logs alongside stream",
+      "apps": [
+        "sauce"
+      ],
+      "cat": "device-farm",
+      "id": "BP343"
+    },
+    {
+      "text": "IDE-embedded device panel",
+      "apps": [
+        "sauce"
+      ],
+      "cat": "device-farm",
+      "id": "BP344"
+    },
+    {
+      "text": "Screenshot/record one-click",
+      "apps": [
+        "sauce"
+      ],
+      "cat": "device-farm",
+      "id": "BP345"
+    },
+    {
+      "text": "Model+Android+region+duration buy form",
+      "apps": [
+        "vsphone"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP346"
+    },
+    {
+      "text": "Multi-instance AFK grid",
+      "apps": [
+        "vsphone"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP347"
+    },
+    {
+      "text": "In-client app market",
+      "apps": [
+        "vsphone"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP348"
+    },
+    {
+      "text": "Proxy bind affordance",
+      "apps": [
+        "vsphone"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP349"
+    },
+    {
+      "text": "Cross-client sync claim",
+      "apps": [
+        "vsphone"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP350"
+    },
+    {
+      "text": "Workspace groups for phones",
+      "apps": [
+        "geelark"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP351"
+    },
+    {
+      "text": "Synchronizer live preview grid",
+      "apps": [
+        "geelark"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP352"
+    },
+    {
+      "text": "Visual RPA builder",
+      "apps": [
+        "geelark"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP353"
+    },
+    {
+      "text": "Team roles/permissions",
+      "apps": [
+        "geelark"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP354"
+    },
+    {
+      "text": "Per-device proxy health",
+      "apps": [
+        "geelark"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP355"
+    },
+    {
+      "text": "Browser+phone one dashboard",
+      "apps": [
+        "multilogin"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP356"
+    },
+    {
+      "text": "Launch phone in same tab",
+      "apps": [
+        "multilogin"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP357"
+    },
+    {
+      "text": "Built-in proxies with profile",
+      "apps": [
+        "multilogin"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP358"
+    },
+    {
+      "text": "API automation parity marketing",
+      "apps": [
+        "multilogin"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP359"
+    },
+    {
+      "text": "Identity isolation messaging",
+      "apps": [
+        "multilogin"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP360"
+    },
+    {
+      "text": "VIP ladder exposes RAM/ROM/Android",
+      "apps": [
+        "redfinger"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP361"
+    },
+    {
+      "text": "Region list on price page",
+      "apps": [
+        "redfinger"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP362"
+    },
+    {
+      "text": "Legacy Android 8.1 still offered",
+      "apps": [
+        "redfinger"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP363"
+    },
+    {
+      "text": "Spec-first purchasing",
+      "apps": [
+        "redfinger"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP364"
+    },
+    {
+      "text": "Trial entry path",
+      "apps": [
+        "redfinger"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP365"
+    },
+    {
+      "text": "Homepage tile \u2192 instant stream",
+      "apps": [
+        "nowgg"
+      ],
+      "cat": "cloud-gaming",
+      "id": "BP366"
+    },
+    {
+      "text": "Zero install browser play",
+      "apps": [
+        "nowgg"
+      ],
+      "cat": "cloud-gaming",
+      "id": "BP367"
+    },
+    {
+      "text": "Curated catalog simplicity",
+      "apps": [
+        "nowgg"
+      ],
+      "cat": "cloud-gaming",
+      "id": "BP368"
+    },
+    {
+      "text": "Ads/queue as cautionary UX",
+      "apps": [
+        "nowgg"
+      ],
+      "cat": "cloud-gaming",
+      "id": "BP369"
+    },
+    {
+      "text": "Instant-play mental model",
+      "apps": [
+        "nowgg"
+      ],
+      "cat": "cloud-gaming",
+      "id": "BP370"
+    },
+    {
+      "text": "Library sync from stores",
+      "apps": [
+        "geforce-now"
+      ],
+      "cat": "cloud-gaming",
+      "id": "BP371"
+    },
+    {
+      "text": "Queue position honesty",
+      "apps": [
+        "geforce-now"
+      ],
+      "cat": "cloud-gaming",
+      "id": "BP372"
+    },
+    {
+      "text": "Settings for bitrate/latency",
+      "apps": [
+        "geforce-now"
+      ],
+      "cat": "cloud-gaming",
+      "id": "BP373"
+    },
+    {
+      "text": "Rig tier comparison",
+      "apps": [
+        "geforce-now"
+      ],
+      "cat": "cloud-gaming",
+      "id": "BP374"
+    },
+    {
+      "text": "Session time remaining",
+      "apps": [
+        "geforce-now"
+      ],
+      "cat": "cloud-gaming",
+      "id": "BP375"
+    },
+    {
+      "text": "Game Pass catalog browse",
+      "apps": [
+        "xbox-cloud"
+      ],
+      "cat": "cloud-gaming",
+      "id": "BP376"
+    },
+    {
+      "text": "Controller pairing UX",
+      "apps": [
+        "xbox-cloud"
+      ],
+      "cat": "cloud-gaming",
+      "id": "BP377"
+    },
+    {
+      "text": "Quick resume cloud",
+      "apps": [
+        "xbox-cloud"
+      ],
+      "cat": "cloud-gaming",
+      "id": "BP378"
+    },
+    {
+      "text": "Friends activity",
+      "apps": [
+        "xbox-cloud"
+      ],
+      "cat": "cloud-gaming",
+      "id": "BP379"
+    },
+    {
+      "text": "Touch controls overlay",
+      "apps": [
+        "xbox-cloud"
+      ],
+      "cat": "cloud-gaming",
+      "id": "BP380"
+    },
+    {
+      "text": "Low-latency remote desktop",
+      "apps": [
+        "parsec"
+      ],
+      "cat": "remote",
+      "id": "BP381"
+    },
+    {
+      "text": "Host/client role clarity",
+      "apps": [
+        "parsec"
+      ],
+      "cat": "remote",
+      "id": "BP382"
+    },
+    {
+      "text": "Bandwidth adaptive",
+      "apps": [
+        "parsec"
+      ],
+      "cat": "remote",
+      "id": "BP383"
+    },
+    {
+      "text": "Multi-monitor handling",
+      "apps": [
+        "parsec"
+      ],
+      "cat": "remote",
+      "id": "BP384"
+    },
+    {
+      "text": "Friend share hosts",
+      "apps": [
+        "parsec"
+      ],
+      "cat": "remote",
+      "id": "BP385"
+    },
+    {
+      "text": "$cashtag identity",
+      "apps": [
+        "cashapp"
+      ],
+      "cat": "fintech",
+      "id": "BP386"
+    },
+    {
+      "text": "Investing adjacent to pay",
+      "apps": [
+        "cashapp"
+      ],
+      "cat": "fintech",
+      "id": "BP387"
+    },
+    {
+      "text": "Bold monochrome brand UI",
+      "apps": [
+        "cashapp"
+      ],
+      "cat": "fintech",
+      "id": "BP388"
+    },
+    {
+      "text": "Instant verify flows",
+      "apps": [
+        "cashapp"
+      ],
+      "cat": "fintech",
+      "id": "BP389"
+    },
+    {
+      "text": "Card controls simple",
+      "apps": [
+        "cashapp"
+      ],
+      "cat": "fintech",
+      "id": "BP390"
+    },
+    {
+      "text": "Multi-currency vaults",
+      "apps": [
+        "revolut"
+      ],
+      "cat": "fintech",
+      "id": "BP391"
+    },
+    {
+      "text": "Crypto/metal adjacent tabs",
+      "apps": [
+        "revolut"
+      ],
+      "cat": "fintech",
+      "id": "BP392"
+    },
+    {
+      "text": "Spending analytics rings",
+      "apps": [
+        "revolut"
+      ],
+      "cat": "fintech",
+      "id": "BP393"
+    },
+    {
+      "text": "Card freeze one-tap",
+      "apps": [
+        "revolut"
+      ],
+      "cat": "fintech",
+      "id": "BP394"
+    },
+    {
+      "text": "Vault goals",
+      "apps": [
+        "revolut"
+      ],
+      "cat": "fintech",
+      "id": "BP395"
+    },
+    {
+      "text": "Gesture trade confirm",
+      "apps": [
+        "robinhood"
+      ],
+      "cat": "fintech",
+      "id": "BP396"
+    },
+    {
+      "text": "Sparkline-first holdings",
+      "apps": [
+        "robinhood"
+      ],
+      "cat": "fintech",
+      "id": "BP397"
+    },
+    {
+      "text": "Fractional share education",
+      "apps": [
+        "robinhood"
+      ],
+      "cat": "fintech",
+      "id": "BP398"
+    },
+    {
+      "text": "Push for price moves",
+      "apps": [
+        "robinhood"
+      ],
+      "cat": "fintech",
+      "id": "BP399"
+    },
+    {
+      "text": "Clean onboarding risk disclosures",
+      "apps": [
+        "robinhood"
+      ],
+      "cat": "fintech",
+      "id": "BP400"
+    },
+    {
+      "text": "UPI intent ubiquity",
+      "apps": [
+        "phonepe"
+      ],
+      "cat": "fintech",
+      "id": "BP401"
+    },
+    {
+      "text": "Scan & pay camera",
+      "apps": [
+        "phonepe"
+      ],
+      "cat": "fintech",
+      "id": "BP402"
+    },
+    {
+      "text": "Billers hub",
+      "apps": [
+        "phonepe"
+      ],
+      "cat": "fintech",
+      "id": "BP403"
+    },
+    {
+      "text": "Reward scratch cards",
+      "apps": [
+        "phonepe"
+      ],
+      "cat": "fintech",
+      "id": "BP404"
+    },
+    {
+      "text": "Switch/linked accounts",
+      "apps": [
+        "phonepe"
+      ],
+      "cat": "fintech",
+      "id": "BP405"
+    },
+    {
+      "text": "UPI + chat-like passbook",
+      "apps": [
+        "gpay-india"
+      ],
+      "cat": "fintech",
+      "id": "BP406"
+    },
+    {
+      "text": "Offers nearby",
+      "apps": [
+        "gpay-india"
+      ],
+      "cat": "fintech",
+      "id": "BP407"
+    },
+    {
+      "text": "Group spend",
+      "apps": [
+        "gpay-india"
+      ],
+      "cat": "fintech",
+      "id": "BP408"
+    },
+    {
+      "text": "Autopay mandates",
+      "apps": [
+        "gpay-india"
+      ],
+      "cat": "fintech",
+      "id": "BP409"
+    },
+    {
+      "text": "QR primary",
+      "apps": [
+        "gpay-india"
+      ],
+      "cat": "fintech",
+      "id": "BP410"
+    },
+    {
+      "text": "Template-first creation",
+      "apps": [
+        "canva"
+      ],
+      "cat": "creative",
+      "id": "BP411"
+    },
+    {
+      "text": "Brand kit consistency",
+      "apps": [
+        "canva"
+      ],
+      "cat": "creative",
+      "id": "BP412"
+    },
+    {
+      "text": "Magic Studio AI assists",
+      "apps": [
+        "canva"
+      ],
+      "cat": "creative",
+      "id": "BP413"
+    },
+    {
+      "text": "Resize magic",
+      "apps": [
+        "canva"
+      ],
+      "cat": "creative",
+      "id": "BP414"
+    },
+    {
+      "text": "Team permissions",
+      "apps": [
+        "canva"
+      ],
+      "cat": "creative",
+      "id": "BP415"
+    },
+    {
+      "text": "Gesture-centric drawing",
+      "apps": [
+        "procreate"
+      ],
+      "cat": "creative",
+      "id": "BP416"
+    },
+    {
+      "text": "Brush studio depth",
+      "apps": [
+        "procreate"
+      ],
+      "cat": "creative",
+      "id": "BP417"
+    },
+    {
+      "text": "Time-lapse replay",
+      "apps": [
+        "procreate"
+      ],
+      "cat": "creative",
+      "id": "BP418"
+    },
+    {
+      "text": "Layer UX on iPad",
+      "apps": [
+        "procreate"
+      ],
+      "cat": "creative",
+      "id": "BP419"
+    },
+    {
+      "text": "QuickShape assist",
+      "apps": [
+        "procreate"
+      ],
+      "cat": "creative",
+      "id": "BP420"
+    },
+    {
+      "text": "Sticky notes + stamps fun",
+      "apps": [
+        "figjam"
+      ],
+      "cat": "creative",
+      "id": "BP421"
+    },
+    {
+      "text": "Timer for workshops",
+      "apps": [
+        "figjam"
+      ],
+      "cat": "creative",
+      "id": "BP422"
+    },
+    {
+      "text": "Cursor chat",
+      "apps": [
+        "figjam"
+      ],
+      "cat": "creative",
+      "id": "BP423"
+    },
+    {
+      "text": "Templates for rituals",
+      "apps": [
+        "figjam"
+      ],
+      "cat": "creative",
+      "id": "BP424"
+    },
+    {
+      "text": "Voting affordances",
+      "apps": [
+        "figjam"
+      ],
+      "cat": "creative",
+      "id": "BP425"
+    },
+    {
+      "text": "Preview deploy per PR",
+      "apps": [
+        "vercel"
+      ],
+      "cat": "devtools",
+      "id": "BP426"
+    },
+    {
+      "text": "Instant rollback",
+      "apps": [
+        "vercel"
+      ],
+      "cat": "devtools",
+      "id": "BP427"
+    },
+    {
+      "text": "Domain/DNS clarity",
+      "apps": [
+        "vercel"
+      ],
+      "cat": "devtools",
+      "id": "BP428"
+    },
+    {
+      "text": "Analytics tasteful",
+      "apps": [
+        "vercel"
+      ],
+      "cat": "devtools",
+      "id": "BP429"
+    },
+    {
+      "text": "Edge config UX",
+      "apps": [
+        "vercel"
+      ],
+      "cat": "devtools",
+      "id": "BP430"
+    },
+    {
+      "text": "PR conversation + checks",
+      "apps": [
+        "github"
+      ],
+      "cat": "devtools",
+      "id": "BP431"
+    },
+    {
+      "text": "Actions status dots",
+      "apps": [
+        "github"
+      ],
+      "cat": "devtools",
+      "id": "BP432"
+    },
+    {
+      "text": "Codespaces one-click env",
+      "apps": [
+        "github"
+      ],
+      "cat": "devtools",
+      "id": "BP433"
+    },
+    {
+      "text": "Mobile triage app",
+      "apps": [
+        "github"
+      ],
+      "cat": "devtools",
+      "id": "BP434"
+    },
+    {
+      "text": "Security alerts severity",
+      "apps": [
+        "github"
+      ],
+      "cat": "devtools",
+      "id": "BP435"
+    },
+    {
+      "text": "Command palette ubiquity",
+      "apps": [
+        "vscode"
+      ],
+      "cat": "devtools",
+      "id": "BP436"
+    },
+    {
+      "text": "Extensions marketplace trust",
+      "apps": [
+        "vscode"
+      ],
+      "cat": "devtools",
+      "id": "BP437"
+    },
+    {
+      "text": "Split editor layouts",
+      "apps": [
+        "vscode"
+      ],
+      "cat": "devtools",
+      "id": "BP438"
+    },
+    {
+      "text": "Problems panel triage",
+      "apps": [
+        "vscode"
+      ],
+      "cat": "devtools",
+      "id": "BP439"
+    },
+    {
+      "text": "Remote SSH continuity",
+      "apps": [
+        "vscode"
+      ],
+      "cat": "devtools",
+      "id": "BP440"
+    },
+    {
+      "text": "Table editor",
+      "apps": [
+        "supabase"
+      ],
+      "cat": "devtools",
+      "id": "BP441"
+    },
+    {
+      "text": "Auth UI",
+      "apps": [
+        "supabase"
+      ],
+      "cat": "devtools",
+      "id": "BP442"
+    },
+    {
+      "text": "Realtime",
+      "apps": [
+        "supabase"
+      ],
+      "cat": "devtools",
+      "id": "BP443"
+    },
+    {
+      "text": "Storage",
+      "apps": [
+        "supabase"
+      ],
+      "cat": "devtools",
+      "id": "BP444"
+    },
+    {
+      "text": "Edge functions",
+      "apps": [
+        "supabase"
+      ],
+      "cat": "devtools",
+      "id": "BP445"
+    },
+    {
+      "text": "Console overview",
+      "apps": [
+        "firebase"
+      ],
+      "cat": "devtools",
+      "id": "BP446"
+    },
+    {
+      "text": "Auth providers",
+      "apps": [
+        "firebase"
+      ],
+      "cat": "devtools",
+      "id": "BP447"
+    },
+    {
+      "text": "Crashlytics",
+      "apps": [
+        "firebase"
+      ],
+      "cat": "devtools",
+      "id": "BP448"
+    },
+    {
+      "text": "Remote Config",
+      "apps": [
+        "firebase"
+      ],
+      "cat": "devtools",
+      "id": "BP449"
+    },
+    {
+      "text": "App Check",
+      "apps": [
+        "firebase"
+      ],
+      "cat": "devtools",
+      "id": "BP450"
+    },
+    {
+      "text": "Watchtower security",
+      "apps": [
+        "1password"
+      ],
+      "cat": "security",
+      "id": "BP451"
+    },
+    {
+      "text": "Autofill reliability",
+      "apps": [
+        "1password"
+      ],
+      "cat": "security",
+      "id": "BP452"
+    },
+    {
+      "text": "Travel mode",
+      "apps": [
+        "1password"
+      ],
+      "cat": "security",
+      "id": "BP453"
+    },
+    {
+      "text": "SSH agent",
+      "apps": [
+        "1password"
+      ],
+      "cat": "security",
+      "id": "BP454"
+    },
+    {
+      "text": "Family sharing",
+      "apps": [
+        "1password"
+      ],
+      "cat": "security",
+      "id": "BP455"
+    },
+    {
+      "text": "Privacy as primary brand UI",
+      "apps": [
+        "signal"
+      ],
+      "cat": "social",
+      "id": "BP456"
+    },
+    {
+      "text": "Disappearing messages clear",
+      "apps": [
+        "signal"
+      ],
+      "cat": "social",
+      "id": "BP457"
+    },
+    {
+      "text": "Sealed sender trust",
+      "apps": [
+        "signal"
+      ],
+      "cat": "social",
+      "id": "BP458"
+    },
+    {
+      "text": "Minimal metadata cues",
+      "apps": [
+        "signal"
+      ],
+      "cat": "social",
+      "id": "BP459"
+    },
+    {
+      "text": "Call quality focus",
+      "apps": [
+        "signal"
+      ],
+      "cat": "social",
+      "id": "BP460"
+    },
+    {
+      "text": "One-tap join",
+      "apps": [
+        "zoom"
+      ],
+      "cat": "productivity",
+      "id": "BP461"
+    },
+    {
+      "text": "Gallery vs speaker views",
+      "apps": [
+        "zoom"
+      ],
+      "cat": "productivity",
+      "id": "BP462"
+    },
+    {
+      "text": "Reaction nonverbal",
+      "apps": [
+        "zoom"
+      ],
+      "cat": "productivity",
+      "id": "BP463"
+    },
+    {
+      "text": "Breakout rooms IA",
+      "apps": [
+        "zoom"
+      ],
+      "cat": "productivity",
+      "id": "BP464"
+    },
+    {
+      "text": "Waiting room safety",
+      "apps": [
+        "zoom"
+      ],
+      "cat": "productivity",
+      "id": "BP465"
+    },
+    {
+      "text": "Keyboard triage speed",
+      "apps": [
+        "superhuman"
+      ],
+      "cat": "productivity",
+      "id": "BP466"
+    },
+    {
+      "text": "Reminders snooze",
+      "apps": [
+        "superhuman"
+      ],
+      "cat": "productivity",
+      "id": "BP467"
+    },
+    {
+      "text": "Split inbox",
+      "apps": [
+        "superhuman"
+      ],
+      "cat": "productivity",
+      "id": "BP468"
+    },
+    {
+      "text": "AI summarize/compose",
+      "apps": [
+        "superhuman"
+      ],
+      "cat": "productivity",
+      "id": "BP469"
+    },
+    {
+      "text": "Instant open feel",
+      "apps": [
+        "superhuman"
+      ],
+      "cat": "productivity",
+      "id": "BP470"
+    },
+    {
+      "text": "One-link booking",
+      "apps": [
+        "calendly"
+      ],
+      "cat": "productivity",
+      "id": "BP471"
+    },
+    {
+      "text": "Buffer times",
+      "apps": [
+        "calendly"
+      ],
+      "cat": "productivity",
+      "id": "BP472"
+    },
+    {
+      "text": "Round robin",
+      "apps": [
+        "calendly"
+      ],
+      "cat": "productivity",
+      "id": "BP473"
+    },
+    {
+      "text": "Payment collect",
+      "apps": [
+        "calendly"
+      ],
+      "cat": "productivity",
+      "id": "BP474"
+    },
+    {
+      "text": "Reminder SMS",
+      "apps": [
+        "calendly"
+      ],
+      "cat": "productivity",
+      "id": "BP475"
+    },
+    {
+      "text": "One-question focus",
+      "apps": [
+        "typeform"
+      ],
+      "cat": "productivity",
+      "id": "BP476"
+    },
+    {
+      "text": "Conversational forms",
+      "apps": [
+        "typeform"
+      ],
+      "cat": "productivity",
+      "id": "BP477"
+    },
+    {
+      "text": "Logic jumps",
+      "apps": [
+        "typeform"
+      ],
+      "cat": "productivity",
+      "id": "BP478"
+    },
+    {
+      "text": "Beautiful endings",
+      "apps": [
+        "typeform"
+      ],
+      "cat": "productivity",
+      "id": "BP479"
+    },
+    {
+      "text": "Embed polish",
+      "apps": [
+        "typeform"
+      ],
+      "cat": "productivity",
+      "id": "BP480"
+    },
+    {
+      "text": "Async video record",
+      "apps": [
+        "loom"
+      ],
+      "cat": "media",
+      "id": "BP481"
+    },
+    {
+      "text": "CTA links on video",
+      "apps": [
+        "loom"
+      ],
+      "cat": "media",
+      "id": "BP482"
+    },
+    {
+      "text": "Trim silence",
+      "apps": [
+        "loom"
+      ],
+      "cat": "media",
+      "id": "BP483"
+    },
+    {
+      "text": "Viewer insights",
+      "apps": [
+        "loom"
+      ],
+      "cat": "media",
+      "id": "BP484"
+    },
+    {
+      "text": "Emoji react on timeline",
+      "apps": [
+        "loom"
+      ],
+      "cat": "media",
+      "id": "BP485"
+    },
+    {
+      "text": "Chat + stream split",
+      "apps": [
+        "twitch"
+      ],
+      "cat": "streaming",
+      "id": "BP486"
+    },
+    {
+      "text": "Bits/cheers economy",
+      "apps": [
+        "twitch"
+      ],
+      "cat": "streaming",
+      "id": "BP487"
+    },
+    {
+      "text": "Clip creation",
+      "apps": [
+        "twitch"
+      ],
+      "cat": "streaming",
+      "id": "BP488"
+    },
+    {
+      "text": "Category browse",
+      "apps": [
+        "twitch"
+      ],
+      "cat": "streaming",
+      "id": "BP489"
+    },
+    {
+      "text": "Raids continuity",
+      "apps": [
+        "twitch"
+      ],
+      "cat": "streaming",
+      "id": "BP490"
+    },
+    {
+      "text": "Car as UI remote",
+      "apps": [
+        "tesla"
+      ],
+      "cat": "mobility",
+      "id": "BP491"
+    },
+    {
+      "text": "Climate precondition",
+      "apps": [
+        "tesla"
+      ],
+      "cat": "mobility",
+      "id": "BP492"
+    },
+    {
+      "text": "Summon/controls map",
+      "apps": [
+        "tesla"
+      ],
+      "cat": "mobility",
+      "id": "BP493"
+    },
+    {
+      "text": "Charging visualizations",
+      "apps": [
+        "tesla"
+      ],
+      "cat": "mobility",
+      "id": "BP494"
+    },
+    {
+      "text": "Software update progress",
+      "apps": [
+        "tesla"
+      ],
+      "cat": "mobility",
+      "id": "BP495"
+    },
+    {
+      "text": "Class schedule browse",
+      "apps": [
+        "peloton"
+      ],
+      "cat": "health",
+      "id": "BP496"
+    },
+    {
+      "text": "Instructor follow",
+      "apps": [
+        "peloton"
+      ],
+      "cat": "health",
+      "id": "BP497"
+    },
+    {
+      "text": "Leaderboard opt-in",
+      "apps": [
+        "peloton"
+      ],
+      "cat": "health",
+      "id": "BP498"
+    },
+    {
+      "text": "Scenic rides",
+      "apps": [
+        "peloton"
+      ],
+      "cat": "health",
+      "id": "BP499"
+    },
+    {
+      "text": "Hardware+app unit",
+      "apps": [
+        "peloton"
+      ],
+      "cat": "health",
+      "id": "BP500"
+    },
+    {
+      "text": "Diary logging films",
+      "apps": [
+        "letterboxd"
+      ],
+      "cat": "social",
+      "id": "BP501"
+    },
+    {
+      "text": "Lists culture",
+      "apps": [
+        "letterboxd"
+      ],
+      "cat": "social",
+      "id": "BP502"
+    },
+    {
+      "text": "Poster grid beauty",
+      "apps": [
+        "letterboxd"
+      ],
+      "cat": "social",
+      "id": "BP503"
+    },
+    {
+      "text": "Review length flexibility",
+      "apps": [
+        "letterboxd"
+      ],
+      "cat": "social",
+      "id": "BP504"
+    },
+    {
+      "text": "Friends watch activity",
+      "apps": [
+        "letterboxd"
+      ],
+      "cat": "social",
+      "id": "BP505"
+    },
+    {
+      "text": "Typography controls",
+      "apps": [
+        "kindle"
+      ],
+      "cat": "media",
+      "id": "BP506"
+    },
+    {
+      "text": "Whispersync position",
+      "apps": [
+        "kindle"
+      ],
+      "cat": "media",
+      "id": "BP507"
+    },
+    {
+      "text": "Vocabulary builder",
+      "apps": [
+        "kindle"
+      ],
+      "cat": "media",
+      "id": "BP508"
+    },
+    {
+      "text": "X-Ray",
+      "apps": [
+        "kindle"
+      ],
+      "cat": "media",
+      "id": "BP509"
+    },
+    {
+      "text": "Cool light tones",
+      "apps": [
+        "kindle"
+      ],
+      "cat": "media",
+      "id": "BP510"
+    },
+    {
+      "text": "Admin mobile glance",
+      "apps": [
+        "shopify"
+      ],
+      "cat": "commerce",
+      "id": "BP511"
+    },
+    {
+      "text": "POS continuity",
+      "apps": [
+        "shopify"
+      ],
+      "cat": "commerce",
+      "id": "BP512"
+    },
+    {
+      "text": "Theme editor preview",
+      "apps": [
+        "shopify"
+      ],
+      "cat": "commerce",
+      "id": "BP513"
+    },
+    {
+      "text": "Checkout extensibility",
+      "apps": [
+        "shopify"
+      ],
+      "cat": "commerce",
+      "id": "BP514"
+    },
+    {
+      "text": "Analytics home cards",
+      "apps": [
+        "shopify"
+      ],
+      "cat": "commerce",
+      "id": "BP515"
+    },
+    {
+      "text": "Search domination IA",
+      "apps": [
+        "amazon"
+      ],
+      "cat": "commerce",
+      "id": "BP516"
+    },
+    {
+      "text": "1-Click trust/risk",
+      "apps": [
+        "amazon"
+      ],
+      "cat": "commerce",
+      "id": "BP517"
+    },
+    {
+      "text": "Prime badge clarity",
+      "apps": [
+        "amazon"
+      ],
+      "cat": "commerce",
+      "id": "BP518"
+    },
+    {
+      "text": "Buy Box competition UI",
+      "apps": [
+        "amazon"
+      ],
+      "cat": "commerce",
+      "id": "BP519"
+    },
+    {
+      "text": "Returns self-serve",
+      "apps": [
+        "amazon"
+      ],
+      "cat": "commerce",
+      "id": "BP520"
+    },
+    {
+      "text": "Super-app mini programs",
+      "apps": [
+        "wechat"
+      ],
+      "cat": "social",
+      "id": "BP521"
+    },
+    {
+      "text": "Pay + chat fused",
+      "apps": [
+        "wechat"
+      ],
+      "cat": "social",
+      "id": "BP522"
+    },
+    {
+      "text": "Moments social layer",
+      "apps": [
+        "wechat"
+      ],
+      "cat": "social",
+      "id": "BP523"
+    },
+    {
+      "text": "Official accounts",
+      "apps": [
+        "wechat"
+      ],
+      "cat": "social",
+      "id": "BP524"
+    },
+    {
+      "text": "Search as discovery",
+      "apps": [
+        "wechat"
+      ],
+      "cat": "social",
+      "id": "BP525"
+    },
+    {
+      "text": "Continuous vertical gesture",
+      "apps": [
+        "ios-control"
+      ],
+      "cat": "os",
+      "id": "BP526"
+    },
+    {
+      "text": "Module expand deep links",
+      "apps": [
+        "ios-control"
+      ],
+      "cat": "os",
+      "id": "BP527"
+    },
+    {
+      "text": "Haptic density",
+      "apps": [
+        "ios-control"
+      ],
+      "cat": "os",
+      "id": "BP528"
+    },
+    {
+      "text": "Focus integration",
+      "apps": [
+        "ios-control"
+      ],
+      "cat": "os",
+      "id": "BP529"
+    },
+    {
+      "text": "Brightness/volume absolute",
+      "apps": [
+        "ios-control"
+      ],
+      "cat": "os",
+      "id": "BP530"
+    },
+    {
+      "text": "At a Glance widgets",
+      "apps": [
+        "pixel-launcher"
+      ],
+      "cat": "os",
+      "id": "BP531"
+    },
+    {
+      "text": "Material You dynamic color",
+      "apps": [
+        "pixel-launcher"
+      ],
+      "cat": "os",
+      "id": "BP532"
+    },
+    {
+      "text": "App search from swipe",
+      "apps": [
+        "pixel-launcher"
+      ],
+      "cat": "os",
+      "id": "BP533"
+    },
+    {
+      "text": "Themed icons",
+      "apps": [
+        "pixel-launcher"
+      ],
+      "cat": "os",
+      "id": "BP534"
+    },
+    {
+      "text": "Minimal dock",
+      "apps": [
+        "pixel-launcher"
+      ],
+      "cat": "os",
+      "id": "BP535"
+    },
+    {
+      "text": "Dynamic color tokens",
+      "apps": [
+        "material3"
+      ],
+      "cat": "os",
+      "id": "BP536"
+    },
+    {
+      "text": "Predictive back",
+      "apps": [
+        "material3"
+      ],
+      "cat": "os",
+      "id": "BP537"
+    },
+    {
+      "text": "Large typography scales",
+      "apps": [
+        "material3"
+      ],
+      "cat": "os",
+      "id": "BP538"
+    },
+    {
+      "text": "Expressive motion",
+      "apps": [
+        "material3"
+      ],
+      "cat": "os",
+      "id": "BP539"
+    },
+    {
+      "text": "Navigation bar vs rail",
+      "apps": [
+        "material3"
+      ],
+      "cat": "os",
+      "id": "BP540"
+    },
+    {
+      "text": "Issue grouping quality",
+      "apps": [
+        "sentry"
+      ],
+      "cat": "devtools",
+      "id": "BP541"
+    },
+    {
+      "text": "Release health",
+      "apps": [
+        "sentry"
+      ],
+      "cat": "devtools",
+      "id": "BP542"
+    },
+    {
+      "text": "Suspect commits",
+      "apps": [
+        "sentry"
+      ],
+      "cat": "devtools",
+      "id": "BP543"
+    },
+    {
+      "text": "Breadcrumbs timeline",
+      "apps": [
+        "sentry"
+      ],
+      "cat": "devtools",
+      "id": "BP544"
+    },
+    {
+      "text": "Quota clarity",
+      "apps": [
+        "sentry"
+      ],
+      "cat": "devtools",
+      "id": "BP545"
+    },
+    {
+      "text": "Messenger as product surface",
+      "apps": [
+        "intercom"
+      ],
+      "cat": "support",
+      "id": "BP546"
+    },
+    {
+      "text": "Fin AI triage",
+      "apps": [
+        "intercom"
+      ],
+      "cat": "support",
+      "id": "BP547"
+    },
+    {
+      "text": "Series campaigns",
+      "apps": [
+        "intercom"
+      ],
+      "cat": "support",
+      "id": "BP548"
+    },
+    {
+      "text": "Help center search",
+      "apps": [
+        "intercom"
+      ],
+      "cat": "support",
+      "id": "BP549"
+    },
+    {
+      "text": "Inbox assignment",
+      "apps": [
+        "intercom"
+      ],
+      "cat": "support",
+      "id": "BP550"
+    },
+    {
+      "text": "InstantSearch components",
+      "apps": [
+        "algolia"
+      ],
+      "cat": "devtools",
+      "id": "BP551"
+    },
+    {
+      "text": "Relevance tuning",
+      "apps": [
+        "algolia"
+      ],
+      "cat": "devtools",
+      "id": "BP552"
+    },
+    {
+      "text": "Query suggestions",
+      "apps": [
+        "algolia"
+      ],
+      "cat": "devtools",
+      "id": "BP553"
+    },
+    {
+      "text": "Analytics",
+      "apps": [
+        "algolia"
+      ],
+      "cat": "devtools",
+      "id": "BP554"
+    },
+    {
+      "text": "Rules merchandising",
+      "apps": [
+        "algolia"
+      ],
+      "cat": "devtools",
+      "id": "BP555"
+    },
+    {
+      "text": "Serverless Postgres branches",
+      "apps": [
+        "neon"
+      ],
+      "cat": "devtools",
+      "id": "BP556"
+    },
+    {
+      "text": "Scale-to-zero",
+      "apps": [
+        "neon"
+      ],
+      "cat": "devtools",
+      "id": "BP557"
+    },
+    {
+      "text": "Time Travel",
+      "apps": [
+        "neon"
+      ],
+      "cat": "devtools",
+      "id": "BP558"
+    },
+    {
+      "text": "Launchpad",
+      "apps": [
+        "neon"
+      ],
+      "cat": "devtools",
+      "id": "BP559"
+    },
+    {
+      "text": "Driver serverless",
+      "apps": [
+        "neon"
+      ],
+      "cat": "devtools",
+      "id": "BP560"
+    },
+    {
+      "text": "Hosted login consistency",
+      "apps": [
+        "auth0"
+      ],
+      "cat": "security",
+      "id": "BP561"
+    },
+    {
+      "text": "Social connection buttons",
+      "apps": [
+        "auth0"
+      ],
+      "cat": "security",
+      "id": "BP562"
+    },
+    {
+      "text": "Branding hooks",
+      "apps": [
+        "auth0"
+      ],
+      "cat": "security",
+      "id": "BP563"
+    },
+    {
+      "text": "MFA step-up",
+      "apps": [
+        "auth0"
+      ],
+      "cat": "security",
+      "id": "BP564"
+    },
+    {
+      "text": "Error localization",
+      "apps": [
+        "auth0"
+      ],
+      "cat": "security",
+      "id": "BP565"
+    },
+    {
+      "text": "Infinite workshop canvas",
+      "apps": [
+        "miro"
+      ],
+      "cat": "creative",
+      "id": "BP566"
+    },
+    {
+      "text": "Private mode",
+      "apps": [
+        "miro"
+      ],
+      "cat": "creative",
+      "id": "BP567"
+    },
+    {
+      "text": "Voting",
+      "apps": [
+        "miro"
+      ],
+      "cat": "creative",
+      "id": "BP568"
+    },
+    {
+      "text": "Frames present",
+      "apps": [
+        "miro"
+      ],
+      "cat": "creative",
+      "id": "BP569"
+    },
+    {
+      "text": "AI clustering",
+      "apps": [
+        "miro"
+      ],
+      "cat": "creative",
+      "id": "BP570"
+    },
+    {
+      "text": "Lists/cards simplicity",
+      "apps": [
+        "trello"
+      ],
+      "cat": "productivity",
+      "id": "BP571"
+    },
+    {
+      "text": "Butler automation",
+      "apps": [
+        "trello"
+      ],
+      "cat": "productivity",
+      "id": "BP572"
+    },
+    {
+      "text": "Power-Ups",
+      "apps": [
+        "trello"
+      ],
+      "cat": "productivity",
+      "id": "BP573"
+    },
+    {
+      "text": "Calendar",
+      "apps": [
+        "trello"
+      ],
+      "cat": "productivity",
+      "id": "BP574"
+    },
+    {
+      "text": "Mirror cards",
+      "apps": [
+        "trello"
+      ],
+      "cat": "productivity",
+      "id": "BP575"
+    },
+    {
+      "text": "My Tasks ritual",
+      "apps": [
+        "asana"
+      ],
+      "cat": "productivity",
+      "id": "BP576"
+    },
+    {
+      "text": "Timeline view",
+      "apps": [
+        "asana"
+      ],
+      "cat": "productivity",
+      "id": "BP577"
+    },
+    {
+      "text": "Workloads",
+      "apps": [
+        "asana"
+      ],
+      "cat": "productivity",
+      "id": "BP578"
+    },
+    {
+      "text": "Rules automation",
+      "apps": [
+        "asana"
+      ],
+      "cat": "productivity",
+      "id": "BP579"
+    },
+    {
+      "text": "Forms intake",
+      "apps": [
+        "asana"
+      ],
+      "cat": "productivity",
+      "id": "BP580"
+    },
+    {
+      "text": "Scheduling links",
+      "apps": [
+        "notion-cal"
+      ],
+      "cat": "productivity",
+      "id": "BP581"
+    },
+    {
+      "text": "AI event drafting",
+      "apps": [
+        "notion-cal"
+      ],
+      "cat": "productivity",
+      "id": "BP582"
+    },
+    {
+      "text": "Multi-cal overlay",
+      "apps": [
+        "notion-cal"
+      ],
+      "cat": "productivity",
+      "id": "BP583"
+    },
+    {
+      "text": "Availability sharing",
+      "apps": [
+        "notion-cal"
+      ],
+      "cat": "productivity",
+      "id": "BP584"
+    },
+    {
+      "text": "Minimal chrome",
+      "apps": [
+        "notion-cal"
+      ],
+      "cat": "productivity",
+      "id": "BP585"
+    },
+    {
+      "text": "Live traffic layers",
+      "apps": [
+        "gmaps"
+      ],
+      "cat": "nav",
+      "id": "BP586"
+    },
+    {
+      "text": "Lane guidance clarity",
+      "apps": [
+        "gmaps"
+      ],
+      "cat": "nav",
+      "id": "BP587"
+    },
+    {
+      "text": "Contribute UX loops",
+      "apps": [
+        "gmaps"
+      ],
+      "cat": "nav",
+      "id": "BP588"
+    },
+    {
+      "text": "Explore local packs",
+      "apps": [
+        "gmaps"
+      ],
+      "cat": "nav",
+      "id": "BP589"
+    },
+    {
+      "text": "Timeline privacy controls",
+      "apps": [
+        "gmaps"
+      ],
+      "cat": "nav",
+      "id": "BP590"
+    },
+    {
+      "text": "Look Around immersion",
+      "apps": [
+        "maps-apple"
+      ],
+      "cat": "nav",
+      "id": "BP591"
+    },
+    {
+      "text": "Transit clarity",
+      "apps": [
+        "maps-apple"
+      ],
+      "cat": "nav",
+      "id": "BP592"
+    },
+    {
+      "text": "Guides collections",
+      "apps": [
+        "maps-apple"
+      ],
+      "cat": "nav",
+      "id": "BP593"
+    },
+    {
+      "text": "Offline download maps",
+      "apps": [
+        "maps-apple"
+      ],
+      "cat": "nav",
+      "id": "BP594"
+    },
+    {
+      "text": "Siri integration handoff",
+      "apps": [
+        "maps-apple"
+      ],
+      "cat": "nav",
+      "id": "BP595"
+    },
+    {
+      "text": "Tapbacks micro-ack",
+      "apps": [
+        "imessage"
+      ],
+      "cat": "social",
+      "id": "BP596"
+    },
+    {
+      "text": "Inline apps/stickers",
+      "apps": [
+        "imessage"
+      ],
+      "cat": "social",
+      "id": "BP597"
+    },
+    {
+      "text": "Shared with You continuity",
+      "apps": [
+        "imessage"
+      ],
+      "cat": "social",
+      "id": "BP598"
+    },
+    {
+      "text": "Focus filter integration",
+      "apps": [
+        "imessage"
+      ],
+      "cat": "social",
+      "id": "BP599"
+    },
+    {
+      "text": "Audio message raise-to-listen",
+      "apps": [
+        "imessage"
+      ],
+      "cat": "social",
+      "id": "BP600"
+    },
+    {
+      "text": "Memories storytelling",
+      "apps": [
+        "apple-photos"
+      ],
+      "cat": "media",
+      "id": "BP601"
+    },
+    {
+      "text": "Clean years/months scrub",
+      "apps": [
+        "apple-photos"
+      ],
+      "cat": "media",
+      "id": "BP602"
+    },
+    {
+      "text": "iCloud Shared Library",
+      "apps": [
+        "apple-photos"
+      ],
+      "cat": "media",
+      "id": "BP603"
+    },
+    {
+      "text": "Edit non-destructive",
+      "apps": [
+        "apple-photos"
+      ],
+      "cat": "media",
+      "id": "BP604"
+    },
+    {
+      "text": "Search people/pets",
+      "apps": [
+        "apple-photos"
+      ],
+      "cat": "media",
+      "id": "BP605"
+    },
+    {
+      "text": "Compact tab bar iOS",
+      "apps": [
+        "safari"
+      ],
+      "cat": "browsers",
+      "id": "BP606"
+    },
+    {
+      "text": "Reader mode calm",
+      "apps": [
+        "safari"
+      ],
+      "cat": "browsers",
+      "id": "BP607"
+    },
+    {
+      "text": "Privacy report cues",
+      "apps": [
+        "safari"
+      ],
+      "cat": "browsers",
+      "id": "BP608"
+    },
+    {
+      "text": "Profiles separation",
+      "apps": [
+        "safari"
+      ],
+      "cat": "browsers",
+      "id": "BP609"
+    },
+    {
+      "text": "Shared tab groups",
+      "apps": [
+        "safari"
+      ],
+      "cat": "browsers",
+      "id": "BP610"
+    },
+    {
+      "text": "Simultaneous dual camera",
+      "apps": [
+        "beereal"
+      ],
+      "cat": "social",
+      "id": "BP611"
+    },
+    {
+      "text": "Notification-timed authenticity",
+      "apps": [
+        "beereal"
+      ],
+      "cat": "social",
+      "id": "BP612"
+    },
+    {
+      "text": "Friends Real grid",
+      "apps": [
+        "beereal"
+      ],
+      "cat": "social",
+      "id": "BP613"
+    },
+    {
+      "text": "Low likes pressure classic",
+      "apps": [
+        "beereal"
+      ],
+      "cat": "social",
+      "id": "BP614"
+    },
+    {
+      "text": "Late Real honesty",
+      "apps": [
+        "beereal"
+      ],
+      "cat": "social",
+      "id": "BP615"
+    },
+    {
+      "text": "Camera-first home",
+      "apps": [
+        "snapchat"
+      ],
+      "cat": "social",
+      "id": "BP616"
+    },
+    {
+      "text": "Ephemeral default",
+      "apps": [
+        "snapchat"
+      ],
+      "cat": "social",
+      "id": "BP617"
+    },
+    {
+      "text": "Snap Map social",
+      "apps": [
+        "snapchat"
+      ],
+      "cat": "social",
+      "id": "BP618"
+    },
+    {
+      "text": "Lenses AR entry",
+      "apps": [
+        "snapchat"
+      ],
+      "cat": "social",
+      "id": "BP619"
+    },
+    {
+      "text": "Streaks retention",
+      "apps": [
+        "snapchat"
+      ],
+      "cat": "social",
+      "id": "BP620"
+    },
+    {
+      "text": "Masonry discovery grid",
+      "apps": [
+        "pinterest"
+      ],
+      "cat": "social",
+      "id": "BP621"
+    },
+    {
+      "text": "Save to board taxonomy",
+      "apps": [
+        "pinterest"
+      ],
+      "cat": "social",
+      "id": "BP622"
+    },
+    {
+      "text": "Visual search camera",
+      "apps": [
+        "pinterest"
+      ],
+      "cat": "social",
+      "id": "BP623"
+    },
+    {
+      "text": "Idea pins format",
+      "apps": [
+        "pinterest"
+      ],
+      "cat": "social",
+      "id": "BP624"
+    },
+    {
+      "text": "Shopping tags",
+      "apps": [
+        "pinterest"
+      ],
+      "cat": "social",
+      "id": "BP625"
+    },
+    {
+      "text": "Learn & earn",
+      "apps": [
+        "coinbase"
+      ],
+      "cat": "fintech",
+      "id": "BP626"
+    },
+    {
+      "text": "Asset clarity",
+      "apps": [
+        "coinbase"
+      ],
+      "cat": "fintech",
+      "id": "BP627"
+    },
+    {
+      "text": "Send/receive QR",
+      "apps": [
+        "coinbase"
+      ],
+      "cat": "fintech",
+      "id": "BP628"
+    },
+    {
+      "text": "Advanced trade toggle",
+      "apps": [
+        "coinbase"
+      ],
+      "cat": "fintech",
+      "id": "BP629"
+    },
+    {
+      "text": "Security keys education",
+      "apps": [
+        "coinbase"
+      ],
+      "cat": "fintech",
+      "id": "BP630"
+    },
+    {
+      "text": "Tap-to-pay simplicity",
+      "apps": [
+        "square"
+      ],
+      "cat": "fintech",
+      "id": "BP631"
+    },
+    {
+      "text": "Dashboard sales pulse",
+      "apps": [
+        "square"
+      ],
+      "cat": "fintech",
+      "id": "BP632"
+    },
+    {
+      "text": "Invoice create fast",
+      "apps": [
+        "square"
+      ],
+      "cat": "fintech",
+      "id": "BP633"
+    },
+    {
+      "text": "Hardware setup wizards",
+      "apps": [
+        "square"
+      ],
+      "cat": "fintech",
+      "id": "BP634"
+    },
+    {
+      "text": "Team clock-in",
+      "apps": [
+        "square"
+      ],
+      "cat": "fintech",
+      "id": "BP635"
+    },
+    {
+      "text": "Selective sync",
+      "apps": [
+        "dropbox"
+      ],
+      "cat": "productivity",
+      "id": "BP636"
+    },
+    {
+      "text": "Transfer large files",
+      "apps": [
+        "dropbox"
+      ],
+      "cat": "productivity",
+      "id": "BP637"
+    },
+    {
+      "text": "Replay/rewind",
+      "apps": [
+        "dropbox"
+      ],
+      "cat": "productivity",
+      "id": "BP638"
+    },
+    {
+      "text": "Doc scanning",
+      "apps": [
+        "dropbox"
+      ],
+      "cat": "productivity",
+      "id": "BP639"
+    },
+    {
+      "text": "Share link permissions",
+      "apps": [
+        "dropbox"
+      ],
+      "cat": "productivity",
+      "id": "BP640"
+    },
+    {
+      "text": "Local-first vault",
+      "apps": [
+        "obsidian"
+      ],
+      "cat": "productivity",
+      "id": "BP641"
+    },
+    {
+      "text": "Graph view relationships",
+      "apps": [
+        "obsidian"
+      ],
+      "cat": "productivity",
+      "id": "BP642"
+    },
+    {
+      "text": "Plugin ecosystem",
+      "apps": [
+        "obsidian"
+      ],
+      "cat": "productivity",
+      "id": "BP643"
+    },
+    {
+      "text": "Daily notes ritual",
+      "apps": [
+        "obsidian"
+      ],
+      "cat": "productivity",
+      "id": "BP644"
+    },
+    {
+      "text": "Backlinks panel",
+      "apps": [
+        "obsidian"
+      ],
+      "cat": "productivity",
+      "id": "BP645"
+    },
+    {
+      "text": "Areas/projects elegance",
+      "apps": [
+        "things3"
+      ],
+      "cat": "productivity",
+      "id": "BP646"
+    },
+    {
+      "text": "Today/Upcoming ritual",
+      "apps": [
+        "things3"
+      ],
+      "cat": "productivity",
+      "id": "BP647"
+    },
+    {
+      "text": "Checkoff satisfaction",
+      "apps": [
+        "things3"
+      ],
+      "cat": "productivity",
+      "id": "BP648"
+    },
+    {
+      "text": "Typewriter quick entry",
+      "apps": [
+        "things3"
+      ],
+      "cat": "productivity",
+      "id": "BP649"
+    },
+    {
+      "text": "Macintosh craft polish",
+      "apps": [
+        "things3"
+      ],
+      "cat": "productivity",
+      "id": "BP650"
+    },
+    {
+      "text": "Hand-drawn feel digital",
+      "apps": [
+        "excalidraw"
+      ],
+      "cat": "creative",
+      "id": "BP651"
+    },
+    {
+      "text": "Library shapes",
+      "apps": [
+        "excalidraw"
+      ],
+      "cat": "creative",
+      "id": "BP652"
+    },
+    {
+      "text": "Collaboration room",
+      "apps": [
+        "excalidraw"
+      ],
+      "cat": "creative",
+      "id": "BP653"
+    },
+    {
+      "text": "Export scene",
+      "apps": [
+        "excalidraw"
+      ],
+      "cat": "creative",
+      "id": "BP654"
+    },
+    {
+      "text": "Open-source embed",
+      "apps": [
+        "excalidraw"
+      ],
+      "cat": "creative",
+      "id": "BP655"
+    },
+    {
+      "text": "Design\u2192site publish",
+      "apps": [
+        "framer"
+      ],
+      "cat": "creative",
+      "id": "BP656"
+    },
+    {
+      "text": "CMS collections",
+      "apps": [
+        "framer"
+      ],
+      "cat": "creative",
+      "id": "BP657"
+    },
+    {
+      "text": "Effects timeline",
+      "apps": [
+        "framer"
+      ],
+      "cat": "creative",
+      "id": "BP658"
+    },
+    {
+      "text": "Breakpoints",
+      "apps": [
+        "framer"
+      ],
+      "cat": "creative",
+      "id": "BP659"
+    },
+    {
+      "text": "AI wireframe",
+      "apps": [
+        "framer"
+      ],
+      "cat": "creative",
+      "id": "BP660"
+    },
+    {
+      "text": "Open-source scheduling",
+      "apps": [
+        "calcom"
+      ],
+      "cat": "productivity",
+      "id": "BP661"
+    },
+    {
+      "text": "Availability matrix",
+      "apps": [
+        "calcom"
+      ],
+      "cat": "productivity",
+      "id": "BP662"
+    },
+    {
+      "text": "Routing forms",
+      "apps": [
+        "calcom"
+      ],
+      "cat": "productivity",
+      "id": "BP663"
+    },
+    {
+      "text": "Embed booking",
+      "apps": [
+        "calcom"
+      ],
+      "cat": "productivity",
+      "id": "BP664"
+    },
+    {
+      "text": "Team event types",
+      "apps": [
+        "calcom"
+      ],
+      "cat": "productivity",
+      "id": "BP665"
+    },
+    {
+      "text": "Product analytics self-host",
+      "apps": [
+        "posthog"
+      ],
+      "cat": "devtools",
+      "id": "BP666"
+    },
+    {
+      "text": "Session replay privacy",
+      "apps": [
+        "posthog"
+      ],
+      "cat": "devtools",
+      "id": "BP667"
+    },
+    {
+      "text": "Feature flags colocated",
+      "apps": [
+        "posthog"
+      ],
+      "cat": "devtools",
+      "id": "BP668"
+    },
+    {
+      "text": "Surveys",
+      "apps": [
+        "posthog"
+      ],
+      "cat": "devtools",
+      "id": "BP669"
+    },
+    {
+      "text": "SQL insights",
+      "apps": [
+        "posthog"
+      ],
+      "cat": "devtools",
+      "id": "BP670"
+    },
+    {
+      "text": "Video API simplicity",
+      "apps": [
+        "mux"
+      ],
+      "cat": "devtools",
+      "id": "BP671"
+    },
+    {
+      "text": "Data quality of experience",
+      "apps": [
+        "mux"
+      ],
+      "cat": "devtools",
+      "id": "BP672"
+    },
+    {
+      "text": "Player themes",
+      "apps": [
+        "mux"
+      ],
+      "cat": "devtools",
+      "id": "BP673"
+    },
+    {
+      "text": "Live streams",
+      "apps": [
+        "mux"
+      ],
+      "cat": "devtools",
+      "id": "BP674"
+    },
+    {
+      "text": "Webhooks",
+      "apps": [
+        "mux"
+      ],
+      "cat": "devtools",
+      "id": "BP675"
+    },
+    {
+      "text": "Realtime rooms",
+      "apps": [
+        "livekit"
+      ],
+      "cat": "devtools",
+      "id": "BP676"
+    },
+    {
+      "text": "Egress/ingress",
+      "apps": [
+        "livekit"
+      ],
+      "cat": "devtools",
+      "id": "BP677"
+    },
+    {
+      "text": "Agents framework",
+      "apps": [
+        "livekit"
+      ],
+      "cat": "devtools",
+      "id": "BP678"
+    },
+    {
+      "text": "Playground",
+      "apps": [
+        "livekit"
+      ],
+      "cat": "devtools",
+      "id": "BP679"
+    },
+    {
+      "text": "Latency focus",
+      "apps": [
+        "livekit"
+      ],
+      "cat": "devtools",
+      "id": "BP680"
+    },
+    {
+      "text": "Experience discovery",
+      "apps": [
+        "roblox"
+      ],
+      "cat": "games",
+      "id": "BP681"
+    },
+    {
+      "text": "Avatar economy",
+      "apps": [
+        "roblox"
+      ],
+      "cat": "games",
+      "id": "BP682"
+    },
+    {
+      "text": "Create continue",
+      "apps": [
+        "roblox"
+      ],
+      "cat": "games",
+      "id": "BP683"
+    },
+    {
+      "text": "Age guidelines",
+      "apps": [
+        "roblox"
+      ],
+      "cat": "games",
+      "id": "BP684"
+    },
+    {
+      "text": "Party join",
+      "apps": [
+        "roblox"
+      ],
+      "cat": "games",
+      "id": "BP685"
+    },
+    {
+      "text": "Marketplace clarity",
+      "apps": [
+        "minecraft"
+      ],
+      "cat": "games",
+      "id": "BP686"
+    },
+    {
+      "text": "Realm invites",
+      "apps": [
+        "minecraft"
+      ],
+      "cat": "games",
+      "id": "BP687"
+    },
+    {
+      "text": "Cross-play friends",
+      "apps": [
+        "minecraft"
+      ],
+      "cat": "games",
+      "id": "BP688"
+    },
+    {
+      "text": "Skin/cape identity",
+      "apps": [
+        "minecraft"
+      ],
+      "cat": "games",
+      "id": "BP689"
+    },
+    {
+      "text": "Education edition modes",
+      "apps": [
+        "minecraft"
+      ],
+      "cat": "games",
+      "id": "BP690"
+    },
+    {
+      "text": "Lobby social",
+      "apps": [
+        "fortnite"
+      ],
+      "cat": "games",
+      "id": "BP691"
+    },
+    {
+      "text": "Battle Pass track",
+      "apps": [
+        "fortnite"
+      ],
+      "cat": "games",
+      "id": "BP692"
+    },
+    {
+      "text": "Creative island browse",
+      "apps": [
+        "fortnite"
+      ],
+      "cat": "games",
+      "id": "BP693"
+    },
+    {
+      "text": "Emote wheel",
+      "apps": [
+        "fortnite"
+      ],
+      "cat": "games",
+      "id": "BP694"
+    },
+    {
+      "text": "Seasonal UI themes",
+      "apps": [
+        "fortnite"
+      ],
+      "cat": "games",
+      "id": "BP695"
+    },
+    {
+      "text": "AR catch ritual",
+      "apps": [
+        "pokemon-go"
+      ],
+      "cat": "games",
+      "id": "BP696"
+    },
+    {
+      "text": "Nearby radar",
+      "apps": [
+        "pokemon-go"
+      ],
+      "cat": "games",
+      "id": "BP697"
+    },
+    {
+      "text": "Raid lobby",
+      "apps": [
+        "pokemon-go"
+      ],
+      "cat": "games",
+      "id": "BP698"
+    },
+    {
+      "text": "Buddy adventure",
+      "apps": [
+        "pokemon-go"
+      ],
+      "cat": "games",
+      "id": "BP699"
+    },
+    {
+      "text": "Community day events",
+      "apps": [
+        "pokemon-go"
+      ],
+      "cat": "games",
+      "id": "BP700"
+    },
+    {
+      "text": "Daily puzzles",
+      "apps": [
+        "chesscom"
+      ],
+      "cat": "games",
+      "id": "BP701"
+    },
+    {
+      "text": "Lesson trees",
+      "apps": [
+        "chesscom"
+      ],
+      "cat": "games",
+      "id": "BP702"
+    },
+    {
+      "text": "Live match seek",
+      "apps": [
+        "chesscom"
+      ],
+      "cat": "games",
+      "id": "BP703"
+    },
+    {
+      "text": "Analysis board",
+      "apps": [
+        "chesscom"
+      ],
+      "cat": "games",
+      "id": "BP704"
+    },
+    {
+      "text": "Club team battles",
+      "apps": [
+        "chesscom"
+      ],
+      "cat": "games",
+      "id": "BP705"
+    },
+    {
+      "text": "Live sky map",
+      "apps": [
+        "flightradar"
+      ],
+      "cat": "utility",
+      "id": "BP706"
+    },
+    {
+      "text": "Playback historic",
+      "apps": [
+        "flightradar"
+      ],
+      "cat": "utility",
+      "id": "BP707"
+    },
+    {
+      "text": "Aircraft detail cards",
+      "apps": [
+        "flightradar"
+      ],
+      "cat": "utility",
+      "id": "BP708"
+    },
+    {
+      "text": "Alerts",
+      "apps": [
+        "flightradar"
+      ],
+      "cat": "utility",
+      "id": "BP709"
+    },
+    {
+      "text": "3D view",
+      "apps": [
+        "flightradar"
+      ],
+      "cat": "utility",
+      "id": "BP710"
+    },
+    {
+      "text": "Sections IA",
+      "apps": [
+        "nytimes"
+      ],
+      "cat": "media",
+      "id": "BP711"
+    },
+    {
+      "text": "Cooking/Games upsells",
+      "apps": [
+        "nytimes"
+      ],
+      "cat": "media",
+      "id": "BP712"
+    },
+    {
+      "text": "Audio articles",
+      "apps": [
+        "nytimes"
+      ],
+      "cat": "media",
+      "id": "BP713"
+    },
+    {
+      "text": "Saving lists",
+      "apps": [
+        "nytimes"
+      ],
+      "cat": "media",
+      "id": "BP714"
+    },
+    {
+      "text": "Paywall after value",
+      "apps": [
+        "nytimes"
+      ],
+      "cat": "media",
+      "id": "BP715"
+    },
+    {
+      "text": "Writer-owned readers",
+      "apps": [
+        "substack"
+      ],
+      "cat": "media",
+      "id": "BP716"
+    },
+    {
+      "text": "App reading calm",
+      "apps": [
+        "substack"
+      ],
+      "cat": "media",
+      "id": "BP717"
+    },
+    {
+      "text": "Chat/notes social",
+      "apps": [
+        "substack"
+      ],
+      "cat": "media",
+      "id": "BP718"
+    },
+    {
+      "text": "Pledges clarity",
+      "apps": [
+        "substack"
+      ],
+      "cat": "media",
+      "id": "BP719"
+    },
+    {
+      "text": "Discovery charts",
+      "apps": [
+        "substack"
+      ],
+      "cat": "media",
+      "id": "BP720"
+    },
+    {
+      "text": "Typography-first reading",
+      "apps": [
+        "medium"
+      ],
+      "cat": "media",
+      "id": "BP721"
+    },
+    {
+      "text": "Member clap economy",
+      "apps": [
+        "medium"
+      ],
+      "cat": "media",
+      "id": "BP722"
+    },
+    {
+      "text": "Highlight notes",
+      "apps": [
+        "medium"
+      ],
+      "cat": "media",
+      "id": "BP723"
+    },
+    {
+      "text": "Topic follows",
+      "apps": [
+        "medium"
+      ],
+      "cat": "media",
+      "id": "BP724"
+    },
+    {
+      "text": "Partner program",
+      "apps": [
+        "medium"
+      ],
+      "cat": "media",
+      "id": "BP725"
+    },
+    {
+      "text": "Hill charts",
+      "apps": [
+        "basecamp"
+      ],
+      "cat": "productivity",
+      "id": "BP726"
+    },
+    {
+      "text": "Card table",
+      "apps": [
+        "basecamp"
+      ],
+      "cat": "productivity",
+      "id": "BP727"
+    },
+    {
+      "text": "Hey menu",
+      "apps": [
+        "basecamp"
+      ],
+      "cat": "productivity",
+      "id": "BP728"
+    },
+    {
+      "text": "Check-ins",
+      "apps": [
+        "basecamp"
+      ],
+      "cat": "productivity",
+      "id": "BP729"
+    },
+    {
+      "text": "Calm company UX",
+      "apps": [
+        "basecamp"
+      ],
+      "cat": "productivity",
+      "id": "BP730"
+    },
+    {
+      "text": "Autopilot tasks",
+      "apps": [
+        "height-app"
+      ],
+      "cat": "productivity",
+      "id": "BP731"
+    },
+    {
+      "text": "Chat+tasks fusion",
+      "apps": [
+        "height-app"
+      ],
+      "cat": "productivity",
+      "id": "BP732"
+    },
+    {
+      "text": "Live projects",
+      "apps": [
+        "height-app"
+      ],
+      "cat": "productivity",
+      "id": "BP733"
+    },
+    {
+      "text": "Attributes",
+      "apps": [
+        "height-app"
+      ],
+      "cat": "productivity",
+      "id": "BP734"
+    },
+    {
+      "text": "Productive aesthetic",
+      "apps": [
+        "height-app"
+      ],
+      "cat": "productivity",
+      "id": "BP735"
+    },
+    {
+      "text": "App tile SSO home",
+      "apps": [
+        "okta"
+      ],
+      "cat": "security",
+      "id": "BP736"
+    },
+    {
+      "text": "FastPass passwordless",
+      "apps": [
+        "okta"
+      ],
+      "cat": "security",
+      "id": "BP737"
+    },
+    {
+      "text": "Device trust cues",
+      "apps": [
+        "okta"
+      ],
+      "cat": "security",
+      "id": "BP738"
+    },
+    {
+      "text": "Admin directory clarity",
+      "apps": [
+        "okta"
+      ],
+      "cat": "security",
+      "id": "BP739"
+    },
+    {
+      "text": "Access request flows",
+      "apps": [
+        "okta"
+      ],
+      "cat": "security",
+      "id": "BP740"
+    },
+    {
+      "text": "Unified service map",
+      "apps": [
+        "datadog"
+      ],
+      "cat": "devtools",
+      "id": "BP741"
+    },
+    {
+      "text": "Notebooks incident",
+      "apps": [
+        "datadog"
+      ],
+      "cat": "devtools",
+      "id": "BP742"
+    },
+    {
+      "text": "Watchdog AI",
+      "apps": [
+        "datadog"
+      ],
+      "cat": "devtools",
+      "id": "BP743"
+    },
+    {
+      "text": "Dashboard sharing",
+      "apps": [
+        "datadog"
+      ],
+      "cat": "devtools",
+      "id": "BP744"
+    },
+    {
+      "text": "Log pattern clustering",
+      "apps": [
+        "datadog"
+      ],
+      "cat": "devtools",
+      "id": "BP745"
+    },
+    {
+      "text": "Console try-it",
+      "apps": [
+        "twilio"
+      ],
+      "cat": "devtools",
+      "id": "BP746"
+    },
+    {
+      "text": "Docs quickstarts",
+      "apps": [
+        "twilio"
+      ],
+      "cat": "devtools",
+      "id": "BP747"
+    },
+    {
+      "text": "Debugger",
+      "apps": [
+        "twilio"
+      ],
+      "cat": "devtools",
+      "id": "BP748"
+    },
+    {
+      "text": "Phone number buy UX",
+      "apps": [
+        "twilio"
+      ],
+      "cat": "devtools",
+      "id": "BP749"
+    },
+    {
+      "text": "Usage triggers",
+      "apps": [
+        "twilio"
+      ],
+      "cat": "devtools",
+      "id": "BP750"
+    },
+    {
+      "text": "Order tracking unified",
+      "apps": [
+        "shop-app"
+      ],
+      "cat": "commerce",
+      "id": "BP751"
+    },
+    {
+      "text": "Store follows",
+      "apps": [
+        "shop-app"
+      ],
+      "cat": "commerce",
+      "id": "BP752"
+    },
+    {
+      "text": "Checkout Shop Pay",
+      "apps": [
+        "shop-app"
+      ],
+      "cat": "commerce",
+      "id": "BP753"
+    },
+    {
+      "text": "Package map",
+      "apps": [
+        "shop-app"
+      ],
+      "cat": "commerce",
+      "id": "BP754"
+    },
+    {
+      "text": "Rewards",
+      "apps": [
+        "shop-app"
+      ],
+      "cat": "commerce",
+      "id": "BP755"
+    },
+    {
+      "text": "India-first vernacular cues",
+      "apps": [
+        "flipkart"
+      ],
+      "cat": "commerce",
+      "id": "BP756"
+    },
+    {
+      "text": "Exchange flows",
+      "apps": [
+        "flipkart"
+      ],
+      "cat": "commerce",
+      "id": "BP757"
+    },
+    {
+      "text": "EMI clarity",
+      "apps": [
+        "flipkart"
+      ],
+      "cat": "commerce",
+      "id": "BP758"
+    },
+    {
+      "text": "SuperCoin loyalty",
+      "apps": [
+        "flipkart"
+      ],
+      "cat": "commerce",
+      "id": "BP759"
+    },
+    {
+      "text": "Grocery vs mall modes",
+      "apps": [
+        "flipkart"
+      ],
+      "cat": "commerce",
+      "id": "BP760"
+    },
+    {
+      "text": "Friendly tone + map",
+      "apps": [
+        "lyft"
+      ],
+      "cat": "mobility",
+      "id": "BP761"
+    },
+    {
+      "text": "Wait time honesty",
+      "apps": [
+        "lyft"
+      ],
+      "cat": "mobility",
+      "id": "BP762"
+    },
+    {
+      "text": "Mode comparison cards",
+      "apps": [
+        "lyft"
+      ],
+      "cat": "mobility",
+      "id": "BP763"
+    },
+    {
+      "text": "Tips post-ride flow",
+      "apps": [
+        "lyft"
+      ],
+      "cat": "mobility",
+      "id": "BP764"
+    },
+    {
+      "text": "Scheduled rides",
+      "apps": [
+        "lyft"
+      ],
+      "cat": "mobility",
+      "id": "BP765"
+    },
+    {
+      "text": "Scene soundscapes",
+      "apps": [
+        "calm"
+      ],
+      "cat": "health",
+      "id": "BP766"
+    },
+    {
+      "text": "Sleep stories format",
+      "apps": [
+        "calm"
+      ],
+      "cat": "health",
+      "id": "BP767"
+    },
+    {
+      "text": "Daily calm ritual",
+      "apps": [
+        "calm"
+      ],
+      "cat": "health",
+      "id": "BP768"
+    },
+    {
+      "text": "Paywall after value taste",
+      "apps": [
+        "calm"
+      ],
+      "cat": "health",
+      "id": "BP769"
+    },
+    {
+      "text": "Visual stillness",
+      "apps": [
+        "calm"
+      ],
+      "cat": "health",
+      "id": "BP770"
+    },
+    {
+      "text": "Today scores",
+      "apps": [
+        "fitbit"
+      ],
+      "cat": "health",
+      "id": "BP771"
+    },
+    {
+      "text": "Sleep stages",
+      "apps": [
+        "fitbit"
+      ],
+      "cat": "health",
+      "id": "BP772"
+    },
+    {
+      "text": "Challenge friends",
+      "apps": [
+        "fitbit"
+      ],
+      "cat": "health",
+      "id": "BP773"
+    },
+    {
+      "text": "Premium readiness",
+      "apps": [
+        "fitbit"
+      ],
+      "cat": "health",
+      "id": "BP774"
+    },
+    {
+      "text": "Device battery",
+      "apps": [
+        "fitbit"
+      ],
+      "cat": "health",
+      "id": "BP775"
+    },
+    {
+      "text": "Guided runs audio",
+      "apps": [
+        "nike-run"
+      ],
+      "cat": "health",
+      "id": "BP776"
+    },
+    {
+      "text": "Mile celebrations",
+      "apps": [
+        "nike-run"
+      ],
+      "cat": "health",
+      "id": "BP777"
+    },
+    {
+      "text": "Plan adaptive",
+      "apps": [
+        "nike-run"
+      ],
+      "cat": "health",
+      "id": "BP778"
+    },
+    {
+      "text": "Friend activity",
+      "apps": [
+        "nike-run"
+      ],
+      "cat": "health",
+      "id": "BP779"
+    },
+    {
+      "text": "Shoe tracking",
+      "apps": [
+        "nike-run"
+      ],
+      "cat": "health",
+      "id": "BP780"
+    },
+    {
+      "text": "Narrator samples",
+      "apps": [
+        "audible"
+      ],
+      "cat": "media",
+      "id": "BP781"
+    },
+    {
+      "text": "Sleep timer",
+      "apps": [
+        "audible"
+      ],
+      "cat": "media",
+      "id": "BP782"
+    },
+    {
+      "text": "Bookmarks clips",
+      "apps": [
+        "audible"
+      ],
+      "cat": "media",
+      "id": "BP783"
+    },
+    {
+      "text": "Plus catalog",
+      "apps": [
+        "audible"
+      ],
+      "cat": "media",
+      "id": "BP784"
+    },
+    {
+      "text": "Whispersync nab",
+      "apps": [
+        "audible"
+      ],
+      "cat": "media",
+      "id": "BP785"
+    },
+    {
+      "text": "Spatial Audio badges",
+      "apps": [
+        "apple-music"
+      ],
+      "cat": "streaming",
+      "id": "BP786"
+    },
+    {
+      "text": "Sing lyrics mode",
+      "apps": [
+        "apple-music"
+      ],
+      "cat": "streaming",
+      "id": "BP787"
+    },
+    {
+      "text": "Replay year wrap",
+      "apps": [
+        "apple-music"
+      ],
+      "cat": "streaming",
+      "id": "BP788"
+    },
+    {
+      "text": "Radio live",
+      "apps": [
+        "apple-music"
+      ],
+      "cat": "streaming",
+      "id": "BP789"
+    },
+    {
+      "text": "SharePlay listen",
+      "apps": [
+        "apple-music"
+      ],
+      "cat": "streaming",
+      "id": "BP790"
+    },
+    {
+      "text": "Tabs Primary/Social/Promos",
+      "apps": [
+        "gmail"
+      ],
+      "cat": "productivity",
+      "id": "BP791"
+    },
+    {
+      "text": "Smart Reply",
+      "apps": [
+        "gmail"
+      ],
+      "cat": "productivity",
+      "id": "BP792"
+    },
+    {
+      "text": "Priority inbox",
+      "apps": [
+        "gmail"
+      ],
+      "cat": "productivity",
+      "id": "BP793"
+    },
+    {
+      "text": "Multiple inboxes",
+      "apps": [
+        "gmail"
+      ],
+      "cat": "productivity",
+      "id": "BP794"
+    },
+    {
+      "text": "Confidential mode",
+      "apps": [
+        "gmail"
+      ],
+      "cat": "productivity",
+      "id": "BP795"
+    },
+    {
+      "text": "Screener for strangers",
+      "apps": [
+        "hey-email"
+      ],
+      "cat": "productivity",
+      "id": "BP796"
+    },
+    {
+      "text": "Imbox/Feed/Paper Trail",
+      "apps": [
+        "hey-email"
+      ],
+      "cat": "productivity",
+      "id": "BP797"
+    },
+    {
+      "text": "Reply Later",
+      "apps": [
+        "hey-email"
+      ],
+      "cat": "productivity",
+      "id": "BP798"
+    },
+    {
+      "text": "Bundles",
+      "apps": [
+        "hey-email"
+      ],
+      "cat": "productivity",
+      "id": "BP799"
+    },
+    {
+      "text": "No folder anxiety",
+      "apps": [
+        "hey-email"
+      ],
+      "cat": "productivity",
+      "id": "BP800"
+    },
+    {
+      "text": "Open-source trust",
+      "apps": [
+        "bitwarden"
+      ],
+      "cat": "security",
+      "id": "BP801"
+    },
+    {
+      "text": "Org collections",
+      "apps": [
+        "bitwarden"
+      ],
+      "cat": "security",
+      "id": "BP802"
+    },
+    {
+      "text": "Send secure",
+      "apps": [
+        "bitwarden"
+      ],
+      "cat": "security",
+      "id": "BP803"
+    },
+    {
+      "text": "TOTP built-in",
+      "apps": [
+        "bitwarden"
+      ],
+      "cat": "security",
+      "id": "BP804"
+    },
+    {
+      "text": "Self-host option",
+      "apps": [
+        "bitwarden"
+      ],
+      "cat": "security",
+      "id": "BP805"
+    },
+    {
+      "text": "Chat soft UI",
+      "apps": [
+        "crisp"
+      ],
+      "cat": "support",
+      "id": "BP806"
+    },
+    {
+      "text": "Knowledge base",
+      "apps": [
+        "crisp"
+      ],
+      "cat": "support",
+      "id": "BP807"
+    },
+    {
+      "text": "CRM sidebar",
+      "apps": [
+        "crisp"
+      ],
+      "cat": "support",
+      "id": "BP808"
+    },
+    {
+      "text": "Status page link",
+      "apps": [
+        "crisp"
+      ],
+      "cat": "support",
+      "id": "BP809"
+    },
+    {
+      "text": "Push campaigns",
+      "apps": [
+        "crisp"
+      ],
+      "cat": "support",
+      "id": "BP810"
+    },
+    {
+      "text": "Ticket statuses",
+      "apps": [
+        "zendesk"
+      ],
+      "cat": "support",
+      "id": "BP811"
+    },
+    {
+      "text": "Macro replies",
+      "apps": [
+        "zendesk"
+      ],
+      "cat": "support",
+      "id": "BP812"
+    },
+    {
+      "text": "Help Center themes",
+      "apps": [
+        "zendesk"
+      ],
+      "cat": "support",
+      "id": "BP813"
+    },
+    {
+      "text": "Satisfaction surveys",
+      "apps": [
+        "zendesk"
+      ],
+      "cat": "support",
+      "id": "BP814"
+    },
+    {
+      "text": "Omnichannel",
+      "apps": [
+        "zendesk"
+      ],
+      "cat": "support",
+      "id": "BP815"
+    },
+    {
+      "text": "Resource blade IA",
+      "apps": [
+        "azure-portal"
+      ],
+      "cat": "devtools",
+      "id": "BP816"
+    },
+    {
+      "text": "Favorites",
+      "apps": [
+        "azure-portal"
+      ],
+      "cat": "devtools",
+      "id": "BP817"
+    },
+    {
+      "text": "Cloud Shell",
+      "apps": [
+        "azure-portal"
+      ],
+      "cat": "devtools",
+      "id": "BP818"
+    },
+    {
+      "text": "Advisor recommendations",
+      "apps": [
+        "azure-portal"
+      ],
+      "cat": "devtools",
+      "id": "BP819"
+    },
+    {
+      "text": "Density caution lessons",
+      "apps": [
+        "azure-portal"
+      ],
+      "cat": "devtools",
+      "id": "BP820"
+    },
+    {
+      "text": "One-handed reachability",
+      "apps": [
+        "one-ui"
+      ],
+      "cat": "os",
+      "id": "BP821"
+    },
+    {
+      "text": "Edge panels",
+      "apps": [
+        "one-ui"
+      ],
+      "cat": "os",
+      "id": "BP822"
+    },
+    {
+      "text": "DeX desktop continuity",
+      "apps": [
+        "one-ui"
+      ],
+      "cat": "os",
+      "id": "BP823"
+    },
+    {
+      "text": "Modes and Routines",
+      "apps": [
+        "one-ui"
+      ],
+      "cat": "os",
+      "id": "BP824"
+    },
+    {
+      "text": "Good Lock customization",
+      "apps": [
+        "one-ui"
+      ],
+      "cat": "os",
+      "id": "BP825"
+    },
+    {
+      "text": "App sets staging",
+      "apps": [
+        "macos-stage"
+      ],
+      "cat": "os",
+      "id": "BP826"
+    },
+    {
+      "text": "Window strip glance",
+      "apps": [
+        "macos-stage"
+      ],
+      "cat": "os",
+      "id": "BP827"
+    },
+    {
+      "text": "Focus without fullscreen force",
+      "apps": [
+        "macos-stage"
+      ],
+      "cat": "os",
+      "id": "BP828"
+    },
+    {
+      "text": "External display behavior",
+      "apps": [
+        "macos-stage"
+      ],
+      "cat": "os",
+      "id": "BP829"
+    },
+    {
+      "text": "Mission Control coexistence",
+      "apps": [
+        "macos-stage"
+      ],
+      "cat": "os",
+      "id": "BP830"
+    },
+    {
+      "text": "Try-before-pay: show live phone before wallet gate",
+      "apps": [
+        "appetize",
+        "nowgg",
+        "multilogin"
+      ],
+      "cat": "onboarding",
+      "id": "BP831"
+    },
+    {
+      "text": "Published price tiers with overage rate visible",
+      "apps": [
+        "appetize",
+        "stripe"
+      ],
+      "cat": "payment",
+      "id": "BP832"
+    },
+    {
+      "text": "Test-mode banner always visible in pay UI",
+      "apps": [
+        "stripe"
+      ],
+      "cat": "payment",
+      "id": "BP833"
+    },
+    {
+      "text": "Device card expands to fullscreen bezel",
+      "apps": [
+        "appetize",
+        "browserstack"
+      ],
+      "cat": "navigation",
+      "id": "BP834"
+    },
+    {
+      "text": "Floating tools never eclipse primary content",
+      "apps": [
+        "browserstack",
+        "linear"
+      ],
+      "cat": "layout",
+      "id": "BP835"
+    },
+    {
+      "text": "JPEG/H.264 graceful stream fallback",
+      "apps": [
+        "vsphone",
+        "appetize"
+      ],
+      "cat": "performance",
+      "id": "BP836"
+    },
+    {
+      "text": "RAM/ROM/Android filters co-equal",
+      "apps": [
+        "redfinger",
+        "vsphone"
+      ],
+      "cat": "navigation",
+      "id": "BP837"
+    },
+    {
+      "text": "Latency meter from real RTT samples",
+      "apps": [
+        "geforce-now",
+        "parsec"
+      ],
+      "cat": "feedback",
+      "id": "BP838"
+    },
+    {
+      "text": "Status page link in disconnect states",
+      "apps": [
+        "crisp",
+        "vercel"
+      ],
+      "cat": "feedback",
+      "id": "BP839"
+    },
+    {
+      "text": "Keyboard-first device picker",
+      "apps": [
+        "linear",
+        "raycast"
+      ],
+      "cat": "a11y",
+      "id": "BP840"
+    },
+    {
+      "text": "Focus order through checkout",
+      "apps": [
+        "stripe",
+        "guitar-wiz"
+      ],
+      "cat": "a11y",
+      "id": "BP841"
+    },
+    {
+      "text": "Dynamic Type / text scaling",
+      "apps": [
+        "guitar-wiz",
+        "structured"
+      ],
+      "cat": "a11y",
+      "id": "BP842"
+    },
+    {
+      "text": "Differentiate without color alone",
+      "apps": [
+        "guitar-wiz"
+      ],
+      "cat": "a11y",
+      "id": "BP843"
+    },
+    {
+      "text": "Empty state teaches first action",
+      "apps": [
+        "notion",
+        "todoist"
+      ],
+      "cat": "onboarding",
+      "id": "BP844"
+    },
+    {
+      "text": "Natural language capture",
+      "apps": [
+        "todoist"
+      ],
+      "cat": "interaction",
+      "id": "BP845"
+    },
+    {
+      "text": "Command palette global",
+      "apps": [
+        "linear",
+        "vscode",
+        "raycast"
+      ],
+      "cat": "navigation",
+      "id": "BP846"
+    },
+    {
+      "text": "Local-first perceived speed",
+      "apps": [
+        "linear",
+        "obsidian"
+      ],
+      "cat": "performance",
+      "id": "BP847"
+    },
+    {
+      "text": "Optimistic UI with rollback",
+      "apps": [
+        "linear",
+        "notion"
+      ],
+      "cat": "feedback",
+      "id": "BP848"
+    },
+    {
+      "text": "Presence cursors for collab",
+      "apps": [
+        "figma",
+        "miro"
+      ],
+      "cat": "social",
+      "id": "BP849"
+    },
+    {
+      "text": "Share link expiry defaults",
+      "apps": [
+        "dropbox",
+        "figma"
+      ],
+      "cat": "security",
+      "id": "BP850"
+    },
+    {
+      "text": "Role-based share scopes",
+      "apps": [
+        "geelark",
+        "notion"
+      ],
+      "cat": "security",
+      "id": "BP851"
+    },
+    {
+      "text": "In-context comments not side inbox",
+      "apps": [
+        "figma",
+        "loom"
+      ],
+      "cat": "feedback",
+      "id": "BP852"
+    },
+    {
+      "text": "Progressive disclosure of power features",
+      "apps": [
+        "airtable"
+      ],
+      "cat": "navigation",
+      "id": "BP853"
+    },
+    {
+      "text": "Content-first full-bleed media",
+      "apps": [
+        "instagram",
+        "tiktok",
+        "netflix"
+      ],
+      "cat": "layout",
+      "id": "BP854"
+    },
+    {
+      "text": "Persistent now-playing / session dock",
+      "apps": [
+        "spotify",
+        "youtube"
+      ],
+      "cat": "navigation",
+      "id": "BP855"
+    },
+    {
+      "text": "Swipe continuum for next item",
+      "apps": [
+        "tiktok",
+        "instagram"
+      ],
+      "cat": "interaction",
+      "id": "BP856"
+    },
+    {
+      "text": "Double-tap micro-ack",
+      "apps": [
+        "instagram",
+        "imessage"
+      ],
+      "cat": "interaction",
+      "id": "BP857"
+    },
+    {
+      "text": "Haptics mapped to tool variants",
+      "apps": [
+        "powerwash",
+        "ios-control"
+      ],
+      "cat": "feedback",
+      "id": "BP858"
+    },
+    {
+      "text": "Sky/environment-adaptive theme",
+      "apps": [
+        "tide-guide"
+      ],
+      "cat": "visual",
+      "id": "BP859"
+    },
+    {
+      "text": "Liquid Glass / material blending",
+      "apps": [
+        "moonlitt",
+        "tide-guide"
+      ],
+      "cat": "visual",
+      "id": "BP860"
+    },
+    {
+      "text": "Data \u2192 one hero score",
+      "apps": [
+        "oura",
+        "whoop"
+      ],
+      "cat": "visual",
+      "id": "BP861"
+    },
+    {
+      "text": "Fee transparency before commit",
+      "apps": [
+        "wise",
+        "stripe"
+      ],
+      "cat": "payment",
+      "id": "BP862"
+    },
+    {
+      "text": "UPI/local rails alongside cards",
+      "apps": [
+        "phonepe",
+        "gpay-india"
+      ],
+      "cat": "payment",
+      "id": "BP863"
+    },
+    {
+      "text": "AI inside primary surface not sidecar chat",
+      "apps": [
+        "cursor-ide",
+        "claude-app"
+      ],
+      "cat": "ai",
+      "id": "BP864"
+    },
+    {
+      "text": "Citations default for AI answers",
+      "apps": [
+        "perplexity"
+      ],
+      "cat": "ai",
+      "id": "BP865"
+    },
+    {
+      "text": "Artifacts / canvas beside chat",
+      "apps": [
+        "claude-app",
+        "chatgpt"
+      ],
+      "cat": "ai",
+      "id": "BP866"
+    },
+    {
+      "text": "Preview deploys per change",
+      "apps": [
+        "vercel"
+      ],
+      "cat": "devtools",
+      "id": "BP867"
+    },
+    {
+      "text": "Issue grouping reduces noise",
+      "apps": [
+        "sentry"
+      ],
+      "cat": "devtools",
+      "id": "BP868"
+    },
+    {
+      "text": "Session replay with privacy masks",
+      "apps": [
+        "posthog"
+      ],
+      "cat": "devtools",
+      "id": "BP869"
+    },
+    {
+      "text": "Feature flags next to analytics",
+      "apps": [
+        "posthog"
+      ],
+      "cat": "devtools",
+      "id": "BP870"
+    },
+    {
+      "text": "Table editor for backend data",
+      "apps": [
+        "supabase"
+      ],
+      "cat": "devtools",
+      "id": "BP871"
+    },
+    {
+      "text": "Branching databases",
+      "apps": [
+        "neon"
+      ],
+      "cat": "devtools",
+      "id": "BP872"
+    },
+    {
+      "text": "Instant search components",
+      "apps": [
+        "algolia"
+      ],
+      "cat": "interaction",
+      "id": "BP873"
+    },
+    {
+      "text": "One-question form focus",
+      "apps": [
+        "typeform"
+      ],
+      "cat": "onboarding",
+      "id": "BP874"
+    },
+    {
+      "text": "Booking link simplicity",
+      "apps": [
+        "calendly",
+        "calcom"
+      ],
+      "cat": "onboarding",
+      "id": "BP875"
+    },
+    {
+      "text": "Async video with timeline reacts",
+      "apps": [
+        "loom"
+      ],
+      "cat": "feedback",
+      "id": "BP876"
+    },
+    {
+      "text": "Hill charts for project uncertainty",
+      "apps": [
+        "basecamp"
+      ],
+      "cat": "visual",
+      "id": "BP877"
+    },
+    {
+      "text": "My Tasks daily ritual",
+      "apps": [
+        "asana",
+        "todoist"
+      ],
+      "cat": "navigation",
+      "id": "BP878"
+    },
+    {
+      "text": "Board simplicity default",
+      "apps": [
+        "trello"
+      ],
+      "cat": "navigation",
+      "id": "BP879"
+    },
+    {
+      "text": "Hand-drawn digital warmth",
+      "apps": [
+        "excalidraw",
+        "grug"
+      ],
+      "cat": "visual",
+      "id": "BP880"
+    },
+    {
+      "text": "Camera-first home for capture apps",
+      "apps": [
+        "snapchat",
+        "instagram"
+      ],
+      "cat": "navigation",
+      "id": "BP881"
+    },
+    {
+      "text": "Ephemeral default with clear lifetime",
+      "apps": [
+        "snapchat",
+        "signal"
+      ],
+      "cat": "trust",
+      "id": "BP882"
+    },
+    {
+      "text": "Dual-camera authenticity ritual",
+      "apps": [
+        "beereal"
+      ],
+      "cat": "interaction",
+      "id": "BP883"
+    },
+    {
+      "text": "Privacy report visible",
+      "apps": [
+        "safari",
+        "signal"
+      ],
+      "cat": "trust",
+      "id": "BP884"
+    },
+    {
+      "text": "Reader mode for calm consumption",
+      "apps": [
+        "safari",
+        "kindle"
+      ],
+      "cat": "visual",
+      "id": "BP885"
+    },
+    {
+      "text": "Profiles separate contexts",
+      "apps": [
+        "netflix",
+        "safari",
+        "arc-browser"
+      ],
+      "cat": "navigation",
+      "id": "BP886"
+    },
+    {
+      "text": "Kids/adult profile split",
+      "apps": [
+        "netflix"
+      ],
+      "cat": "trust",
+      "id": "BP887"
+    },
+    {
+      "text": "Continue Watching resume row",
+      "apps": [
+        "netflix",
+        "youtube"
+      ],
+      "cat": "navigation",
+      "id": "BP888"
+    },
+    {
+      "text": "Queue transparency",
+      "apps": [
+        "spotify"
+      ],
+      "cat": "feedback",
+      "id": "BP889"
+    },
+    {
+      "text": "Download/offline state badges",
+      "apps": [
+        "spotify",
+        "gmaps"
+      ],
+      "cat": "feedback",
+      "id": "BP890"
+    },
+    {
+      "text": "Map+list dual presentation",
+      "apps": [
+        "airbnb",
+        "gmaps"
+      ],
+      "cat": "layout",
+      "id": "BP891"
+    },
+    {
+      "text": "ETA animation trust",
+      "apps": [
+        "uber",
+        "doordash"
+      ],
+      "cat": "feedback",
+      "id": "BP892"
+    },
+    {
+      "text": "Safety toolkit one tap away",
+      "apps": [
+        "uber",
+        "bumble"
+      ],
+      "cat": "trust",
+      "id": "BP893"
+    },
+    {
+      "text": "Fare/price upfront",
+      "apps": [
+        "uber",
+        "wise"
+      ],
+      "cat": "payment",
+      "id": "BP894"
+    },
+    {
+      "text": "Spend notification instant",
+      "apps": [
+        "monzo",
+        "cashapp"
+      ],
+      "cat": "feedback",
+      "id": "BP895"
+    },
+    {
+      "text": "Goals/pots mental model",
+      "apps": [
+        "monzo",
+        "revolut"
+      ],
+      "cat": "fintech",
+      "id": "BP896"
+    },
+    {
+      "text": "Barcode accelerate tedious input",
+      "apps": [
+        "myfitnesspal"
+      ],
+      "cat": "interaction",
+      "id": "BP897"
+    },
+    {
+      "text": "Coaching cadence over raw metrics",
+      "apps": [
+        "noom",
+        "headspace"
+      ],
+      "cat": "onboarding",
+      "id": "BP898"
+    },
+    {
+      "text": "Streak with recovery paths",
+      "apps": [
+        "duolingo"
+      ],
+      "cat": "engagement",
+      "id": "BP899"
+    },
+    {
+      "text": "Activity social cards",
+      "apps": [
+        "strava"
+      ],
+      "cat": "social",
+      "id": "BP900"
+    },
+    {
+      "text": "Bite-size lesson cards",
+      "apps": [
+        "duolingo",
+        "blinkist"
+      ],
+      "cat": "onboarding",
+      "id": "BP901"
+    },
+    {
+      "text": "Editorial full-bleed product",
+      "apps": [
+        "zara",
+        "airbnb"
+      ],
+      "cat": "visual",
+      "id": "BP902"
+    },
+    {
+      "text": "Feed\u00d7commerce hybrid",
+      "apps": [
+        "depop",
+        "instagram"
+      ],
+      "cat": "commerce",
+      "id": "BP903"
+    },
+    {
+      "text": "Category-first discovery",
+      "apps": [
+        "airbnb",
+        "ubereats"
+      ],
+      "cat": "navigation",
+      "id": "BP904"
+    },
+    {
+      "text": "Filter power with chip summary",
+      "apps": [
+        "booking",
+        "skyscanner"
+      ],
+      "cat": "navigation",
+      "id": "BP905"
+    },
+    {
+      "text": "Price calendar flexible intent",
+      "apps": [
+        "skyscanner"
+      ],
+      "cat": "interaction",
+      "id": "BP906"
+    },
+    {
+      "text": "Negative lesson: ads over stream",
+      "apps": [
+        "nowgg"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP907"
+    },
+    {
+      "text": "Negative lesson: opaque premium",
+      "apps": [
+        "nowgg"
+      ],
+      "cat": "payment",
+      "id": "BP908"
+    },
+    {
+      "text": "Negative lesson: wallet opacity",
+      "apps": [
+        "vsphone"
+      ],
+      "cat": "payment",
+      "id": "BP909"
+    },
+    {
+      "text": "Negative lesson: tools eclipse device",
+      "apps": [
+        "azure-portal"
+      ],
+      "cat": "layout",
+      "id": "BP910"
+    },
+    {
+      "text": "Negative lesson: contact-sales only",
+      "apps": [
+        "browserstack"
+      ],
+      "cat": "payment",
+      "id": "BP911"
+    },
+    {
+      "text": "Embeddable phone for demos",
+      "apps": [
+        "appetize"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP912"
+    },
+    {
+      "text": "Device filters OEM/OS",
+      "apps": [
+        "sauce",
+        "browserstack"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP913"
+    },
+    {
+      "text": "Same-tab cloud phone launch",
+      "apps": [
+        "multilogin"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP914"
+    },
+    {
+      "text": "Spec ladder RAM/ROM public",
+      "apps": [
+        "redfinger"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP915"
+    },
+    {
+      "text": "Workspace groups for devices",
+      "apps": [
+        "geelark"
+      ],
+      "cat": "cloud-phone",
+      "id": "BP916"
+    },
+    {
+      "text": "Skeleton loaders matching final layout",
+      "apps": [
+        "linear",
+        "notion"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP917"
+    },
+    {
+      "text": "Prefers-reduced-motion respect",
+      "apps": [
+        "guitar-wiz",
+        "moonlitt"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP918"
+    },
+    {
+      "text": "Hit targets at least 44pt",
+      "apps": [
+        "guitar-wiz"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP919"
+    },
+    {
+      "text": "Error copy with next action",
+      "apps": [
+        "stripe"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP920"
+    },
+    {
+      "text": "Success toast undo window",
+      "apps": [
+        "gmail"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP921"
+    },
+    {
+      "text": "Drag handle affordance visible",
+      "apps": [
+        "trello"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP922"
+    },
+    {
+      "text": "Pinch-zoom with focal point",
+      "apps": [
+        "gmaps",
+        "apple-photos"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP923"
+    },
+    {
+      "text": "Edge swipe back gesture",
+      "apps": [
+        "imessage"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP924"
+    },
+    {
+      "text": "Predictive back animation",
+      "apps": [
+        "material3"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP925"
+    },
+    {
+      "text": "Large title collapse on scroll",
+      "apps": [
+        "structured"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP926"
+    },
+    {
+      "text": "Sticky section headers in lists",
+      "apps": [
+        "settings-multi"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP927"
+    },
+    {
+      "text": "Search debounce 200-300ms",
+      "apps": [
+        "algolia"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP928"
+    },
+    {
+      "text": "Recent searches chips",
+      "apps": [
+        "gmaps",
+        "spotify"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP929"
+    },
+    {
+      "text": "Empty search helpful suggestions",
+      "apps": [
+        "notion"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP930"
+    },
+    {
+      "text": "Filter count badge on icon",
+      "apps": [
+        "booking"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP931"
+    },
+    {
+      "text": "Clear-all filters one tap",
+      "apps": [
+        "booking"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP932"
+    },
+    {
+      "text": "Compare tray for 2-3 items",
+      "apps": [
+        "skyscanner"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP933"
+    },
+    {
+      "text": "Saved search alerts",
+      "apps": [
+        "skyscanner"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP934"
+    },
+    {
+      "text": "Wishlist heart with count",
+      "apps": [
+        "airbnb"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP935"
+    },
+    {
+      "text": "Map price pins",
+      "apps": [
+        "airbnb"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP936"
+    },
+    {
+      "text": "Cluster map markers",
+      "apps": [
+        "gmaps"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP937"
+    },
+    {
+      "text": "Recenter FAB on maps",
+      "apps": [
+        "uber"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP938"
+    },
+    {
+      "text": "Offline banner with retry",
+      "apps": [
+        "gmaps"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP939"
+    },
+    {
+      "text": "Conflict resolve UI for sync",
+      "apps": [
+        "notion"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP940"
+    },
+    {
+      "text": "Version history restore",
+      "apps": [
+        "dropbox"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP941"
+    },
+    {
+      "text": "Presence avatars in header",
+      "apps": [
+        "figma"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP942"
+    },
+    {
+      "text": "Follow someones viewport",
+      "apps": [
+        "figma"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP943"
+    },
+    {
+      "text": "Design token theme switch",
+      "apps": [
+        "material3"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP944"
+    },
+    {
+      "text": "Brand kit lock",
+      "apps": [
+        "canva"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP945"
+    },
+    {
+      "text": "Background removal one tap",
+      "apps": [
+        "canva"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP946"
+    },
+    {
+      "text": "Crop aspect presets",
+      "apps": [
+        "apple-photos"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP947"
+    },
+    {
+      "text": "Non-destructive edit stack",
+      "apps": [
+        "apple-photos"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP948"
+    },
+    {
+      "text": "Compare before/after slider",
+      "apps": [
+        "apple-photos"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP949"
+    },
+    {
+      "text": "Brush size pressure curve",
+      "apps": [
+        "procreate"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP950"
+    },
+    {
+      "text": "QuickShape geometry assist",
+      "apps": [
+        "procreate"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP951"
+    },
+    {
+      "text": "Timelapse share after create",
+      "apps": [
+        "procreate"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP952"
+    },
+    {
+      "text": "Color picker from image",
+      "apps": [
+        "figma",
+        "procreate"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP953"
+    },
+    {
+      "text": "Auto-layout constraints",
+      "apps": [
+        "figma"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP954"
+    },
+    {
+      "text": "Variant property panel",
+      "apps": [
+        "figma"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP955"
+    },
+    {
+      "text": "Dev Mode inspect",
+      "apps": [
+        "figma"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP956"
+    },
+    {
+      "text": "Focus ring never removed",
+      "apps": [
+        "guitar-wiz"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP957"
+    },
+    {
+      "text": "Skip link to main content",
+      "apps": [
+        "stripe"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP958"
+    },
+    {
+      "text": "Landmark roles main nav",
+      "apps": [
+        "stripe"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP959"
+    },
+    {
+      "text": "Live region for status",
+      "apps": [
+        "stripe"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP960"
+    },
+    {
+      "text": "Captions for product video",
+      "apps": [
+        "youtube"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP961"
+    },
+    {
+      "text": "RTL layout flip",
+      "apps": [
+        "whatsapp",
+        "telegram"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP962"
+    },
+    {
+      "text": "Locale-aware numerals",
+      "apps": [
+        "wise"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP963"
+    },
+    {
+      "text": "Currency formatting by locale",
+      "apps": [
+        "stripe"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP964"
+    },
+    {
+      "text": "Phone input country picker",
+      "apps": [
+        "stripe",
+        "auth0"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP965"
+    },
+    {
+      "text": "OTP autofill from SMS",
+      "apps": [
+        "phonepe",
+        "auth0"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP966"
+    },
+    {
+      "text": "Passkey primary CTA",
+      "apps": [
+        "okta",
+        "auth0"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP967"
+    },
+    {
+      "text": "Fallback password path",
+      "apps": [
+        "auth0"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP968"
+    },
+    {
+      "text": "Session timeout warning",
+      "apps": [
+        "monzo"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP969"
+    },
+    {
+      "text": "Reauth step-up for pay",
+      "apps": [
+        "stripe"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP970"
+    },
+    {
+      "text": "Biometric unlock vault",
+      "apps": [
+        "1password"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP971"
+    },
+    {
+      "text": "Autofill from keyboard extension",
+      "apps": [
+        "1password"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP972"
+    },
+    {
+      "text": "Copy password with auto-clear clipboard",
+      "apps": [
+        "1password"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP973"
+    },
+    {
+      "text": "Breach alert actionable",
+      "apps": [
+        "1password"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP974"
+    },
+    {
+      "text": "Secure send expiring link",
+      "apps": [
+        "bitwarden"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP975"
+    },
+    {
+      "text": "Admin audit log export",
+      "apps": [
+        "okta"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP976"
+    },
+    {
+      "text": "Device trust posture",
+      "apps": [
+        "okta"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP977"
+    },
+    {
+      "text": "Hard-key enrollment wizard",
+      "apps": [
+        "coinbase",
+        "okta"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP978"
+    },
+    {
+      "text": "Hide balances privacy toggle",
+      "apps": [
+        "revolut",
+        "monzo"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP979"
+    },
+    {
+      "text": "Card freeze one tap",
+      "apps": [
+        "revolut"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP980"
+    },
+    {
+      "text": "Risk disclosure before options",
+      "apps": [
+        "robinhood"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP981"
+    },
+    {
+      "text": "Price alert create from chart",
+      "apps": [
+        "robinhood"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP982"
+    },
+    {
+      "text": "Hotkey cheat sheet",
+      "apps": [
+        "superhuman",
+        "linear"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP983"
+    },
+    {
+      "text": "Onboarding checklist dismissible",
+      "apps": [
+        "notion"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP984"
+    },
+    {
+      "text": "Sample data playground",
+      "apps": [
+        "stripe",
+        "twilio"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP985"
+    },
+    {
+      "text": "Interactive API docs",
+      "apps": [
+        "stripe"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP986"
+    },
+    {
+      "text": "Copy curl snippets",
+      "apps": [
+        "twilio"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP987"
+    },
+    {
+      "text": "Webhook debugger",
+      "apps": [
+        "stripe"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP988"
+    },
+    {
+      "text": "Idempotency key explanation",
+      "apps": [
+        "stripe"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP989"
+    },
+    {
+      "text": "Customer portal self-serve",
+      "apps": [
+        "stripe"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP990"
+    },
+    {
+      "text": "Usage meter graphs",
+      "apps": [
+        "vercel",
+        "twilio"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP991"
+    },
+    {
+      "text": "Spend caps",
+      "apps": [
+        "azure-portal"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP992"
+    },
+    {
+      "text": "Soft limit warnings before hard stop",
+      "apps": [
+        "appetize"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP993"
+    },
+    {
+      "text": "Grace period messaging",
+      "apps": [
+        "stripe"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP994"
+    },
+    {
+      "text": "Export data before cancel",
+      "apps": [
+        "notion"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP995"
+    },
+    {
+      "text": "Delete account path findable",
+      "apps": [
+        "signal"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP996"
+    },
+    {
+      "text": "Consent granular toggles",
+      "apps": [
+        "safari"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP997"
+    },
+    {
+      "text": "Age gate appropriate",
+      "apps": [
+        "roblox"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP998"
+    },
+    {
+      "text": "Parental controls",
+      "apps": [
+        "netflix",
+        "roblox"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP999"
+    },
+    {
+      "text": "Focus mode filter notifications",
+      "apps": [
+        "imessage"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1000"
+    },
+    {
+      "text": "Notification channel settings",
+      "apps": [
+        "slack"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1001"
+    },
+    {
+      "text": "Mute thread not channel",
+      "apps": [
+        "slack"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1002"
+    },
+    {
+      "text": "Remind me about this",
+      "apps": [
+        "slack",
+        "superhuman"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1003"
+    },
+    {
+      "text": "Snooze email",
+      "apps": [
+        "gmail",
+        "superhuman"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1004"
+    },
+    {
+      "text": "Send later",
+      "apps": [
+        "gmail",
+        "superhuman"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1005"
+    },
+    {
+      "text": "Undo send window",
+      "apps": [
+        "gmail"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1006"
+    },
+    {
+      "text": "Read receipts optional",
+      "apps": [
+        "whatsapp"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1007"
+    },
+    {
+      "text": "Disappearing messages timer UI",
+      "apps": [
+        "signal"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1008"
+    },
+    {
+      "text": "Username without phone reveal",
+      "apps": [
+        "signal",
+        "telegram"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1009"
+    },
+    {
+      "text": "Proxy settings for censored regions",
+      "apps": [
+        "telegram"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1010"
+    },
+    {
+      "text": "Saved messages personal notepad",
+      "apps": [
+        "telegram"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1011"
+    },
+    {
+      "text": "Pin chats",
+      "apps": [
+        "whatsapp",
+        "telegram"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1012"
+    },
+    {
+      "text": "Schedule message",
+      "apps": [
+        "telegram",
+        "slack"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1013"
+    },
+    {
+      "text": "Poll in chat",
+      "apps": [
+        "telegram",
+        "slack"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1014"
+    },
+    {
+      "text": "Thread reply counts",
+      "apps": [
+        "slack"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1015"
+    },
+    {
+      "text": "Huddle continuous voice",
+      "apps": [
+        "slack"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1016"
+    },
+    {
+      "text": "Raise hand",
+      "apps": [
+        "zoom"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1017"
+    },
+    {
+      "text": "Reaction burst",
+      "apps": [
+        "zoom"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1018"
+    },
+    {
+      "text": "Noise suppression toggle",
+      "apps": [
+        "zoom",
+        "discord"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1019"
+    },
+    {
+      "text": "Push to talk",
+      "apps": [
+        "discord"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1020"
+    },
+    {
+      "text": "Server roles colors",
+      "apps": [
+        "discord"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1021"
+    },
+    {
+      "text": "Forum channels",
+      "apps": [
+        "discord"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1022"
+    },
+    {
+      "text": "Nitro perks clear vs paywall block",
+      "apps": [
+        "discord"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1023"
+    },
+    {
+      "text": "Go Live quality picker",
+      "apps": [
+        "discord"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1024"
+    },
+    {
+      "text": "Clip from buffer",
+      "apps": [
+        "twitch"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1025"
+    },
+    {
+      "text": "Raid transfer audience",
+      "apps": [
+        "twitch"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1026"
+    },
+    {
+      "text": "VOD chapters",
+      "apps": [
+        "twitch",
+        "youtube"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1027"
+    },
+    {
+      "text": "Community posts",
+      "apps": [
+        "youtube"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1028"
+    },
+    {
+      "text": "Theater fullscreen modes",
+      "apps": [
+        "youtube"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1029"
+    },
+    {
+      "text": "Picture-in-picture OS",
+      "apps": [
+        "youtube"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1030"
+    },
+    {
+      "text": "Quality auto with manual override",
+      "apps": [
+        "youtube"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1031"
+    },
+    {
+      "text": "Playlist collaborative",
+      "apps": [
+        "spotify"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1032"
+    },
+    {
+      "text": "Crossfade setting",
+      "apps": [
+        "spotify"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1033"
+    },
+    {
+      "text": "Lyrics sync karaoke",
+      "apps": [
+        "apple-music",
+        "spotify"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1034"
+    },
+    {
+      "text": "SharePlay session",
+      "apps": [
+        "apple-music"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1035"
+    },
+    {
+      "text": "Spatial badge education",
+      "apps": [
+        "apple-music"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1036"
+    },
+    {
+      "text": "Data saver streaming mode",
+      "apps": [
+        "spotify"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1037"
+    },
+    {
+      "text": "Car mode simplified",
+      "apps": [
+        "spotify"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1038"
+    },
+    {
+      "text": "CarPlay Android Auto templates",
+      "apps": [
+        "gmaps",
+        "spotify"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1039"
+    },
+    {
+      "text": "Live Activities",
+      "apps": [
+        "ios-control"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1040"
+    },
+    {
+      "text": "Dynamic Island compact expanded",
+      "apps": [
+        "ios-control"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1041"
+    },
+    {
+      "text": "Interactive widgets",
+      "apps": [
+        "pixel-launcher",
+        "grug"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1042"
+    },
+    {
+      "text": "Lock Screen widgets",
+      "apps": [
+        "structured"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1043"
+    },
+    {
+      "text": "visionOS ornament chrome",
+      "apps": [
+        "moonlitt"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1044"
+    },
+    {
+      "text": "Context menus long-press",
+      "apps": [
+        "imessage"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1045"
+    },
+    {
+      "text": "Swipe actions leading trailing",
+      "apps": [
+        "gmail",
+        "todoist"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1046"
+    },
+    {
+      "text": "Share sheet extensions",
+      "apps": [
+        "apple-photos"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1047"
+    },
+    {
+      "text": "Drag and drop cross-app",
+      "apps": [
+        "figma"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1048"
+    },
+    {
+      "text": "Handoff between devices",
+      "apps": [
+        "imessage",
+        "maps-apple"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1049"
+    },
+    {
+      "text": "Find My network UX",
+      "apps": [
+        "apple-photos"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1050"
+    },
+    {
+      "text": "Medical ID lock screen",
+      "apps": [
+        "oura"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1051"
+    },
+    {
+      "text": "Medication schedule",
+      "apps": [
+        "oura"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1052"
+    },
+    {
+      "text": "Live Speech accessibility",
+      "apps": [
+        "hearing-buddy",
+        "speechify"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1053"
+    },
+    {
+      "text": "Personal Voice accessibility",
+      "apps": [
+        "speechify"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1054"
+    },
+    {
+      "text": "Sound recognition alerts",
+      "apps": [
+        "hearing-buddy"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1055"
+    },
+    {
+      "text": "Quota remaining countdown",
+      "apps": [
+        "appetize"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1056"
+    },
+    {
+      "text": "Device card hover preview",
+      "apps": [
+        "browserstack"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1057"
+    },
+    {
+      "text": "Stream reconnect with last frame",
+      "apps": [
+        "parsec",
+        "geforce-now"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1058"
+    },
+    {
+      "text": "Bitrate ladder user control",
+      "apps": [
+        "geforce-now",
+        "youtube"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1059"
+    },
+    {
+      "text": "Input latency ghost cursor",
+      "apps": [
+        "parsec"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1060"
+    },
+    {
+      "text": "Controller pairing wizard",
+      "apps": [
+        "xbox-cloud"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1061"
+    },
+    {
+      "text": "Touch controls overlay toggle",
+      "apps": [
+        "xbox-cloud"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1062"
+    },
+    {
+      "text": "Host share invite expiry",
+      "apps": [
+        "parsec"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1063"
+    },
+    {
+      "text": "Session time remaining banner",
+      "apps": [
+        "geforce-now",
+        "appetize"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1064"
+    },
+    {
+      "text": "Real vs virtual device visual distinction",
+      "apps": [
+        "sauce"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1065"
+    },
+    {
+      "text": "Tunnel setup progress stepper",
+      "apps": [
+        "browserstack"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1066"
+    },
+    {
+      "text": "Recording download ready toast",
+      "apps": [
+        "browserstack",
+        "sauce"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1067"
+    },
+    {
+      "text": "ADB shell as power drawer",
+      "apps": [
+        "browserstack"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1068"
+    },
+    {
+      "text": "Network throttle presets",
+      "apps": [
+        "browserstack"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1069"
+    },
+    {
+      "text": "Locale and language session config",
+      "apps": [
+        "appetize"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1070"
+    },
+    {
+      "text": "Kiosk single-app lock",
+      "apps": [
+        "appetize"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1071"
+    },
+    {
+      "text": "Agent semantic tree access",
+      "apps": [
+        "appetize"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1072"
+    },
+    {
+      "text": "CLI parity with UI actions",
+      "apps": [
+        "appetize",
+        "github"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1073"
+    },
+    {
+      "text": "White-label embed options",
+      "apps": [
+        "appetize"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1074"
+    },
+    {
+      "text": "Minutes included vs overage table",
+      "apps": [
+        "appetize"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1075"
+    },
+    {
+      "text": "Free tier session length stated up front",
+      "apps": [
+        "appetize"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1076"
+    },
+    {
+      "text": "Region latency probe before buy",
+      "apps": [
+        "vsphone",
+        "redfinger"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1077"
+    },
+    {
+      "text": "Android version compatibility hint per app",
+      "apps": [
+        "redfinger"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1078"
+    },
+    {
+      "text": "Factory reset affordance clear",
+      "apps": [
+        "vsphone"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1079"
+    },
+    {
+      "text": "Root risk warning dialog",
+      "apps": [
+        "vsphone"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1080"
+    },
+    {
+      "text": "WASD mapping discoverability",
+      "apps": [
+        "vsphone"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1081"
+    },
+    {
+      "text": "Split screen help in product",
+      "apps": [
+        "vsphone"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1082"
+    },
+    {
+      "text": "Wallet runtime estimate hours left",
+      "apps": [
+        "vsphone"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1083"
+    },
+    {
+      "text": "Activation code redeem single path",
+      "apps": [
+        "vsphone"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1084"
+    },
+    {
+      "text": "Unpaid order recovery UX",
+      "apps": [
+        "vsphone"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1085"
+    },
+    {
+      "text": "Synchronizer confirm before mass action",
+      "apps": [
+        "geelark"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1086"
+    },
+    {
+      "text": "Proxy health badge per device",
+      "apps": [
+        "geelark"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1087"
+    },
+    {
+      "text": "Team audit log of device opens",
+      "apps": [
+        "geelark"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1088"
+    },
+    {
+      "text": "Power-off billing zero clarity",
+      "apps": [
+        "multilogin"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1089"
+    },
+    {
+      "text": "Browser and phone unified nav",
+      "apps": [
+        "multilogin"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1090"
+    },
+    {
+      "text": "Fingerprint honesty labeling",
+      "apps": [
+        "multilogin"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1091"
+    },
+    {
+      "text": "Anti-detect vs gaming SKU separation",
+      "apps": [
+        "vsphone",
+        "geelark"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1092"
+    },
+    {
+      "text": "Homepage mini-phone CTA",
+      "apps": [
+        "appetize",
+        "nowgg"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1093"
+    },
+    {
+      "text": "Fullscreen expand shared-element transition",
+      "apps": [
+        "appetize"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1094"
+    },
+    {
+      "text": "Bezel matches selected device aspect",
+      "apps": [
+        "browserstack"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1095"
+    },
+    {
+      "text": "Ask AI inside bezel not side panel",
+      "apps": [
+        "claude-app",
+        "cursor-ide"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1096"
+    },
+    {
+      "text": "In-phone assistant chips",
+      "apps": [
+        "claude-app"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1097"
+    },
+    {
+      "text": "Voice barge-in while speaking",
+      "apps": [
+        "chatgpt"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1098"
+    },
+    {
+      "text": "Citation chips under AI answers",
+      "apps": [
+        "perplexity"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1099"
+    },
+    {
+      "text": "Model picker not blocking core",
+      "apps": [
+        "chatgpt",
+        "claude-app"
+      ],
+      "cat": "cross-cutting",
+      "id": "BP1100"
+    }
+  ]
+}

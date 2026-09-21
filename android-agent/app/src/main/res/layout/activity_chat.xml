@@ -1,0 +1,378 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/askRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:accessibilityPaneTitle="@string/ask_screen_description"
+    android:background="@color/zevi_bg"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="14dp">
+
+        <ImageView
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:contentDescription="@string/strlix_logo_description"
+            android:src="@drawable/ic_zevi_z" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_weight="1"
+            android:accessibilityHeading="true"
+            android:text="@string/assistant"
+            android:textColor="@color/zevi_text"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/chatStatus"
+            android:accessibilityLiveRegion="polite"
+            android:contentDescription="@string/cloud_status_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_chip"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="4dp"
+            android:text="…"
+            android:textColor="@color/zevi_muted"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/skipToMessage"
+        android:nextFocusForward="@id/input"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:minHeight="48dp"
+        android:paddingHorizontal="4dp"
+        android:text="@string/skip_to_message"
+        android:textAllCaps="false"
+        android:textColor="@color/zevi_accent" />
+
+    <LinearLayout
+        android:id="@+id/triageStrip"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="12dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/bg_card"
+        android:orientation="vertical"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="10dp"
+        android:importantForAccessibility="yes">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/triageTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:accessibilityHeading="true"
+                android:text="@string/triage_title"
+                android:textColor="@color/zevi_text"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/triageState"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Ready"
+                android:textColor="@color/zevi_muted"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/triageCopy"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:text="@string/triage_copy"
+            android:textColor="@color/zevi_muted"
+            android:textSize="12sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/triageOpen"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                android:contentDescription="@string/triage_open_description"
+                android:focusable="true"
+                android:minHeight="44dp"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="8dp"
+                android:text="@string/triage_open"
+                android:textColor="@color/zevi_accent"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/triageAsk"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:clickable="true"
+                android:contentDescription="@string/triage_ask_description"
+                android:focusable="true"
+                android:minHeight="44dp"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="8dp"
+                android:text="@string/triage_ask"
+                android:textColor="@color/zevi_text"
+                android:textSize="12sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <HorizontalScrollView
+        android:id="@+id/chipScroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/suggestions_description"
+        android:paddingHorizontal="12dp"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:id="@+id/chipRow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingBottom="8dp">
+
+            <TextView
+                android:id="@+id/chipChrome"
+                android:clickable="true"
+                android:contentDescription="@string/open_chrome_description"
+                android:nextFocusForward="@id/chipHome"
+                android:focusable="true"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_chip"
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="10dp"
+                android:text="Open Chrome"
+                android:textColor="@color/zevi_text"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/chipHome"
+                android:clickable="true"
+                android:contentDescription="@string/go_home_description"
+                android:nextFocusForward="@id/chipLive"
+                android:focusable="true"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_chip"
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="10dp"
+                android:text="Go home"
+                android:textColor="@color/zevi_text"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/chipLive"
+                android:clickable="true"
+                android:contentDescription="@string/live_chip_description"
+                android:nextFocusForward="@id/chipScreen"
+                android:focusable="true"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_chip"
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="10dp"
+                android:text="Live"
+                android:textColor="@color/zevi_text"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/chipScreen"
+                android:clickable="true"
+                android:contentDescription="@string/screen_chip_description"
+                android:nextFocusForward="@id/btnMic"
+                android:focusable="true"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_chip"
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="10dp"
+                android:text="What&apos;s on my screen?"
+                android:textColor="@color/zevi_text"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/chipSchedule"
+                android:clickable="true"
+                android:contentDescription="@string/schedule_chip_description"
+                android:focusable="true"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_chip"
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="10dp"
+                android:text="@string/schedule_chip"
+                android:textColor="@color/zevi_accent"
+                android:textSize="13sp" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <TextView
+        android:id="@+id/scheduleSummary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="12dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/bg_chip"
+        android:clickable="true"
+        android:contentDescription="@string/schedule_chip_description"
+        android:focusable="true"
+        android:minHeight="44dp"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="10dp"
+        android:textColor="@color/zevi_accent"
+        android:textSize="12sp"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/doStrip"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/zevi_surface"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="12dp"
+        android:importantForAccessibility="yes"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/doNarration"
+            android:accessibilityLiveRegion="polite"
+            android:contentDescription="@string/working_status_description"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:text="Working…"
+            android:textColor="@color/zevi_muted"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/doShare"
+            android:clickable="true"
+            android:focusable="true"
+            android:minHeight="48dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:contentDescription="@string/share_replay_description"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="8dp"
+            android:text="@string/share_replay"
+            android:textColor="@color/zevi_accent"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/doStop"
+            android:clickable="true"
+            android:contentDescription="@string/stop_task_description"
+            android:focusable="true"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="8dp"
+            android:text="✕"
+            android:textColor="@color/zevi_accent"
+            android:textSize="16sp" />
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/messageList"
+        android:contentDescription="@string/ask_screen_description"
+        android:focusable="true"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:padding="12dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/zevi_surface"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="12dp">
+
+        <ImageButton
+            android:id="@+id/btnMic"
+            android:contentDescription="@string/voice"
+            android:layout_width="48dp"
+            android:layout_height="44dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="8dp"
+            android:src="@drawable/ic_mic"
+            android:tint="@color/zevi_accent" />
+
+        <EditText
+            android:id="@+id/input"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_weight="1"
+            android:contentDescription="@string/ask_input_description"
+            android:background="@drawable/bg_input"
+            android:hint="@string/hint_message"
+            android:imeOptions="actionSend"
+            android:inputType="textCapSentences|textMultiLine"
+            android:maxLines="4"
+            android:minHeight="44dp"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="10dp"
+            android:textColor="@color/zevi_text"
+            android:textColorHint="@color/zevi_muted"
+            android:textSize="15sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSend"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:contentDescription="@string/send_description"
+            android:minHeight="48dp"
+            android:minWidth="0dp"
+            android:text="@string/send"
+            android:textAllCaps="false" />
+    </LinearLayout>
+</LinearLayout>

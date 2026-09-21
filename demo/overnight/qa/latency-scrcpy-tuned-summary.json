@@ -1,0 +1,44 @@
+{
+  "when": "2026-09-21 IST",
+  "pass": "scrcpy-tuned-lowlat",
+  "before_screenrecord_swipe_to_au_ms": 576.5,
+  "after_scrcpy_raw_warm_median_ms": 253,
+  "tuned": {
+    "encode": {
+      "max_size": 800,
+      "bitrate": 800000,
+      "width": 360,
+      "codec_options": "i-frame-interval:int=1,latency:int=1",
+      "flush_idle_ms": 12
+    },
+    "swipe80_median_ms": 270.1,
+    "swipe30_median_ms": 127.5,
+    "swipe30_min_ms": 120.9,
+    "tap_median_ms": 105.0,
+    "tap_min_ms": 52.8,
+    "swipe160_median_ms": 357.3
+  },
+  "vm_local_floor": {
+    "adb_shell_rtt_median_ms": 9.9,
+    "best_cfg_wall_median_ms": 165.2,
+    "note": "VM-local ADB (no SSH) still ~165ms median wall input\u2192TCP bytes \u2014 tunnel is not the bottleneck"
+  },
+  "box_adb_rtt_median_ms": 53.3,
+  "glass_to_glass_under_100ms": false,
+  "best_host_median_ms": 105.0,
+  "best_host_min_ms": 52.8,
+  "honest_ceiling": "On this ranchu emulator, host input\u2192AU floor is ~120-150ms even with local-VM ADB (VM floor sweep median ~165ms). Tunnel RTT (~53ms shell) is NOT the dominant term once encode knobs are lowered. Glass-to-glass adds WebCodecs decode+paint (~1-10ms here) so <100ms is not reachable on this hardware/emulator path without a real device + local encoder.",
+  "what_moved": [
+    "SCRCPY_MAX_SIZE=800 + bitrate 800k + codec_options latency/i-frame",
+    "ephemeral scid + adb forward tcp:0",
+    "H264_FLUSH_IDLE_MS 12",
+    "client decodeQueueSize backpressure + paintMs via rAF",
+    "XDG_RUNTIME_DIR stub (headless scrcpy past XDG abort; SDL window still N/A)"
+  ],
+  "still_blocked": [
+    "emulator MediaCodec + SurfaceFlinger floor (~100ms+)",
+    "i-frame-interval still ignored for true IDR cadence",
+    "full ws-scrcpy / SDL interactive mirror",
+    "glass-to-glass <100ms on ranchu"
+  ]
+}

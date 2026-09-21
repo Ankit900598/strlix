@@ -1,0 +1,54 @@
+{
+  "results": [
+    {
+      "label": "join1_coldish",
+      "source": "scrcpy",
+      "gop_ready": true,
+      "hello_ms": 13.1,
+      "join_to_first_au_ms": 14.1,
+      "join_to_key_au_ms": 14.1,
+      "swipe_to_au_ms": 253.0,
+      "aus": 26
+    },
+    {
+      "label": "join2_warm_gop",
+      "source": "scrcpy",
+      "gop_ready": true,
+      "hello_ms": 3.2,
+      "join_to_first_au_ms": 4.2,
+      "join_to_key_au_ms": 4.2,
+      "swipe_to_au_ms": 241.6,
+      "aus": 26
+    },
+    {
+      "label": "join3_warm_gop",
+      "source": "scrcpy",
+      "gop_ready": true,
+      "hello_ms": 3.3,
+      "join_to_first_au_ms": 4.4,
+      "join_to_key_au_ms": 4.4,
+      "swipe_to_au_ms": 274.9,
+      "aus": 26
+    }
+  ],
+  "keyframe_api_ms": 2.2,
+  "keyframe_api": {
+    "ok": true,
+    "requested": true,
+    "reason": null
+  },
+  "final_stats": {
+    "source": "scrcpy",
+    "fps": 11.1,
+    "kbps": 99,
+    "keyframes": 1,
+    "access_units": 82,
+    "first_frame_ms": 1744,
+    "segments": 1,
+    "restarts": 0,
+    "errors": 0,
+    "last_error": null,
+    "segment_s": 15,
+    "bitrate": 1200000
+  }
+}

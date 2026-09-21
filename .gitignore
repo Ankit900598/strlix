@@ -1,0 +1,49 @@
+# secrets & local env
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+*.pem
+*.key
+secrets/
+**/credentials.json
+**/service-account*.json
+.aws/
+.azure/
+
+# python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# node
+node_modules/
+npm-debug.log*
+
+# android / gradle
+android-agent/.gradle/
+android-agent/**/build/
+android-agent/local.properties
+android-agent/**/*.apk
+android-agent/**/*.aab
+*.keystore
+*.jks
+
+# ide / os
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# large local / runtime
+demo/overnight/uvicorn.log
+demo/scale/logs/
+*.log
+.claude/

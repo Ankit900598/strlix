@@ -1,0 +1,57 @@
+{
+  "url": "http://127.0.0.1:8787/",
+  "started": "2026-09-20 20:00:00",
+  "webcodecs_supported": true,
+  "upgrade_ms": 513,
+  "upgraded_to_h264": true,
+  "after_upgrade": {
+    "transport": "h264",
+    "frames": 1,
+    "fps": 2,
+    "kbps": 391,
+    "hud": "H.264 \u00b7 2fps \u00b7 391kbps",
+    "badge": "Live \u00b7 H.264",
+    "stamp": "8:00:01 PM",
+    "canvas": [
+      540,
+      1200
+    ],
+    "hidden": false
+  },
+  "tap_to_pixels_ms": 568,
+  "tap_stamp": "tap 162,987 \u00b7 73ms",
+  "home_to_pixels_ms": 533,
+  "swipe_to_pixels_ms": 1,
+  "steady": {
+    "transport": "h264",
+    "frames": 84,
+    "fps": 19,
+    "kbps": 1044,
+    "hud": "H.264 \u00b7 19fps \u00b7 1044kbps \u00b7 \u2301 54ms",
+    "badge": "Live \u00b7 H.264",
+    "stamp": "swipe \u2192 540,714 \u00b7 497ms",
+    "canvas": [
+      540,
+      1200
+    ],
+    "hidden": false
+  },
+  "reported_latency_ms": 54,
+  "swipe_stamp": "swipe \u2192 540,714 \u00b7 497ms",
+  "after_restore": {
+    "transport": "h264",
+    "frames": 168,
+    "fps": 168,
+    "kbps": 8509,
+    "hud": "H.264 \u00b7 168fps \u00b7 8509kbps \u00b7 \u2301 54ms",
+    "badge": "Live \u00b7 H.264",
+    "stamp": "swipe \u2192 540,714 \u00b7 497ms",
+    "canvas": [
+      540,
+      1200
+    ],
+    "hidden": false
+  },
+  "restore_input_to_pixels_ms": 564,
+  "console": []
+}

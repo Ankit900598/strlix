@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Strlix — Cloud Phone</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #05070c;
+      --bg-glow: #0a1020;
+      --fg: #eef2ff;
+      --muted: #7d8eab;
+      --accent: #5b8cff;
+      --accent-2: #7c5cff;
+      --accent-glow: rgba(91, 140, 255, 0.4);
+      --ok: #34d399;
+      --warn: #fbbf24;
+      --err: #f87171;
+      --border: rgba(148, 163, 184, 0.12);
+      --bezel: #0c0e14;
+      --bezel-edge: #1a1f2e;
+      --panel: rgba(18, 24, 40, 0.92);
+      --shadow-phone: 0 40px 100px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.06);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+      background:
+        radial-gradient(900px 500px at 50% -15%, rgba(91,140,255,0.16), transparent 55%),
+        radial-gradient(700px 400px at 80% 100%, rgba(124,92,255,0.1), transparent 50%),
+        var(--bg);
+      color: var(--fg);
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    /* ── Top chrome (minimal) ── */
+    .topbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+      height: 52px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 18px;
+      background: rgba(5, 7, 12, 0.72);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .brand {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .logo {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      display: grid; place-items: center;
+      font-weight: 700; font-size: 13px; color: #fff;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.1), 0 4px 14px var(--accent-glow);
+    }
+    .brand h1 {
+      margin: 0; font-size: 14px; font-weight: 650; letter-spacing: -0.02em;
+    }
+    .brand span {
+      font-size: 11px; color: var(--muted); font-weight: 500;
+      margin-left: 2px;
+    }
+    .top-right {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end;
+    }
+    .pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 10px; border-radius: 999px;
+      background: rgba(18,24,40,0.8); border: 1px solid var(--border);
+      font-size: 11px; color: var(--muted); white-space: nowrap;
+    }
+    .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--muted); flex-shrink: 0;
+    }
+    .dot.ok { background: var(--ok); box-shadow: 0 0 8px rgba(52,211,153,0.55); }
+    .dot.warn { background: var(--warn); }
+    .dot.err { background: var(--err); }
+
+    #liveBtn {
+      appearance: none; border: 1px solid rgba(91,140,255,0.4);
+      background: linear-gradient(135deg, rgba(91,140,255,0.22), rgba(124,92,255,0.22));
+      color: #fff; padding: 6px 12px; border-radius: 999px;
+      font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 7px;
+    }
+    #liveBtn .pulse {
+      width: 7px; height: 7px; border-radius: 50%; background: var(--ok);
+      box-shadow: 0 0 8px rgba(52,211,153,.7);
+    }
+    #liveBtn.active {
+      background: linear-gradient(135deg, #ef4444, #b91c1c);
+      border-color: rgba(248,113,113,.5);
+    }
+    #liveBtn.active .pulse { background: #fff; animation: blink 1s infinite; }
+    @keyframes blink { 50% { opacity: .35; } }
+
+    #topLang {
+      appearance: none; background: rgba(18,24,40,0.8); color: var(--fg);
+      border: 1px solid var(--border); border-radius: 999px;
+      padding: 5px 28px 5px 10px; font: inherit; font-size: 11px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237d8eab'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center;
+      cursor: pointer; max-width: 140px;
+    }
+    .ghost-btn {
+      appearance: none; border: 1px solid var(--border);
+      background: rgba(18,24,40,0.8); color: var(--fg);
+      padding: 5px 10px; border-radius: 999px; font: inherit; font-size: 11px;
+      cursor: pointer;
+    }
+    .ghost-btn:hover { border-color: rgba(91,140,255,0.45); }
+    .ghost-btn:disabled { opacity: .45; cursor: wait; }
+
+    /* ── Stage: full-bleed phone ── */
+    .stage {
+      height: 100dvh;
+      padding: 68px 16px 24px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 14px;
+    }
+
+    /* Pixel-like device */
+    .device {
+      position: relative;
+      height: min(calc(100dvh - 110px), 860px);
+      aspect-ratio: 9 / 19.5;
+      max-width: min(420px, 92vw);
+      background: var(--bezel);
+      border-radius: 44px;
+      padding: 12px;
+      box-shadow: var(--shadow-phone);
+      border: 1.5px solid var(--bezel-edge);
+    }
+    .device::before {
+      content: "";
+      position: absolute; inset: 0; border-radius: 44px; pointer-events: none;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+    }
+    .device-screen {
+      position: relative;
+      width: 100%; height: 100%;
+      border-radius: 34px;
+      overflow: hidden;
+      background: #000;
+    }
+    .punch {
+      position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+      width: 22%; height: 11px; border-radius: 999px;
+      background: #050505; z-index: 3;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.04);
+    }
+    #liveShot {
+      width: 100%; height: 100%;
+      object-fit: contain; object-position: center;
+      display: block; background: #05070d;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      cursor: crosshair;
+    }
+    #liveShot.contain { object-fit: contain; }
+    .device-screen { touch-action: none; }
+    #pressRipple {
+      position: absolute; width: 28px; height: 28px; margin: -14px 0 0 -14px;
+      border-radius: 50%; pointer-events: none; z-index: 5;
+      background: rgba(91,140,255,0.45);
+      border: 2px solid rgba(255,255,255,0.85);
+      box-shadow: 0 0 16px rgba(91,140,255,0.7);
+      opacity: 0; transform: scale(0.4);
+      transition: opacity .18s, transform .18s;
+    }
+    #pressRipple.show {
+      opacity: 1; transform: scale(1);
+    }
+    #tapHint {
+      position: absolute; left: 10px; bottom: 10px; z-index: 4;
+      font-size: 10px; color: rgba(255,255,255,0.55);
+      background: rgba(0,0,0,0.45); padding: 3px 8px; border-radius: 999px;
+      pointer-events: none; letter-spacing: 0.02em;
+    }
+    .phone-empty {
+      position: absolute; inset: 0; display: grid; place-items: center;
+      color: var(--muted); font-size: 13px; text-align: center; padding: 32px;
+      background: linear-gradient(180deg, #0a0e18, #05070c);
+      z-index: 1;
+    }
+    .phone-empty.hidden { display: none; }
+    .phone-empty strong { display: block; color: var(--fg); margin-bottom: 6px; font-size: 15px; }
+
+    .device-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      width: min(420px, 92vw);
+      font-size: 11px; color: var(--muted);
+      padding: 0 4px;
+    }
+    .live-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+      font-size: 10px;
+    }
+    .live-badge .blink {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--ok);
+      box-shadow: 0 0 8px rgba(52,211,153,0.7);
+      animation: blink 1.4s infinite;
+    }
+    .live-badge.off .blink { background: var(--muted); box-shadow: none; animation: none; }
+
+    /* ── Floating Ask (optional, not main) ── */
+    #askFab {
+      position: fixed; right: 22px; bottom: 22px; z-index: 30;
+      appearance: none; border: 0; cursor: pointer;
+      width: 52px; height: 52px; border-radius: 16px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #fff; font: inherit; font-weight: 650; font-size: 13px;
+      box-shadow: 0 8px 28px var(--accent-glow), 0 0 0 1px rgba(255,255,255,0.12);
+      transition: transform .15s, opacity .15s;
+    }
+    #askFab:hover { transform: translateY(-2px); }
+    #askFab:active { transform: scale(0.97); }
+    #askFab.open { opacity: 0; pointer-events: none; }
+
+    .ask-drawer {
+      position: fixed; right: 16px; bottom: 16px; z-index: 35;
+      width: min(360px, calc(100vw - 32px));
+      max-height: min(52vh, 480px);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.55);
+      backdrop-filter: blur(20px);
+      display: none; flex-direction: column;
+      overflow: hidden;
+    }
+    .ask-drawer.open { display: flex; }
+    .ask-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 14px; border-bottom: 1px solid var(--border);
+    }
+    .ask-head h2 { margin: 0; font-size: 13px; font-weight: 600; }
+    .ask-head .hint { font-size: 11px; color: var(--muted); font-weight: 400; }
+    #askClose {
+      appearance: none; border: 0; background: transparent; color: var(--muted);
+      font-size: 18px; cursor: pointer; line-height: 1; padding: 4px 8px;
+    }
+    #askLog {
+      flex: 1; overflow: auto; padding: 12px 14px; min-height: 120px;
+      font-size: 13px; line-height: 1.45;
+    }
+    .ask-msg { margin: 0 0 10px; }
+    .ask-msg.user { color: #a8c4ff; }
+    .ask-msg.bot { color: var(--fg); }
+    .ask-msg .role {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--muted); margin-bottom: 2px;
+    }
+    .ask-form {
+      display: flex; gap: 8px; padding: 10px 12px 12px;
+      border-top: 1px solid var(--border);
+    }
+    #askQ {
+      flex: 1; border: 1px solid var(--border); border-radius: 12px;
+      background: rgba(5,7,12,0.6); color: var(--fg);
+      padding: 10px 12px; font: inherit; font-size: 13px; outline: none;
+    }
+    #askQ:focus { border-color: rgba(91,140,255,0.5); }
+    #askGo {
+      appearance: none; border: 0; cursor: pointer;
+      padding: 10px 14px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #fff; font: inherit; font-weight: 600; font-size: 12px;
+    }
+    #askGo:disabled { opacity: .45; cursor: wait; }
+    .ask-chips {
+      display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 8px;
+    }
+    .ask-chips button {
+      appearance: none; border: 1px solid var(--border);
+      background: rgba(5,7,12,0.5); color: var(--muted);
+      padding: 5px 10px; border-radius: 999px; font: inherit; font-size: 11px;
+      cursor: pointer;
+    }
+    .ask-chips button:hover { color: var(--fg); border-color: rgba(91,140,255,0.4); }
+
+    /* Live overlay */
+    #liveOverlay {
+      display: none; position: fixed; inset: 0; z-index: 50;
+      background: rgba(3,6,14,.82); backdrop-filter: blur(10px);
+      align-items: center; justify-content: center; padding: 24px;
+    }
+    #liveOverlay.open { display: flex; }
+    .live-card {
+      width: min(440px, 100%); background: var(--panel);
+      border: 1px solid var(--border); border-radius: 24px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.5); padding: 28px 24px 22px; text-align: center;
+    }
+    .live-card h2 { margin: 0 0 6px; font-size: 20px; letter-spacing: -0.02em; }
+    .live-card .sub { color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+    .wave {
+      height: 64px; display: flex; align-items: center; justify-content: center;
+      gap: 4px; margin: 12px 0 18px;
+    }
+    .wave i {
+      display: block; width: 4px; border-radius: 4px; background: var(--accent);
+      height: 12px; animation: wave 1.1s ease-in-out infinite;
+    }
+    .wave i:nth-child(2) { animation-delay: .1s; }
+    .wave i:nth-child(3) { animation-delay: .2s; }
+    .wave i:nth-child(4) { animation-delay: .3s; }
+    .wave i:nth-child(5) { animation-delay: .4s; }
+    .wave i:nth-child(6) { animation-delay: .15s; }
+    .wave i:nth-child(7) { animation-delay: .25s; }
+    .wave i:nth-child(8) { animation-delay: .35s; }
+    .wave.idle i { animation: none; height: 8px; opacity: .45; }
+    .wave.speaking i { background: var(--ok); }
+    @keyframes wave {
+      0%,100% { height: 10px; }
+      50% { height: 52px; }
+    }
+    #liveTranscript {
+      min-height: 44px; color: var(--fg); font-size: 15px; line-height: 1.45;
+      margin: 0 0 8px; white-space: pre-wrap;
+    }
+    #liveReply {
+      min-height: 36px; color: var(--muted); font-size: 13px; line-height: 1.45;
+      margin: 0 0 16px; white-space: pre-wrap;
+    }
+    .live-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .live-actions button {
+      appearance: none; border: 1px solid var(--border); background: rgba(18,24,40,0.9);
+      color: var(--fg); padding: 10px 16px; border-radius: 12px;
+      font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .live-actions #liveTalk {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border: 0; color: #fff;
+    }
+    .live-actions #liveLeave { color: var(--err); border-color: rgba(248,113,113,.35); }
+    #liveMeta { font-size: 11px; color: var(--muted); margin-top: 14px; }
+
+    @media (max-width: 560px) {
+      .topbar { padding: 0 10px; height: 48px; }
+      .brand span { display: none; }
+      .device { border-radius: 36px; padding: 10px; }
+      .device-screen { border-radius: 28px; }
+      #askFab { right: 14px; bottom: 14px; width: 48px; height: 48px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">S</div>
+      <h1>Strlix</h1>
+      <span>Cloud Phone</span>
+    </div>
+    <div class="top-right">
+      <button type="button" id="liveBtn" title="Live voice on this laptop"><span class="pulse"></span>Live</button>
+      <select id="topLang" aria-label="Language"></select>
+      <span class="pill"><span class="dot" id="adbDot"></span><span id="adbLabel">ADB …</span></span>
+      <button type="button" class="ghost-btn" id="refreshShot" title="Fresh screenshot">↻</button>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div class="device" id="device">
+      <div class="device-screen">
+        <div class="punch" aria-hidden="true"></div>
+        <img id="liveShot" alt="Phone screen" draggable="false" hidden />
+        <div id="pressRipple" aria-hidden="true"></div>
+        <div id="tapHint">Tap or drag to control</div>
+        <div class="phone-empty" id="phoneEmpty">
+          <div>
+            <strong>Connecting to your phone…</strong>
+            Live preview appears when ADB is connected.
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="device-footer">
+      <span class="live-badge off" id="streamBadge"><span class="blink"></span> Preview</span>
+      <span id="shotStamp">—</span>
+    </div>
+  </div>
+
+  <button type="button" id="askFab" title="Ask Strlix (optional)">Ask</button>
+  <aside class="ask-drawer" id="askDrawer" aria-label="Ask Strlix">
+    <div class="ask-head">
+      <div>
+        <h2>Ask <span class="hint">· optional · AI lives on the phone</span></h2>
+      </div>
+      <button type="button" id="askClose" aria-label="Close">×</button>
+    </div>
+    <div id="askLog"></div>
+    <div class="ask-chips" id="askChips">
+      <button type="button" data-prompt="Go home">Go home</button>
+      <button type="button" data-prompt="Open Settings">Settings</button>
+      <button type="button" data-prompt="Take a screenshot and describe the screen">Describe</button>
+    </div>
+    <form class="ask-form" id="askForm">
+      <input id="askQ" placeholder="Tell the phone what to do…" autocomplete="off" />
+      <button id="askGo" type="submit">Send</button>
+    </form>
+  </aside>
+
+  <div id="liveOverlay" role="dialog" aria-modal="true" aria-label="Live voice session">
+    <div class="live-card">
+      <h2>Live with Strlix</h2>
+      <p class="sub">Mic → Strlix → reply on <strong>this laptop</strong>. Phone stays silent.</p>
+      <div class="wave idle" id="liveWave" aria-hidden="true">
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+      </div>
+      <div id="liveTranscript">Tap Talk and speak…</div>
+      <div id="liveReply"></div>
+      <div class="live-actions">
+        <button type="button" id="liveTalk">Talk</button>
+        <button type="button" id="liveLeave">Leave</button>
+      </div>
+      <div id="liveMeta">Audio: host TTS → browser · scrcpy --no-audio</div>
+    </div>
+  </div>
+
+  <script>
+    const liveShot = document.getElementById('liveShot');
+    const phoneEmpty = document.getElementById('phoneEmpty');
+    const shotStamp = document.getElementById('shotStamp');
+    const streamBadge = document.getElementById('streamBadge');
+    const pressRipple = document.getElementById('pressRipple');
+    const askLog = document.getElementById('askLog');
+    const askDrawer = document.getElementById('askDrawer');
+    const askFab = document.getElementById('askFab');
+    let history = [];
+    let pollBusy = false;
+    let lastUrl = '';
+    let connected = false;
+    let deviceW = 1080, deviceH = 2400;
+    let useMjpeg = true;
+    let mjpegActive = false;
+    let interactiveUntil = 0;
+
+    function setLive(url, label) {
+      if (!url) return;
+      liveShot.hidden = false;
+      const u = url.includes('?') ? url : (url + '?t=' + Date.now());
+      lastUrl = u;
+      const img = new Image();
+      img.onload = () => {
+        liveShot.src = u;
+        phoneEmpty.classList.add('hidden');
+        shotStamp.textContent = label || new Date().toLocaleTimeString();
+        streamBadge.classList.remove('off');
+      };
+      img.onerror = () => {};
+      img.src = u;
+    }
+
+    function showPreviewFrame(url, label) {
+      liveShot.hidden = false;
+      liveShot.src = url;
+      phoneEmpty.classList.add('hidden');
+      shotStamp.textContent = label || new Date().toLocaleTimeString();
+      streamBadge.classList.remove('off');
+      const hint = document.getElementById('tapHint');
+      if (hint) hint.style.display = 'none';
+    }
+
+    function askBubble(role, text) {
+      const row = document.createElement('div');
+      row.className = 'ask-msg ' + (role === 'user' ? 'user' : 'bot');
+      row.innerHTML = '<div class="role">' + (role === 'user' ? 'You' : 'Strlix') + '</div>';
+      const body = document.createElement('div');
+      body.textContent = text;
+      row.appendChild(body);
+      askLog.appendChild(row);
+      askLog.scrollTop = askLog.scrollHeight;
+    }
+
+    async function refreshHealth() {
+      const adbDot = document.getElementById('adbDot');
+      const adbLabel = document.getElementById('adbLabel');
+      try {
+        const r = await fetch('/health');
+        const j = await r.json();
+        const state = (j.adb_state || '').toString();
+        connected = state === 'device' || state.includes('device');
+        const err = state.startsWith('error') || state === '';
+        adbDot.className = 'dot ' + (connected ? 'ok' : err ? 'err' : 'warn');
+        adbLabel.textContent = connected ? 'Phone on' : ('Phone ' + (state || 'offline'));
+        if (!connected) streamBadge.classList.add('off');
+      } catch (e) {
+        connected = false;
+        adbDot.className = 'dot err';
+        adbLabel.textContent = 'Offline';
+        streamBadge.classList.add('off');
+      }
+    }
+
+    async function refreshSize() {
+      try {
+        const r = await fetch('/adb/size');
+        const j = await r.json();
+        if (j && j.width && j.height) {
+          deviceW = j.width;
+          deviceH = j.height;
+        }
+      } catch (_) {}
+    }
+
+    /** Map pointer on #liveShot → device pixels (object-fit: contain). */
+    function clientToDevice(clientX, clientY) {
+      const rect = liveShot.getBoundingClientRect();
+      const nw = liveShot.naturalWidth || 0;
+      const nh = liveShot.naturalHeight || 0;
+      if (!nw || !nh || rect.width <= 0 || rect.height <= 0) return null;
+      const scale = Math.min(rect.width / nw, rect.height / nh);
+      const dispW = nw * scale;
+      const dispH = nh * scale;
+      const offX = rect.left + (rect.width - dispW) / 2;
+      const offY = rect.top + (rect.height - dispH) / 2;
+      const ix = (clientX - offX) / scale;
+      const iy = (clientY - offY) / scale;
+      if (ix < 0 || iy < 0 || ix > nw || iy > nh) return null;
+      const x = Math.round(ix * (deviceW / nw));
+      const y = Math.round(iy * (deviceH / nh));
+      return {
+        x: Math.max(0, Math.min(deviceW - 1, x)),
+        y: Math.max(0, Math.min(deviceH - 1, y)),
+      };
+    }
+
+    function showRipple(clientX, clientY) {
+      const screen = liveShot.parentElement.getBoundingClientRect();
+      pressRipple.style.left = (clientX - screen.left) + 'px';
+      pressRipple.style.top = (clientY - screen.top) + 'px';
+      pressRipple.classList.remove('show');
+      void pressRipple.offsetWidth;
+      pressRipple.classList.add('show');
+      clearTimeout(showRipple._t);
+      showRipple._t = setTimeout(() => pressRipple.classList.remove('show'), 280);
+    }
+
+    // ---- Pointer control (mouse + touch) ----
+    let ptrDown = null;
+    const SWIPE_PX = 14;
+
+    function onPtrDown(ev) {
+      if (!liveShot.src || liveShot.hidden) return;
+      if (ev.pointerType === 'mouse' && ev.button !== 0) return;
+      const pt = clientToDevice(ev.clientX, ev.clientY);
+      if (!pt) return;
+      ev.preventDefault();
+      try { liveShot.setPointerCapture(ev.pointerId); } catch (_) {}
+      ptrDown = { id: ev.pointerId, ...pt, cx: ev.clientX, cy: ev.clientY, t: Date.now() };
+      showRipple(ev.clientX, ev.clientY);
+      interactiveUntil = Date.now() + 4000;
+    }
+    async function onPtrUp(ev) {
+      if (!ptrDown || ptrDown.id !== ev.pointerId) return;
+      ev.preventDefault();
+      const start = ptrDown;
+      ptrDown = null;
+      const end = clientToDevice(ev.clientX, ev.clientY) || { x: start.x, y: start.y };
+      showRipple(ev.clientX, ev.clientY);
+      interactiveUntil = Date.now() + 4000;
+      const clientDist = Math.hypot(ev.clientX - start.cx, ev.clientY - start.cy);
+      const dt = Date.now() - start.t;
+      try {
+        if (clientDist < SWIPE_PX) {
+          await fetch('/adb/tap', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ x: start.x, y: start.y }),
+          });
+          shotStamp.textContent = 'tap ' + start.x + ',' + start.y;
+        } else {
+          const dur = Math.max(80, Math.min(800, dt));
+          await fetch('/adb/swipe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              x1: start.x, y1: start.y, x2: end.x, y2: end.y, duration_ms: dur,
+            }),
+          });
+          shotStamp.textContent = 'swipe → ' + end.x + ',' + end.y;
+        }
+        // Nudge preview after input
+        if (!mjpegActive) setTimeout(() => grabPreview(true), 120);
+      } catch (err) {
+        shotStamp.textContent = 'input failed';
+      }
+    }
+    function onPtrCancel(ev) {
+      if (ptrDown && ptrDown.id === ev.pointerId) ptrDown = null;
+    }
+    liveShot.addEventListener('pointerdown', onPtrDown);
+    liveShot.addEventListener('pointerup', onPtrUp);
+    liveShot.addEventListener('pointercancel', onPtrCancel);
+    liveShot.addEventListener('lostpointercapture', onPtrCancel);
+    // Prevent image drag / context menu interfering with control
+    liveShot.addEventListener('dragstart', (e) => e.preventDefault());
+    liveShot.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    async function grabPreview(force) {
+      if (pollBusy && !force) return;
+      if (mjpegActive && !force) return;
+      pollBusy = true;
+      try {
+        const url = '/adb/preview?quality=55&max_width=540&t=' + Date.now();
+        // Prefetch to read size headers
+        const r = await fetch(url, { cache: 'no-store' });
+        if (!r.ok) throw new Error('preview ' + r.status);
+        const dw = parseInt(r.headers.get('X-Device-Width') || '', 10);
+        const dh = parseInt(r.headers.get('X-Device-Height') || '', 10);
+        if (dw && dh) { deviceW = dw; deviceH = dh; }
+        const blob = await r.blob();
+        const obj = URL.createObjectURL(blob);
+        if (liveShot._blobUrl) URL.revokeObjectURL(liveShot._blobUrl);
+        liveShot._blobUrl = obj;
+        showPreviewFrame(obj, new Date().toLocaleTimeString());
+        connected = true;
+        document.getElementById('adbDot').className = 'dot ok';
+        document.getElementById('adbLabel').textContent = 'Phone on';
+      } catch (err) {
+        if (!liveShot.src) shotStamp.textContent = 'Waiting for ADB…';
+      } finally {
+        pollBusy = false;
+      }
+    }
+
+    // Legacy name used by Ask / Live voice callbacks
+    async function grabShot() { return grabPreview(true); }
+
+    function startMjpeg() {
+      if (!useMjpeg) return;
+      mjpegActive = true;
+      liveShot.hidden = false;
+      liveShot.src = '/adb/mjpeg?quality=50&max_width=480&interval_ms=400';
+      phoneEmpty.classList.add('hidden');
+      streamBadge.classList.remove('off');
+      shotStamp.textContent = 'live stream';
+      liveShot.onload = () => {
+        connected = true;
+        document.getElementById('adbDot').className = 'dot ok';
+        document.getElementById('adbLabel').textContent = 'Phone on';
+        const hint = document.getElementById('tapHint');
+        if (hint) hint.style.display = 'none';
+      };
+      liveShot.onerror = () => {
+        mjpegActive = false;
+        useMjpeg = false;
+        shotStamp.textContent = 'stream fallback…';
+        grabPreview(true);
+      };
+    }
+
+    function stopMjpeg() {
+      if (!mjpegActive) return;
+      mjpegActive = false;
+      // leave src; poll will replace
+    }
+
+    // Poll ~500ms when interactive/focused; ~900ms idle; pause when hidden
+    refreshHealth();
+    refreshSize();
+    setInterval(refreshHealth, 12000);
+    setInterval(refreshSize, 60000);
+
+    function pollDelay() {
+      if (Date.now() < interactiveUntil) return 500;
+      return 800;
+    }
+    function schedulePoll() {
+      if (document.visibilityState !== 'visible') {
+        stopMjpeg();
+        setTimeout(schedulePoll, 1200);
+        return;
+      }
+      if (useMjpeg && !mjpegActive) {
+        startMjpeg();
+        setTimeout(schedulePoll, 2000);
+        return;
+      }
+      if (!mjpegActive) {
+        grabPreview(false).finally(() => setTimeout(schedulePoll, pollDelay()));
+      } else {
+        setTimeout(schedulePoll, 2000);
+      }
+    }
+    schedulePoll();
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        if (useMjpeg) startMjpeg();
+        else grabPreview(true);
+      } else {
+        stopMjpeg();
+      }
+    });
+
+    document.getElementById('refreshShot').addEventListener('click', async () => {
+      const btn = document.getElementById('refreshShot');
+      btn.disabled = true;
+      if (mjpegActive) {
+        // bump by briefly restarting stream
+        liveShot.src = '/adb/mjpeg?quality=50&max_width=480&interval_ms=400&t=' + Date.now();
+      } else {
+        await grabPreview(true);
+      }
+      btn.disabled = false;
+    });
+
+    // Ask drawer
+    function openAsk() {
+      askDrawer.classList.add('open');
+      askFab.classList.add('open');
+      document.getElementById('askQ').focus();
+    }
+    function closeAsk() {
+      askDrawer.classList.remove('open');
+      askFab.classList.remove('open');
+    }
+    askFab.addEventListener('click', openAsk);
+    document.getElementById('askClose').addEventListener('click', closeAsk);
+
+    async function sendAsk(message) {
+      if (!message) return;
+      askBubble('user', message);
+      document.getElementById('askQ').value = '';
+      const btn = document.getElementById('askGo');
+      btn.disabled = true;
+      try {
+        const r = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message, history }),
+        });
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.detail || JSON.stringify(j));
+        history = j.history || history;
+        askBubble('bot', j.reply || '(empty)');
+        for (const s of (j.screenshots || [])) {
+          const name = (s.path || '').split('/').pop();
+          setLive('/demo/' + name + '?t=' + Date.now(), name);
+        }
+        grabShot();
+      } catch (err) {
+        askBubble('bot', 'Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    document.getElementById('askForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      sendAsk(document.getElementById('askQ').value.trim());
+    });
+    document.getElementById('askChips').addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-prompt]');
+      if (b) sendAsk(b.dataset.prompt);
+    });
+
+    // ---- Language ----
+    const LANG_KEY = 'strlix.live.language';
+    const topLang = document.getElementById('topLang');
+    let liveLanguage = localStorage.getItem(LANG_KEY) || '';
+    const LANG_FALLBACKS = [
+      {id:'en-US', name:'English', native:'English'},
+      {id:'hi-IN', name:'Hindi', native:'हिन्दी'},
+      {id:'es-ES', name:'Spanish', native:'Español'},
+      {id:'fr-FR', name:'French', native:'Français'},
+      {id:'zh-CN', name:'Mandarin', native:'中文'},
+      {id:'ar-SA', name:'Arabic', native:'العربية'},
+      {id:'pt-BR', name:'Portuguese', native:'Português'},
+      {id:'ja-JP', name:'Japanese', native:'日本語'},
+    ];
+    function matchDeviceLang(list) {
+      const nav = (navigator.language || 'en-US').replace('_','-');
+      const ids = list.map(x => x.id);
+      if (ids.includes(nav)) return nav;
+      const primary = nav.split('-')[0].toLowerCase();
+      const map = {en:'en-US',hi:'hi-IN',es:'es-ES',fr:'fr-FR',zh:'zh-CN',ar:'ar-SA',pt:'pt-BR',ja:'ja-JP'};
+      if (map[primary] && ids.includes(map[primary])) return map[primary];
+      const hit = list.find(x => x.id.toLowerCase().startsWith(primary + '-'));
+      return hit ? hit.id : 'en-US';
+    }
+    function fillLangSelect(list) {
+      topLang.innerHTML = '';
+      for (const L of list) {
+        const opt = document.createElement('option');
+        opt.value = L.id;
+        opt.textContent = L.name;
+        topLang.appendChild(opt);
+      }
+      if (!liveLanguage || ![...topLang.options].some(o => o.value === liveLanguage)) {
+        liveLanguage = matchDeviceLang(list);
+      }
+      topLang.value = liveLanguage;
+      localStorage.setItem(LANG_KEY, liveLanguage);
+    }
+    fillLangSelect(LANG_FALLBACKS);
+    topLang.addEventListener('change', () => {
+      liveLanguage = topLang.value;
+      localStorage.setItem(LANG_KEY, liveLanguage);
+      if (recognition) { try { recognition.lang = liveLanguage; } catch(_){} }
+      setLiveServer(liveOpen);
+    });
+    fetch('/voice/languages').then(r => r.json()).then(j => {
+      if (j && j.languages && j.languages.length) fillLangSelect(j.languages);
+    }).catch(() => {});
+
+    // ---- Live Voice ----
+    const liveBtn = document.getElementById('liveBtn');
+    const liveOverlay = document.getElementById('liveOverlay');
+    const liveWave = document.getElementById('liveWave');
+    const liveTranscript = document.getElementById('liveTranscript');
+    const liveReply = document.getElementById('liveReply');
+    const liveTalk = document.getElementById('liveTalk');
+    const liveLeave = document.getElementById('liveLeave');
+    const liveMeta = document.getElementById('liveMeta');
+    let liveOpen = false;
+    let liveBusy = false;
+    let liveWs = null;
+    let liveAudio = null;
+    let recognition = null;
+
+    function setWave(mode) {
+      liveWave.classList.remove('idle', 'speaking');
+      if (mode === 'idle') liveWave.classList.add('idle');
+      else if (mode === 'speaking') liveWave.classList.add('speaking');
+    }
+    function playHostAudio(url) {
+      if (!url) return;
+      try { if (liveAudio) { liveAudio.pause(); liveAudio = null; } } catch (_) {}
+      liveAudio = new Audio(url);
+      setWave('speaking');
+      liveAudio.onended = () => { if (!liveBusy) setWave('idle'); };
+      liveAudio.onerror = () => setWave('idle');
+      liveAudio.play().catch(err => {
+        liveMeta.textContent = 'Playback blocked: ' + err.message;
+        setWave('idle');
+      });
+    }
+    function connectLiveWs() {
+      if (liveWs && (liveWs.readyState === 0 || liveWs.readyState === 1)) return;
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+      liveWs = new WebSocket(proto + '://' + location.host + '/ws/live');
+      liveWs.onmessage = (ev) => {
+        try {
+          const msg = JSON.parse(ev.data);
+          if (msg.type === 'speak' && msg.audio_url) {
+            if (msg.text) liveReply.textContent = msg.text;
+            playHostAudio(msg.audio_url);
+          } else if (msg.type === 'hello' && msg.voice) {
+            liveMeta.textContent = 'TTS: ' + (msg.voice.provider || '?') + ' · clients ' + (msg.clients || 0);
+          } else if (msg.type === 'turn') {
+            if (msg.user) liveTranscript.textContent = msg.user;
+            if (msg.reply) liveReply.textContent = msg.reply;
+            if (msg.audio_url) playHostAudio(msg.audio_url);
+          }
+        } catch (_) {}
+      };
+      liveWs.onclose = () => { liveWs = null; if (liveOpen) setTimeout(connectLiveWs, 1500); };
+    }
+    async function setLiveServer(active) {
+      try {
+        await fetch('/voice/live', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ active, source: 'browser', language: liveLanguage }),
+        });
+      } catch (_) {}
+    }
+    function enterLive() {
+      liveOpen = true;
+      liveOverlay.classList.add('open');
+      liveBtn.classList.add('active');
+      liveBtn.innerHTML = '<span class="pulse"></span>Leave';
+      setWave('idle');
+      liveTranscript.textContent = 'Tap Talk and speak…';
+      liveReply.textContent = '';
+      connectLiveWs();
+      setLiveServer(true);
+    }
+    function leaveLive() {
+      liveOpen = false;
+      liveOverlay.classList.remove('open');
+      liveBtn.classList.remove('active');
+      liveBtn.innerHTML = '<span class="pulse"></span>Live';
+      stopRecognition();
+      try { if (liveAudio) liveAudio.pause(); } catch (_) {}
+      setLiveServer(false);
+    }
+    liveBtn.addEventListener('click', () => { if (liveOpen) leaveLive(); else enterLive(); });
+    liveLeave.addEventListener('click', leaveLive);
+
+    function getRecognition() {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) return null;
+      if (recognition) return recognition;
+      recognition = new SR();
+      recognition.lang = liveLanguage || 'en-US';
+      recognition.interimResults = true;
+      recognition.continuous = false;
+      recognition.onstart = () => {
+        liveBusy = true; setWave('listen');
+        liveTalk.textContent = 'Listening…';
+        liveTranscript.textContent = 'Listening…';
+      };
+      recognition.onresult = (ev) => {
+        let interim = '', final = '';
+        for (let i = ev.resultIndex; i < ev.results.length; i++) {
+          const t = ev.results[i][0].transcript;
+          if (ev.results[i].isFinal) final += t; else interim += t;
+        }
+        liveTranscript.textContent = final || interim || '…';
+        if (final) { stopRecognition(); runLiveTurn(final.trim()); }
+      };
+      recognition.onerror = (ev) => {
+        liveBusy = false; liveTalk.textContent = 'Talk'; setWave('idle');
+        liveMeta.textContent = 'Mic error: ' + (ev.error || 'unknown');
+      };
+      recognition.onend = () => {
+        liveTalk.textContent = 'Talk';
+        if (!liveBusy) setWave('idle');
+      };
+      return recognition;
+    }
+    function stopRecognition() {
+      try { if (recognition) recognition.stop(); } catch (_) {}
+      liveBusy = false; liveTalk.textContent = 'Talk';
+    }
+    async function runLiveTurn(message) {
+      if (!message) return;
+      liveBusy = true; liveTalk.disabled = true;
+      liveReply.textContent = 'Thinking…'; setWave('idle');
+      try {
+        const r = await fetch('/voice/turn', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message, history, speak: true, source: 'browser', language: liveLanguage }),
+        });
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.detail || JSON.stringify(j));
+        history = j.history || history;
+        const reply = j.reply || '(empty)';
+        liveReply.textContent = reply;
+        const url = (j.audio && j.audio.url) ? j.audio.url : null;
+        if (url) playHostAudio(url);
+        for (const s of (j.screenshots || [])) {
+          const name = (s.path || '').split('/').pop();
+          setLive('/demo/' + name + '?t=' + Date.now(), name);
+        }
+        grabShot();
+        if (j.audio && j.audio.provider) {
+          liveMeta.textContent = 'TTS ' + j.audio.provider + ' · ' + (j.audio.language || liveLanguage);
+        }
+      } catch (err) {
+        liveReply.textContent = 'Error: ' + err.message;
+      } finally {
+        liveBusy = false; liveTalk.disabled = false; liveTalk.textContent = 'Talk';
+      }
+    }
+    liveTalk.addEventListener('click', () => {
+      const rec = getRecognition();
+      if (!rec) {
+        const fallback = prompt('Mic unavailable. Type what you would say:');
+        if (fallback) { liveTranscript.textContent = fallback; runLiveTurn(fallback.trim()); }
+        return;
+      }
+      try {
+        if (!liveAudio) { liveAudio = new Audio(); liveAudio.play().catch(() => {}); }
+        rec.start();
+      } catch (e) {
+        liveMeta.textContent = 'Could not start mic: ' + e.message;
+      }
+    });
+    fetch('/voice/status').then(r => r.json()).then(j => {
+      if (j && j.provider) liveMeta.textContent = 'TTS ready: ' + j.provider;
+    }).catch(() => {});
+  </script>
+</body>
+</html>

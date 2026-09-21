@@ -1,0 +1,18 @@
+{
+  "before_screenrecord_swipe_to_au_ms": 576.5,
+  "after_scrcpy_first_session_swipe_to_au_ms": 512.8,
+  "after_scrcpy_warm_swipe_to_au_ms": [
+    253.0,
+    241.6,
+    274.9
+  ],
+  "after_scrcpy_warm_swipe_median_ms": 253.0,
+  "warm_join_to_first_au_ms": [
+    14.1,
+    4.2,
+    4.4
+  ],
+  "source_live": "scrcpy",
+  "glass_to_glass_under_100ms": false,
+  "blocker": "emulator MediaCodec + ADB/SSH RTT + no on-demand IDR; full scrcpy GUI still SDL/XDG blocked"
+}

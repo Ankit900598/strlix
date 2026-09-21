@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "suite": "strlix-golden-intents",
+  "fixture_package": "com.zevi.goldenfixture",
+  "fixture_id_prefix": "golden.",
+  "status": "provider_ready",
+  "execution_policy": "The evaluator may inspect evidence, but never creates or mutates fixture state. A fixture provider must install this package and emit signed local evidence before E2E is scored.",
+  "intents": [
+    {
+      "id": "save_download_reel",
+      "fixture_id": "golden.save_download_reel",
+      "launch_app": "Chrome",
+      "postconditions": [
+        "fixture.reel.saved",
+        "fixture.download.exists"
+      ]
+    },
+    {
+      "id": "unsubscribe_mailing_list",
+      "fixture_id": "golden.unsubscribe_mailing_list",
+      "launch_app": "Gmail",
+      "postconditions": [
+        "fixture.unsubscribe.review_visible",
+        "fixture.unrelated_mail.unchanged"
+      ]
+    },
+    {
+      "id": "cancel_subscription",
+      "fixture_id": "golden.cancel_subscription",
+      "launch_app": "Chrome",
+      "postconditions": [
+        "fixture.subscription.review_visible",
+        "fixture.subscription.not_confirmed"
+      ]
+    },
+    {
+      "id": "order_usual_food",
+      "fixture_id": "golden.order_usual_food",
+      "launch_app": "Chrome",
+      "postconditions": [
+        "fixture.cart.matches_saved_usual",
+        "fixture.order.not_placed"
+      ]
+    },
+    {
+      "id": "find_photo_description",
+      "fixture_id": "golden.find_photo_description",
+      "launch_app": "Photos",
+      "postconditions": [
+        "fixture.photo.match_found",
+        "fixture.photo.not_shared"
+      ]
+    },
+    {
+      "id": "book_table",
+      "fixture_id": "golden.book_table",
+      "launch_app": "Chrome",
+      "postconditions": [
+        "fixture.reservation.review_visible",
+        "fixture.reservation.not_confirmed"
+      ]
+    },
+    {
+      "id": "fill_form",
+      "fixture_id": "golden.fill_form",
+      "launch_app": "Chrome",
+      "postconditions": [
+        "fixture.form.fields_match_saved_contact",
+        "fixture.form.not_submitted"
+      ]
+    },
+    {
+      "id": "recurring_reminder",
+      "fixture_id": "golden.recurring_reminder",
+      "launch_app": "Calendar",
+      "postconditions": [
+        "fixture.reminder.recurrence_correct",
+        "fixture.reminder.not_saved"
+      ]
+    },
+    {
+      "id": "summarize_long_thread",
+      "fixture_id": "golden.summarize_long_thread",
+      "launch_app": "Gmail",
+      "postconditions": [
+        "fixture.thread.summary_cites_seed",
+        "fixture.thread.no_reply_sent"
+      ]
+    },
+    {
+      "id": "compare_prices",
+      "fixture_id": "golden.compare_prices",
+      "launch_app": "Chrome",
+      "postconditions": [
+        "fixture.prices.same_sku",
+        "fixture.prices.delivered_arithmetic_correct"
+      ]
+    },
+    {
+      "id": "clear_notifications",
+      "fixture_id": "golden.clear_notifications",
+      "launch_app": "Settings",
+      "postconditions": [
+        "fixture.notifications.allowed_only_cleared",
+        "fixture.notifications.calls_messages_unread"
+      ]
+    },
+    {
+      "id": "make_meme",
+      "fixture_id": "golden.make_meme",
+      "launch_app": "Photos",
+      "postconditions": [
+        "fixture.meme.caption_correct",
+        "fixture.meme.preview_visible",
+        "fixture.meme.not_saved_or_shared"
+      ]
+    }
+  ]
+}

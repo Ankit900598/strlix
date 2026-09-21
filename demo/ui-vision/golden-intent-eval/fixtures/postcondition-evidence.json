@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "fixture_package": "com.zevi.goldenfixture",
+  "serial": "127.0.0.1:5555",
+  "provider": "scripts/run_golden_fixture.py",
+  "intents": {
+    "save_download_reel": {
+      "fixture_id": "golden.save_download_reel",
+      "postconditions": {
+        "fixture.reel.saved": true,
+        "fixture.download.exists": true
+      }
+    },
+    "unsubscribe_mailing_list": {
+      "fixture_id": "golden.unsubscribe_mailing_list",
+      "postconditions": {
+        "fixture.unsubscribe.review_visible": true,
+        "fixture.unrelated_mail.unchanged": true
+      }
+    },
+    "cancel_subscription": {
+      "fixture_id": "golden.cancel_subscription",
+      "postconditions": {
+        "fixture.subscription.review_visible": true,
+        "fixture.subscription.not_confirmed": true
+      }
+    },
+    "order_usual_food": {
+      "fixture_id": "golden.order_usual_food",
+      "postconditions": {
+        "fixture.cart.matches_saved_usual": true,
+        "fixture.order.not_placed": true
+      }
+    },
+    "find_photo_description": {
+      "fixture_id": "golden.find_photo_description",
+      "postconditions": {
+        "fixture.photo.match_found": true,
+        "fixture.photo.not_shared": true
+      }
+    },
+    "book_table": {
+      "fixture_id": "golden.book_table",
+      "postconditions": {
+        "fixture.reservation.review_visible": true,
+        "fixture.reservation.not_confirmed": true
+      }
+    },
+    "fill_form": {
+      "fixture_id": "golden.fill_form",
+      "postconditions": {
+        "fixture.form.fields_match_saved_contact": true,
+        "fixture.form.not_submitted": true
+      }
+    },
+    "recurring_reminder": {
+      "fixture_id": "golden.recurring_reminder",
+      "postconditions": {
+        "fixture.reminder.recurrence_correct": true,
+        "fixture.reminder.not_saved": true
+      }
+    },
+    "summarize_long_thread": {
+      "fixture_id": "golden.summarize_long_thread",
+      "postconditions": {
+        "fixture.thread.summary_cites_seed": true,
+        "fixture.thread.no_reply_sent": true
+      }
+    },
+    "compare_prices": {
+      "fixture_id": "golden.compare_prices",
+      "postconditions": {
+        "fixture.prices.same_sku": true,
+        "fixture.prices.delivered_arithmetic_correct": true
+      }
+    },
+    "clear_notifications": {
+      "fixture_id": "golden.clear_notifications",
+      "postconditions": {
+        "fixture.notifications.allowed_only_cleared": true,
+        "fixture.notifications.calls_messages_unread": true
+      }
+    },
+    "make_meme": {
+      "fixture_id": "golden.make_meme",
+      "postconditions": {
+        "fixture.meme.caption_correct": true,
+        "fixture.meme.preview_visible": true,
+        "fixture.meme.not_saved_or_shared": true
+      }
+    }
+  }
+}

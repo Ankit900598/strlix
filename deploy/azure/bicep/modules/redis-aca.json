@@ -1,0 +1,97 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.47.16.16243",
+      "templateHash": "16115490079265542220"
+    }
+  },
+  "parameters": {
+    "name": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "environmentId": {
+      "type": "string"
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {}
+    },
+    "redisPassword": {
+      "type": "securestring"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.App/containerApps",
+      "apiVersion": "2024-03-01",
+      "name": "[parameters('name')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "properties": {
+        "managedEnvironmentId": "[parameters('environmentId')]",
+        "configuration": {
+          "activeRevisionsMode": "Single",
+          "ingress": {
+            "external": false,
+            "targetPort": 6379,
+            "exposedPort": 6380,
+            "transport": "tcp",
+            "allowInsecure": false
+          }
+        },
+        "template": {
+          "containers": [
+            {
+              "name": "redis",
+              "image": "redis:7-alpine",
+              "args": [
+                "redis-server",
+                "--bind",
+                "0.0.0.0",
+                "--requirepass",
+                "[parameters('redisPassword')]",
+                "--appendonly",
+                "yes"
+              ],
+              "resources": {
+                "cpu": "[json('0.25')]",
+                "memory": "0.5Gi"
+              },
+              "probes": [
+                {
+                  "type": "Readiness",
+                  "tcpSocket": {
+                    "port": 6379
+                  },
+                  "initialDelaySeconds": 3,
+                  "periodSeconds": 10,
+                  "failureThreshold": 3
+                }
+              ]
+            }
+          ],
+          "scale": {
+            "minReplicas": 1,
+            "maxReplicas": 1
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "fqdn": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('name')), '2024-03-01').configuration.ingress.fqdn]"
+    },
+    "note": {
+      "type": "string",
+      "value": "ACA Redis is credit-safe foundation; upgrade to Managed Redis for PE/SLA at scale."
+    }
+  }
+}

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.ZeviAgent" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/zevi_accent</item>
+        <item name="colorPrimaryVariant">@color/zevi_accent2</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/zevi_accent2</item>
+        <item name="android:statusBarColor">@color/zevi_bg</item>
+        <item name="android:navigationBarColor">@color/zevi_bg</item>
+        <item name="android:windowBackground">@color/zevi_bg</item>
+        <item name="android:textColorPrimary">@color/zevi_text</item>
+        <item name="android:textColorSecondary">@color/zevi_muted</item>
+    </style>
+
+    <style name="Theme.ZeviAgent.Chat" parent="Theme.ZeviAgent">
+        <item name="android:windowIsTranslucent">false</item>
+    </style>
+</resources>

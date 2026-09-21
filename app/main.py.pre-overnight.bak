@@ -1,0 +1,400 @@
+"""FastAPI entrypoint for Zevi Cloud Phone Pilot + Live Voice."""
+from __future__ import annotations
+
+import os
+from pathlib import Path
+from typing import Any, Optional
+
+from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
+from fastapi.responses import HTMLResponse, Response, StreamingResponse
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field
+
+ROOT = Path(__file__).resolve().parents[1]
+load_dotenv(ROOT / ".env")
+
+from .adb_client import AdbClient, AdbError  # noqa: E402
+from .pilot import PhonePilot  # noqa: E402
+from .languages import list_languages, resolve_language  # noqa: E402
+from .voice import live_hub, provider_status, synthesize  # noqa: E402
+
+app = FastAPI(title="Zevi Cloud Phone Pilot", version="0.2.0-live")
+static_dir = ROOT / "static"
+static_dir.mkdir(exist_ok=True)
+(ROOT / "demo" / "voice-audio").mkdir(parents=True, exist_ok=True)
+app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+app.mount("/demo", StaticFiles(directory=str(ROOT / "demo")), name="demo")
+
+adb = AdbClient()
+pilot: Optional[PhonePilot] = None
+
+
+def get_pilot() -> PhonePilot:
+    global pilot
+    if pilot is None:
+        if not os.environ.get("AZURE_OPENAI_API_KEY"):
+            raise HTTPException(500, "AZURE_OPENAI_API_KEY missing — put it in .env")
+        pilot = PhonePilot(adb=adb)
+    return pilot
+
+
+class ChatRequest(BaseModel):
+    message: str = Field(..., min_length=1)
+    history: Optional[list[dict[str, Any]]] = None
+
+
+class SpeakRequest(BaseModel):
+    text: str = Field(..., min_length=1)
+    voice: Optional[str] = None
+    language: Optional[str] = None  # e.g. hi-IN, en-US
+    broadcast: bool = True  # push to browser live clients
+
+
+class VoiceTurnRequest(BaseModel):
+    message: str = Field(..., min_length=1)
+    history: Optional[list[dict[str, Any]]] = None
+    speak: bool = True
+    voice: Optional[str] = None
+    language: Optional[str] = None
+    source: Optional[str] = None  # browser | phone
+
+
+class LiveStateRequest(BaseModel):
+    active: bool
+    source: Optional[str] = None
+    language: Optional[str] = None
+
+
+@app.get("/", response_class=HTMLResponse)
+async def index():
+    index_path = static_dir / "index.html"
+    return HTMLResponse(index_path.read_text(encoding="utf-8"))
+
+
+@app.get("/health")
+async def health():
+    info: dict[str, Any] = {
+        "ok": True,
+        "adb_serial": adb.serial,
+        "deployment": os.environ.get("AZURE_OPENAI_DEPLOYMENT"),
+        "endpoint_set": bool(os.environ.get("AZURE_OPENAI_ENDPOINT")),
+        "key_set": bool(os.environ.get("AZURE_OPENAI_API_KEY")),
+        "voice": provider_status(),
+        "live": {
+            "active": live_hub.state.get("active"),
+            "source": live_hub.state.get("source"),
+            "browser_clients": live_hub.client_count(),
+        },
+    }
+    try:
+        state = await adb.ensure_connected()
+        info["adb_state"] = state
+    except Exception as e:  # noqa: BLE001
+        info["adb_state"] = f"error: {e}"
+    return info
+
+
+@app.post("/chat")
+async def chat(req: ChatRequest):
+    try:
+        result = await get_pilot().chat(req.message, history=req.history)
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(500, f"{type(e).__name__}: {e}") from e
+
+
+class TapRequest(BaseModel):
+    x: int
+    y: int
+
+
+class SwipeRequest(BaseModel):
+    x1: int
+    y1: int
+    x2: int
+    y2: int
+    duration_ms: int = 300
+
+
+@app.post("/adb/screenshot")
+async def adb_screenshot(save: bool = Query(True, description="Write PNG under demo/")):
+    """Full PNG. Default still saves for pilot/chat; set save=false to skip disk."""
+    try:
+        shot = await adb.screenshot(save=save)
+        url = None
+        if shot.get("path"):
+            url = f"/demo/{Path(shot['path']).name}"
+        return {
+            "ok": True,
+            "path": shot.get("path") or None,
+            "bytes": shot["bytes"],
+            "url": url,
+            "mime": shot.get("mime"),
+            "base64": shot.get("base64") if not save else None,
+        }
+    except AdbError as e:
+        raise HTTPException(503, str(e)) from e
+
+
+@app.get("/adb/preview")
+async def adb_preview(
+    quality: int = Query(55, ge=20, le=90),
+    max_width: int = Query(540, ge=240, le=1080),
+):
+    """Fast JPEG preview (in-memory, no demo/ write)."""
+    try:
+        prev = await adb.preview_jpeg(quality=quality, max_width=max_width)
+    except AdbError as e:
+        raise HTTPException(503, str(e)) from e
+    return Response(
+        content=prev["bytes"],
+        media_type="image/jpeg",
+        headers={
+            "Cache-Control": "no-store",
+            "X-Device-Width": str(prev["device_width"]),
+            "X-Device-Height": str(prev["device_height"]),
+            "X-Image-Width": str(prev["image_width"]),
+            "X-Image-Height": str(prev["image_height"]),
+        },
+    )
+
+
+@app.get("/adb/preview.json")
+async def adb_preview_json(
+    quality: int = Query(55, ge=20, le=90),
+    max_width: int = Query(540, ge=240, le=1080),
+):
+    """Same as /adb/preview but base64 JSON (for clients that prefer fetch+blob)."""
+    try:
+        prev = await adb.preview_jpeg(quality=quality, max_width=max_width)
+    except AdbError as e:
+        raise HTTPException(503, str(e)) from e
+    return {
+        "ok": True,
+        "mime": prev["mime"],
+        "bytes": prev["size"],
+        "base64": prev["base64"],
+        "device_width": prev["device_width"],
+        "device_height": prev["device_height"],
+        "image_width": prev["image_width"],
+        "image_height": prev["image_height"],
+    }
+
+
+@app.get("/adb/mjpeg")
+async def adb_mjpeg(
+    quality: int = Query(50, ge=20, le=80),
+    max_width: int = Query(480, ge=240, le=720),
+    interval_ms: int = Query(450, ge=250, le=2000),
+):
+    """Multipart MJPEG stream for snappy live preview."""
+    boundary = b"frame"
+
+    async def gen():
+        while True:
+            try:
+                prev = await adb.preview_jpeg(quality=quality, max_width=max_width)
+                data = prev["bytes"]
+                header = (
+                    b"--" + boundary + b"\r\n"
+                    b"Content-Type: image/jpeg\r\n"
+                    b"Content-Length: " + str(len(data)).encode() + b"\r\n"
+                    b"X-Device-Width: " + str(prev["device_width"]).encode() + b"\r\n"
+                    b"X-Device-Height: " + str(prev["device_height"]).encode() + b"\r\n"
+                    b"\r\n"
+                )
+                yield header + data + b"\r\n"
+            except Exception:  # noqa: BLE001
+                # Brief pause then continue — keeps stream alive across ADB blips
+                import asyncio as _aio
+                await _aio.sleep(1.0)
+                continue
+            import asyncio as _aio
+            await _aio.sleep(interval_ms / 1000.0)
+
+    return StreamingResponse(
+        gen(),
+        media_type=f"multipart/x-mixed-replace; boundary={boundary.decode()}",
+        headers={"Cache-Control": "no-store", "Pragma": "no-cache"},
+    )
+
+
+@app.post("/adb/tap")
+async def adb_tap(req: TapRequest):
+    try:
+        return await adb.tap(req.x, req.y)
+    except AdbError as e:
+        raise HTTPException(503, str(e)) from e
+
+
+@app.post("/adb/swipe")
+async def adb_swipe(req: SwipeRequest):
+    try:
+        return await adb.swipe(req.x1, req.y1, req.x2, req.y2, req.duration_ms)
+    except AdbError as e:
+        raise HTTPException(503, str(e)) from e
+
+
+@app.get("/adb/size")
+async def adb_size():
+    try:
+        return await adb.wm_size()
+    except AdbError as e:
+        raise HTTPException(503, str(e)) from e
+
+
+@app.get("/voice/languages")
+async def voice_languages():
+    return {"ok": True, "languages": list_languages(), "default": "en-US"}
+
+
+@app.get("/voice/status")
+async def voice_status():
+    return {
+        "ok": True,
+        **provider_status(),
+        "live": live_hub.state,
+        "browser_clients": live_hub.client_count(),
+    }
+
+
+@app.post("/voice/speak")
+async def voice_speak(req: SpeakRequest):
+    """Synthesize text on host; return audio URL for laptop browser playback."""
+    try:
+        audio = await synthesize(req.text, language=req.language, voice=req.voice)
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(500, f"TTS failed: {type(e).__name__}: {e}") from e
+    n = 0
+    if req.broadcast:
+        n = await live_hub.broadcast(
+            {
+                "type": "speak",
+                "text": req.text,
+                "audio_url": audio["url"],
+                "provider": audio["provider"],
+                "language": audio.get("language"),
+                "voice": audio.get("voice"),
+                "ms": audio["ms"],
+            }
+        )
+    return {**audio, "broadcast_clients": n}
+
+
+@app.post("/voice/turn")
+async def voice_turn(req: VoiceTurnRequest):
+    """Full live turn: LLM chat → host TTS → broadcast audio URL to laptop browsers."""
+    try:
+        result = await get_pilot().chat(req.message, history=req.history)
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(500, f"{type(e).__name__}: {e}") from e
+
+    reply = result.get("reply") or ""
+    audio: Optional[dict[str, Any]] = None
+    if req.speak and reply.strip():
+        try:
+            audio = await synthesize(reply, language=req.language, voice=req.voice)
+            await live_hub.broadcast(
+                {
+                    "type": "speak",
+                    "text": reply,
+                    "audio_url": audio["url"],
+                    "provider": audio["provider"],
+                    "language": audio.get("language"),
+                    "voice": audio.get("voice"),
+                    "user": req.message,
+                    "source": req.source or "unknown",
+                    "ms": audio["ms"],
+                }
+            )
+        except Exception as e:  # noqa: BLE001
+            # Chat succeeded; TTS optional failure shouldn't kill the turn
+            audio = {"ok": False, "error": f"{type(e).__name__}: {e}"}
+
+    await live_hub.broadcast(
+        {
+            "type": "turn",
+            "user": req.message,
+            "reply": reply,
+            "source": req.source or "unknown",
+            "audio_url": (audio or {}).get("url"),
+        }
+    )
+    return {
+        **result,
+        "audio": audio,
+        "routing": {
+            "playback": "host_browser_webaudio",
+            "phone_speaker": "silent",
+            "scrcpy_audio": "no-audio (unchanged)",
+        },
+    }
+
+
+@app.post("/voice/live")
+async def voice_live_state(req: LiveStateRequest):
+    lang = resolve_language(req.language or live_hub.state.get("language")).get("id")
+    live_hub.state = {
+        "active": req.active,
+        "source": req.source,
+        "language": lang,
+        "started_at": live_hub.state.get("started_at") if req.active else None,
+    }
+    if req.active and not live_hub.state.get("started_at"):
+        import time
+
+        live_hub.state["started_at"] = time.time()
+    await live_hub.broadcast({"type": "live_state", **live_hub.state})
+    return {"ok": True, **live_hub.state, "browser_clients": live_hub.client_count()}
+
+
+@app.websocket("/ws/live")
+async def ws_live(ws: WebSocket):
+    """Laptop browser connects here to receive speak events + play TTS locally."""
+    await ws.accept()
+    await live_hub.register(ws)
+    await ws.send_json(
+        {
+            "type": "hello",
+            "voice": provider_status(),
+            "live": live_hub.state,
+            "clients": live_hub.client_count(),
+        }
+    )
+    try:
+        while True:
+            data = await ws.receive_json()
+            typ = (data or {}).get("type")
+            if typ == "ping":
+                await ws.send_json({"type": "pong"})
+            elif typ == "live_state":
+                live_hub.state = {
+                    "active": bool(data.get("active")),
+                    "source": data.get("source") or "browser",
+                    "started_at": live_hub.state.get("started_at"),
+                }
+                await live_hub.broadcast({"type": "live_state", **live_hub.state})
+            elif typ == "transcript":
+                # Browser may publish partial transcripts for phone UI sync
+                await live_hub.broadcast(
+                    {
+                        "type": "transcript",
+                        "text": data.get("text"),
+                        "final": bool(data.get("final")),
+                        "source": data.get("source") or "browser",
+                    }
+                )
+    except WebSocketDisconnect:
+        pass
+    except Exception:  # noqa: BLE001
+        pass
+    finally:
+        await live_hub.unregister(ws)
+
+
+@app.get("/favicon.ico")
+async def favicon():
+    return HTMLResponse("")

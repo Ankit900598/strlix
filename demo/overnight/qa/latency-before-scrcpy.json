@@ -1,0 +1,11 @@
+{
+  "phase": "BEFORE_restart_screenrecord",
+  "hello_source": "screenrecord",
+  "swipe_to_next_au_ms": 576.5,
+  "aus": 195,
+  "fps": 18.3,
+  "kbps": 626,
+  "keyframes": 2,
+  "first_frame_ms": 792,
+  "segment_s": 60
+}

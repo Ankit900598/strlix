@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:accessibilityPaneTitle="@string/live_title"
+    android:background="@color/strlix_surface_1">
+
+    <TextView
+        android:id="@+id/liveTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="18dp"
+        android:accessibilityHeading="true"
+        android:text="@string/live_title"
+        android:textColor="@color/white"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnShare"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:contentDescription="@string/share_replay_description"
+        android:minHeight="48dp"
+        android:minWidth="0dp"
+        android:paddingHorizontal="12dp"
+        android:text="@string/share_replay"
+        android:textAllCaps="false"
+        android:visibility="gone" />
+
+    <com.zevi.agent.LiveOrbView
+        android:id="@+id/liveOrb" android:layout_width="160dp" android:layout_height="160dp"
+        android:layout_gravity="center"
+        android:contentDescription="@string/live_orb_description"
+        android:importantForAccessibility="yes" />
+
+    <TextView
+        android:id="@+id/liveCaption" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:accessibilityLiveRegion="polite"
+        android:contentDescription="@string/live_caption_description"
+        android:layout_gravity="center_horizontal|center_vertical" android:layout_marginTop="142dp"
+        android:gravity="center" android:paddingHorizontal="24dp" android:text="@string/live_caption_idle"
+        android:textColor="@color/strlix_text_2" android:textSize="15sp" />
+
+    <LinearLayout
+        android:id="@+id/liveControls" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal" android:layout_marginBottom="28dp"
+        android:gravity="center" android:orientation="horizontal">
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnKeyboard" android:layout_width="48dp" android:layout_height="48dp"
+            android:layout_marginEnd="12dp" android:insetLeft="0dp" android:insetRight="0dp"
+            android:insetTop="0dp" android:insetBottom="0dp" android:text="⌨" android:textSize="18sp"
+            android:contentDescription="@string/live_keyboard_description" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnStop" android:layout_width="64dp" android:layout_height="64dp"
+            android:layout_marginEnd="12dp" android:insetLeft="0dp" android:insetRight="0dp"
+            android:insetTop="0dp" android:insetBottom="0dp" android:text="⏹" android:textSize="22sp"
+            android:contentDescription="@string/live_leave_description" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnMute" android:layout_width="48dp" android:layout_height="48dp"
+            android:insetLeft="0dp" android:insetRight="0dp" android:insetTop="0dp" android:insetBottom="0dp"
+            android:text="🔇" android:textSize="18sp" android:contentDescription="@string/live_mute_description" />
+    </LinearLayout>
+</FrameLayout>

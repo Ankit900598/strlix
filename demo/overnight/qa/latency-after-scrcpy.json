@@ -1,0 +1,15 @@
+{
+  "phase": "AFTER_scrcpy_or_fallback",
+  "hello_source": "scrcpy",
+  "stats_source": "scrcpy",
+  "scrcpy_disabled": false,
+  "last_error": null,
+  "swipe_to_next_au_ms": 512.8,
+  "aus": 41,
+  "fps": 11.8,
+  "kbps": 1728,
+  "keyframes": 1,
+  "first_frame_ms": 1744,
+  "segment_s": 15,
+  "bitrate": 1200000
+}

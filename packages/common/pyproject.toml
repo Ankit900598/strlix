@@ -1,0 +1,19 @@
+[project]
+name = "strlix-common"
+version = "0.1.0"
+description = "Shared auth, config, and types for Strlix android-api and desktop-api"
+requires-python = ">=3.11"
+dependencies = [
+  "pydantic>=2.0.0",
+  "pydantic-settings>=2.0.0",
+  "PyJWT[crypto]>=2.8.0",
+  "python-dotenv>=1.0.0",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["strlix_common*"]

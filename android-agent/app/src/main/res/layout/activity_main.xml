@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/mainScroll"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/zevi_bg"
+    android:contentDescription="@string/app_name"
+    android:fillViewport="true"
+    android:importantForAccessibility="yes">
+
+    <LinearLayout
+        android:id="@+id/mainContent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/skipToAsk"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:minHeight="48dp"
+            android:paddingHorizontal="4dp"
+            android:text="@string/skip_to_ask"
+            android:textAllCaps="false"
+            android:textColor="@color/zevi_accent" />
+
+        <TextView
+            android:id="@+id/brandTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:accessibilityHeading="true"
+            android:contentDescription="@string/app_name"
+            android:text="Strlix"
+            android:textColor="@color/zevi_accent"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.12" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Your phone, with AI"
+            android:textColor="@color/zevi_text"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/welcome"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:lineSpacingExtra="4dp"
+            android:text="@string/welcome"
+            android:textColor="@color/zevi_muted"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/setupHint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/welcome_setup_hint"
+            android:textColor="@color/zevi_muted"
+            android:textSize="13sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/bg_card"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/pilotStatus"
+                android:contentDescription="@string/cloud_status_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Cloud: checking…"
+                android:textColor="@color/zevi_text"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/pilotUrl"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:visibility="gone"
+                android:textColor="@color/zevi_muted"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/overlayStatus"
+                android:contentDescription="@string/setup_status_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textColor="@color/zevi_muted"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnOpenChat"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:contentDescription="@string/open_chat_description"
+            android:nextFocusForward="@id/btnOverlayPerm"
+            android:text="@string/open_chat"
+            android:textAllCaps="false" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnOverlayPerm"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:contentDescription="@string/enable_overlay_description"
+            android:nextFocusForward="@id/btnA11y"
+            android:text="@string/enable_overlay"
+            android:textAllCaps="false" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnA11y"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:contentDescription="@string/enable_a11y_description"
+            android:nextFocusForward="@id/btnPinWidget"
+            android:text="@string/enable_a11y"
+            android:textAllCaps="false" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPinWidget"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:contentDescription="@string/pin_widget_description"
+            android:nextFocusForward="@id/btnStartBubble"
+            android:text="@string/pin_widget"
+            android:textAllCaps="false" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnStartBubble"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:contentDescription="@string/start_bubble_description"
+            android:nextFocusForward="@id/btnHome"
+            android:text="@string/start_bubble"
+            android:textAllCaps="false"
+            android:textColor="@color/zevi_muted" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:accessibilityHeading="true"
+            android:text="@string/quick_actions_heading"
+            android:textColor="@color/zevi_text"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnHome"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:layout_weight="1"
+                android:contentDescription="@string/home_description"
+                android:nextFocusForward="@id/btnSettings"
+                android:text="@string/home"
+                android:textAllCaps="false" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSettings"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:contentDescription="@string/settings_description"
+                android:text="@string/open_settings"
+                android:textAllCaps="false" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:text="@string/footer_version"
+            android:textColor="@color/zevi_muted"
+            android:textSize="11sp" />
+    </LinearLayout>
+</ScrollView>

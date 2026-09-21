@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "id": "e63635e1d0",
+  "title": "Android replay smoke",
+  "steps": [
+    "Frame one",
+    "Frame two"
+  ],
+  "frame_count": 2,
+  "gif": "/demo/replay/replay-20260921-111308-e63635e1d0.gif",
+  "json": "/demo/replay/replay-20260921-111308-e63635e1d0.json",
+  "created_at": "20260921-111308"
+}

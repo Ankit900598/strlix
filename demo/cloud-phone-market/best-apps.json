@@ -1,0 +1,2160 @@
+[
+  {
+    "id": "grug",
+    "name": "grug",
+    "cat": "delight",
+    "source": "ADA2026",
+    "bullets": [
+      "No login / no cloud \u2014 instant first value",
+      "Hand-drawn status bar personality without clutter",
+      "Release notes as delight surface",
+      "Single-idea focus; zero extraneous chrome",
+      "Home Screen widgets extend presence"
+    ]
+  },
+  {
+    "id": "guitar-wiz",
+    "name": "Guitar Wiz",
+    "cat": "inclusivity",
+    "source": "ADA2026",
+    "bullets": [
+      "VoiceOver covers pitch, chords, fret placement",
+      "Dynamic Type + Increased Contrast supported",
+      "Differentiate Without Color for chord cues",
+      "Cross-device SwiftUI toolkit coherence",
+      "Autonomy-first for musicians with disabilities"
+    ]
+  },
+  {
+    "id": "moonlitt",
+    "name": "Moonlitt",
+    "cat": "interaction",
+    "source": "ADA2026",
+    "bullets": [
+      "Easy onboarding to celestial tracking",
+      "Best-in-class Liquid Glass integration",
+      "3D moon path map for photography planning",
+      "Broad platform support incl. Vision Pro",
+      "Sister-app consistency with Sunlitt"
+    ]
+  },
+  {
+    "id": "tide-guide",
+    "name": "Tide Guide",
+    "cat": "visuals",
+    "source": "ADA2026",
+    "bullets": [
+      "Full-screen charts for dense weather/tide data",
+      "Palette adapts to sky color through the day",
+      "Hour-by-hour forecasts scannable by novices",
+      "Crisp hierarchy of swell/temp layers",
+      "Liquid Glass theming tied to environment"
+    ]
+  },
+  {
+    "id": "nba-app",
+    "name": "NBA",
+    "cat": "innovation",
+    "source": "ADA2026",
+    "bullets": [
+      "Novel Apple tech integration for live sports",
+      "Spatial/interactive game experiences",
+      "Clear live-data hierarchy under pressure",
+      "Platform-tailored controls",
+      "Brand-cohesive motion language"
+    ]
+  },
+  {
+    "id": "primary-news",
+    "name": "Primary: News in Depth",
+    "cat": "social-impact",
+    "source": "ADA2026",
+    "bullets": [
+      "Minimal UI gets out of the way of news",
+      "Spatial organization without clickbait",
+      "Editor-led curation visible in IA",
+      "Focus on story over chrome",
+      "Thoughtful engagement over sensationalism"
+    ]
+  },
+  {
+    "id": "structured",
+    "name": "Structured",
+    "cat": "productivity",
+    "source": "ADA2026",
+    "bullets": [
+      "Prioritizes downtime equal to productivity",
+      "Neurodivergent-friendly simple layout",
+      "Foundation Models suggest/pre-fill tasks",
+      "Visually sharp timeline scanning",
+      "Break-finding as first-class feature"
+    ]
+  },
+  {
+    "id": "hearing-buddy",
+    "name": "Hearing Buddy",
+    "cat": "inclusivity",
+    "source": "ADA2026",
+    "bullets": [
+      "Real-time captions from lived experience design",
+      "On-device speech-to-text reliability focus",
+      "Conversation summaries as support, not gimmick",
+      "Easy buddy metaphor reduces stigma",
+      "Watch + phone continuity"
+    ]
+  },
+  {
+    "id": "blippo",
+    "name": "Blippo+",
+    "cat": "delight",
+    "source": "ADA2026",
+    "bullets": [
+      "Synchronized broadcast creates shared watching",
+      "Pixel-perfect retro world-building",
+      "Ad-free alternative streaming metaphor",
+      "Channel-surf mental model",
+      "DIY aesthetic as coherent system"
+    ]
+  },
+  {
+    "id": "metaballs",
+    "name": "Metaballs",
+    "cat": "delight",
+    "source": "ADA2026",
+    "bullets": [
+      "Spatial blob physics that invite play",
+      "Lighting-reactive materials",
+      "Export USDZ into other workflows",
+      "Poke/pull affordances obvious",
+      "visionOS canvas as playground"
+    ]
+  },
+  {
+    "id": "seat-taken",
+    "name": "Is This Seat Taken?",
+    "cat": "games",
+    "source": "ADA2026",
+    "bullets": [
+      "Narrative hides puzzle complexity",
+      "No timers \u2014 low anxiety play",
+      "Tap ambient objects for playful responses",
+      "UI Easter eggs reward exploration",
+      "Cartoon presentation lowers barrier"
+    ]
+  },
+  {
+    "id": "ball-x-pit",
+    "name": "Ball x Pit",
+    "cat": "games",
+    "source": "ADA2026",
+    "bullets": [
+      "HDR-popping retro combat visuals",
+      "Satisfying collision feedback",
+      "Simple verb (fling balls) deep systems",
+      "Chaotic readability on small screens",
+      "Roguelite loops with clear run goals"
+    ]
+  },
+  {
+    "id": "powerwash",
+    "name": "PowerWash Simulator",
+    "cat": "games",
+    "source": "ADA2026",
+    "bullets": [
+      "Per-nozzle haptic differentiation",
+      "Zen cleaning as core loop",
+      "Narrative left-turns keep surprise",
+      "Cross-Apple-platform availability",
+      "Satisfaction from visible progress state"
+    ]
+  },
+  {
+    "id": "play-proto",
+    "name": "Play",
+    "cat": "creative",
+    "source": "ADA2025",
+    "bullets": [
+      "SwiftUI prototyping accessible to designers",
+      "Realtime Mac\u2194iPhone sync",
+      "Powerful yet navigable IA",
+      "Collaboration without heavyweight tools",
+      "Interactive prototypes as first-class"
+    ]
+  },
+  {
+    "id": "taobao",
+    "name": "Taobao",
+    "cat": "commerce",
+    "source": "ADA2025",
+    "bullets": [
+      "Platform-tailored shopping interactions",
+      "Dense catalog with clear paths",
+      "Vision Pro 3D model commerce cues",
+      "Effortless controls for high-frequency buys",
+      "Region-scale information architecture"
+    ]
+  },
+  {
+    "id": "speechify",
+    "name": "Speechify",
+    "cat": "inclusivity",
+    "source": "ADA2025",
+    "bullets": [
+      "50-language TTS accessibility",
+      "Listening transforms reading friction",
+      "Clear playback controls",
+      "Inclusive by default not addon",
+      "Cross-content ingestion UX"
+    ]
+  },
+  {
+    "id": "feather-3d",
+    "name": "Feather: Draw in 3D",
+    "cat": "creative",
+    "source": "ADA2025",
+    "bullets": [
+      "2D\u21923D with Pencil/touch",
+      "Skill-level progressive disclosure",
+      "Spatial drawing affordances",
+      "Creativity-first empty canvas",
+      "iPad interaction mastery"
+    ]
+  },
+  {
+    "id": "capwords",
+    "name": "CapWords",
+    "cat": "delight",
+    "source": "ADA2025",
+    "bullets": [
+      "Memorable caption/word play delight",
+      "Apple tech enhanced engagement",
+      "Satisfying micro-feedback",
+      "Focused single-job craft",
+      "Shareable output moments"
+    ]
+  },
+  {
+    "id": "watch-duty",
+    "name": "Watch Duty",
+    "cat": "social-impact",
+    "source": "ADA2025",
+    "bullets": [
+      "Crisis info hierarchy under stress",
+      "Trustworthy alerts over noise",
+      "Map + status clarity",
+      "Community safety mental model",
+      "Low-friction critical path"
+    ]
+  },
+  {
+    "id": "doordash",
+    "name": "DoorDash",
+    "cat": "food",
+    "source": "GUM",
+    "bullets": [
+      "Impulse-path: hungry\u2192order minimized",
+      "Time-aware recommendations",
+      "Multi-signal restaurant cards",
+      "Checkout speed as design goal",
+      "Contextual home intelligence"
+    ]
+  },
+  {
+    "id": "ubereats",
+    "name": "Uber Eats",
+    "cat": "food",
+    "source": "GUM",
+    "bullets": [
+      "Visual merchandising of food photos",
+      "Category organization as window shopping",
+      "Browse pleasure over pure utility",
+      "Clear delivery ETA hierarchy",
+      "Merchant brand within platform"
+    ]
+  },
+  {
+    "id": "grubhub",
+    "name": "Grubhub",
+    "cat": "food",
+    "source": "GUM",
+    "bullets": [
+      "Streamlined menu customization",
+      "Ordering flow progressive disclosure",
+      "Modifier UX without overwhelm",
+      "Clear cart state",
+      "Repeat-order shortcuts"
+    ]
+  },
+  {
+    "id": "venmo",
+    "name": "Venmo",
+    "cat": "fintech",
+    "source": "GUM",
+    "bullets": [
+      "Social feed for payments",
+      "Casual money movement tone",
+      "Public/private payment privacy controls",
+      "Emoji/note as social glue",
+      "Contact-first send flow"
+    ]
+  },
+  {
+    "id": "monzo",
+    "name": "Monzo",
+    "cat": "fintech",
+    "source": "GUM",
+    "bullets": [
+      "Vibrant non-boring banking colors",
+      "Instant spend notifications",
+      "Spending insights visualizations",
+      "Pots/goals mental model",
+      "Modern card controls"
+    ]
+  },
+  {
+    "id": "betterment",
+    "name": "Betterment",
+    "cat": "fintech",
+    "source": "GUM",
+    "bullets": [
+      "Goal-based portfolio UI",
+      "Complex investing made scannable",
+      "Clear data viz over tables",
+      "Progress toward goals",
+      "Calm risk communication"
+    ]
+  },
+  {
+    "id": "airbnb",
+    "name": "Airbnb",
+    "cat": "travel",
+    "source": "GUM",
+    "bullets": [
+      "Category-first browse discovery",
+      "Full-bleed aspirational photography",
+      "Wishlists as lightweight save",
+      "Map+list dual mode",
+      "Host trust signals near CTA"
+    ]
+  },
+  {
+    "id": "booking",
+    "name": "Booking.com",
+    "cat": "travel",
+    "source": "GUM",
+    "bullets": [
+      "Handles extreme information density",
+      "Filter power without paralysis",
+      "Scarcity/availability honesty patterns",
+      "Compare clarity",
+      "Mobile booking confidence"
+    ]
+  },
+  {
+    "id": "skyscanner",
+    "name": "Skyscanner",
+    "cat": "travel",
+    "source": "GUM",
+    "bullets": [
+      "Price calendar for flexible dates",
+      "Complex comparison made actionable",
+      "Clear leg hierarchy",
+      "Everywhere/anytime search modes",
+      "Price alert feedback"
+    ]
+  },
+  {
+    "id": "todoist",
+    "name": "Todoist",
+    "cat": "productivity",
+    "source": "GUM",
+    "bullets": [
+      "Natural language task capture",
+      "Gets out of the way",
+      "Smart scheduling suggestions",
+      "Karma/light gamification optional",
+      "Fast add from anywhere"
+    ]
+  },
+  {
+    "id": "airtable",
+    "name": "Airtable",
+    "cat": "productivity",
+    "source": "GUM",
+    "bullets": [
+      "Database power with progressive disclosure",
+      "Mobile-friendly spreadsheet paradigms",
+      "Views switch without relearning",
+      "Rich field types visible",
+      "Collaboration presence cues"
+    ]
+  },
+  {
+    "id": "linkedin",
+    "name": "LinkedIn",
+    "cat": "social",
+    "source": "GUM",
+    "bullets": [
+      "Multi-purpose tabs clearly separated",
+      "Professional feed vs jobs vs network",
+      "Profile as living resume",
+      "Messaging without losing context",
+      "Dense but scannable cards"
+    ]
+  },
+  {
+    "id": "myfitnesspal",
+    "name": "MyFitnessPal",
+    "cat": "health",
+    "source": "GUM",
+    "bullets": [
+      "Barcode + recent meals speed logging",
+      "Tedious task made quick",
+      "Smart food search",
+      "Daily summary dashboard",
+      "Habit streaks light touch"
+    ]
+  },
+  {
+    "id": "noom",
+    "name": "Noom",
+    "cat": "health",
+    "source": "GUM",
+    "bullets": [
+      "Coaching UI not just trackers",
+      "Daily lessons cadence",
+      "Progress celebrations",
+      "Gentle nudge copy tone",
+      "Behavior-change framing"
+    ]
+  },
+  {
+    "id": "whoop",
+    "name": "Whoop",
+    "cat": "health",
+    "source": "GUM",
+    "bullets": [
+      "Biometrics \u2192 actionable summaries",
+      "Clean recovery/strain hierarchy",
+      "Avoids data overwhelm",
+      "Day/night glanceability",
+      "Hardware+app continuity"
+    ]
+  },
+  {
+    "id": "etsy",
+    "name": "Etsy",
+    "cat": "commerce",
+    "source": "GUM",
+    "bullets": [
+      "Unique-item discovery curation",
+      "Strong imagery primacy",
+      "Personalization of handmade catalog",
+      "Seller story near buy",
+      "Favorites collections"
+    ]
+  },
+  {
+    "id": "depop",
+    "name": "Depop",
+    "cat": "commerce",
+    "source": "GUM",
+    "bullets": [
+      "Social feed \u00d7 shopping merge",
+      "Instagram-like browse for retail",
+      "Seller profiles as brands",
+      "Like/comment engagement loops",
+      "Youth-culture visual tone"
+    ]
+  },
+  {
+    "id": "stockx",
+    "name": "StockX",
+    "cat": "commerce",
+    "source": "GUM",
+    "bullets": [
+      "Bid/ask market transparency",
+      "Stock-market metaphor for retail",
+      "Authentication trust UI",
+      "Price graph literacy",
+      "Size/condition clarity"
+    ]
+  },
+  {
+    "id": "zara",
+    "name": "Zara",
+    "cat": "commerce",
+    "source": "GUM",
+    "bullets": [
+      "Editorial magazine product pages",
+      "Minimalist luxury fast-fashion",
+      "Image-led storytelling",
+      "Sparse chrome",
+      "Lookbook \u2192 PDP path"
+    ]
+  },
+  {
+    "id": "bumble",
+    "name": "Bumble",
+    "cat": "social",
+    "source": "GUM",
+    "bullets": [
+      "Women-first interaction rules in UI",
+      "Time-limited match urgency",
+      "Verification trust badges",
+      "Prompt-led profiles",
+      "Safety tools visible"
+    ]
+  },
+  {
+    "id": "coursera",
+    "name": "Coursera",
+    "cat": "education",
+    "source": "GUM",
+    "bullets": [
+      "Learning path visualization",
+      "Progress tracking for long courses",
+      "Mobile lecture continuity",
+      "Credential motivation surfaces",
+      "Module chunking"
+    ]
+  },
+  {
+    "id": "blinkist",
+    "name": "Blinkist",
+    "cat": "education",
+    "source": "GUM",
+    "bullets": [
+      "15-minute read format",
+      "Beautiful text-on-mobile reading",
+      "Library management clarity",
+      "Audio/text mode switch",
+      "Finish celebration"
+    ]
+  },
+  {
+    "id": "linear",
+    "name": "Linear",
+    "cat": "productivity",
+    "source": "DC",
+    "bullets": [
+      "Sub-50ms local-first feel; no spinners",
+      "Keyboard-first command palette",
+      "Dark-first contrast hierarchy",
+      "Native-feeling GitHub/Slack integrations",
+      "Opinionated IA over configurability"
+    ]
+  },
+  {
+    "id": "stripe",
+    "name": "Stripe",
+    "cat": "fintech",
+    "source": "DOC",
+    "bullets": [
+      "Checkout clarity and trust copy",
+      "Docs-as-product navigation",
+      "Dashboard metric scannability",
+      "Test-mode obviousness",
+      "Error messages that teach"
+    ]
+  },
+  {
+    "id": "figma",
+    "name": "Figma",
+    "cat": "creative",
+    "source": "DOC",
+    "bullets": [
+      "Multiplayer cursors presence",
+      "Infinite canvas zoom performance",
+      "Component/variant systems UX",
+      "Comment pins in context",
+      "Share link permissions clarity"
+    ]
+  },
+  {
+    "id": "notion",
+    "name": "Notion",
+    "cat": "productivity",
+    "source": "DOC",
+    "bullets": [
+      "Blocks as universal editing model",
+      "Empty-state templates that teach",
+      "Slash-command discovery",
+      "Database\u2194doc hybrid",
+      "Sidebar workspace nesting"
+    ]
+  },
+  {
+    "id": "spotify",
+    "name": "Spotify",
+    "cat": "streaming",
+    "source": "DOC",
+    "bullets": [
+      "Now Playing as persistent dock",
+      "Personalized home shelves",
+      "Crossfade/queue transparency",
+      "Shareable playlist identity",
+      "Offline download state clarity"
+    ]
+  },
+  {
+    "id": "instagram",
+    "name": "Instagram",
+    "cat": "social",
+    "source": "DOC",
+    "bullets": [
+      "Stories ring affordance",
+      "Vertical full-bleed content",
+      "Double-tap like microinteraction",
+      "Creation from camera tab",
+      "Explore grid discovery"
+    ]
+  },
+  {
+    "id": "tiktok",
+    "name": "TikTok",
+    "cat": "social",
+    "source": "DOC",
+    "bullets": [
+      "For You full-screen immersion",
+      "Swipe-up next content velocity",
+      "Sound-on default with clarity",
+      "Create entry always present",
+      "Comment drawer over content"
+    ]
+  },
+  {
+    "id": "youtube",
+    "name": "YouTube",
+    "cat": "streaming",
+    "source": "DOC",
+    "bullets": [
+      "Miniplayer continuity",
+      "Chapter scrubbing",
+      "Shorts vs long-form modes",
+      "Subscribe/notify controls",
+      "Quality/bandwidth picker"
+    ]
+  },
+  {
+    "id": "netflix",
+    "name": "Netflix",
+    "cat": "streaming",
+    "source": "DOC",
+    "bullets": [
+      "Billboard hero + rows IA",
+      "Profile kids/adult separation",
+      "Continue Watching resume",
+      "Preview autoplay muted",
+      "My List lightweight save"
+    ]
+  },
+  {
+    "id": "discord",
+    "name": "Discord",
+    "cat": "social",
+    "source": "DOC",
+    "bullets": [
+      "Servers/channels IA",
+      "Voice states visible",
+      "Nitro upsell without blocking core",
+      "Slash commands in chat",
+      "Thread side conversations"
+    ]
+  },
+  {
+    "id": "slack",
+    "name": "Slack",
+    "cat": "productivity",
+    "source": "DOC",
+    "bullets": [
+      "Channel + DM mental model",
+      "Huddles lightweight voice",
+      "Emoji react density",
+      "Saved/later triage",
+      "Search modifiers power"
+    ]
+  },
+  {
+    "id": "whatsapp",
+    "name": "WhatsApp",
+    "cat": "social",
+    "source": "DOC",
+    "bullets": [
+      "End-to-end lock cues",
+      "Status lightweight stories",
+      "Voice note waveform UX",
+      "Chat wallpaper identity",
+      "Read receipts subtle"
+    ]
+  },
+  {
+    "id": "telegram",
+    "name": "Telegram",
+    "cat": "social",
+    "source": "DOC",
+    "bullets": [
+      "Folders for chat triage",
+      "Saved Messages personal cloud",
+      "Channels broadcast model",
+      "Secret chat visual distinction",
+      "Fast media gallery"
+    ]
+  },
+  {
+    "id": "uber",
+    "name": "Uber",
+    "cat": "mobility",
+    "source": "DOC",
+    "bullets": [
+      "Map-centric request",
+      "Fare upfront certainty",
+      "Driver ETA animation",
+      "Safety toolkit visible",
+      "Multi-stop trip editing"
+    ]
+  },
+  {
+    "id": "wise",
+    "name": "Wise",
+    "cat": "fintech",
+    "source": "DOC",
+    "bullets": [
+      "Fee transparency before send",
+      "Mid-market rate education",
+      "Recipient details checklist",
+      "Transfer tracker stages",
+      "Borderless account clarity"
+    ]
+  },
+  {
+    "id": "duolingo",
+    "name": "Duolingo",
+    "cat": "education",
+    "source": "DOC",
+    "bullets": [
+      "Streak + owl urgency",
+      "Bite-sized lesson cards",
+      "Hearts/lives friction balance",
+      "Leaderboards social",
+      "Celebrate correct with motion"
+    ]
+  },
+  {
+    "id": "headspace",
+    "name": "Headspace",
+    "cat": "health",
+    "source": "DOC",
+    "bullets": [
+      "Illustration-led calm brand",
+      "Session length chooser",
+      "Course vs single session",
+      "Sleep/focus modes",
+      "Progress without shame"
+    ]
+  },
+  {
+    "id": "strava",
+    "name": "Strava",
+    "cat": "health",
+    "source": "DOC",
+    "bullets": [
+      "Activity cards social proof",
+      "Segment leaderboards",
+      "Map polyline beauty",
+      "Kudos micro-ack",
+      "Relative effort clarity"
+    ]
+  },
+  {
+    "id": "oura",
+    "name": "Oura",
+    "cat": "health",
+    "source": "WEBBY",
+    "bullets": [
+      "Webby-winning visual design/function",
+      "Ring data \u2192 simple scores",
+      "Readiness as hero metric",
+      "Intuitive redesign hierarchy",
+      "Best UI award patterns"
+    ]
+  },
+  {
+    "id": "claude-app",
+    "name": "Claude",
+    "cat": "ai",
+    "source": "DOC",
+    "bullets": [
+      "Artifacts side panel",
+      "Projects memory scoping",
+      "Clean prose-first chat",
+      "Tool use visible but calm",
+      "Style controls"
+    ]
+  },
+  {
+    "id": "chatgpt",
+    "name": "ChatGPT",
+    "cat": "ai",
+    "source": "DOC",
+    "bullets": [
+      "Model picker progressive",
+      "Voice mode orb presence",
+      "Custom GPTs directory",
+      "Canvas/editing surfaces",
+      "Memory toggles"
+    ]
+  },
+  {
+    "id": "perplexity",
+    "name": "Perplexity",
+    "cat": "ai",
+    "source": "DOC",
+    "bullets": [
+      "Cited answers as default",
+      "Focus/collection modes",
+      "Follow-up chips",
+      "Source drawer trust",
+      "Threads vs search hybrid"
+    ]
+  },
+  {
+    "id": "cursor-ide",
+    "name": "Cursor",
+    "cat": "devtools",
+    "source": "DOC",
+    "bullets": [
+      "AI in editor not chat-only",
+      "Tab autocomplete feel",
+      "Composer multi-file",
+      "Diff review UX",
+      "Model routing controls"
+    ]
+  },
+  {
+    "id": "raycast",
+    "name": "Raycast",
+    "cat": "productivity",
+    "source": "DOC",
+    "bullets": [
+      "Launcher as OS extension",
+      "Extensions store",
+      "Snippets/AI commands",
+      "Window management",
+      "Clipboard history"
+    ]
+  },
+  {
+    "id": "arc-browser",
+    "name": "Arc",
+    "cat": "browsers",
+    "source": "DOC",
+    "bullets": [
+      "Spaces for context",
+      "Split view tabs",
+      "Little Arc quick windows",
+      "Boosts page restyle",
+      "Command bar navigation"
+    ]
+  },
+  {
+    "id": "appetize",
+    "name": "Appetize.io",
+    "cat": "cloud-phone",
+    "source": "RES",
+    "bullets": [
+      "Embed \u2192 fullscreen phone metaphor",
+      "Seconds-to-stream start",
+      "Kiosk/allowlist controls",
+      "UI hierarchy for agents",
+      "Published tier minutes honesty"
+    ]
+  },
+  {
+    "id": "browserstack",
+    "name": "BrowserStack App Live",
+    "cat": "device-farm",
+    "source": "RES",
+    "bullets": [
+      "Device card \u2192 immersive session",
+      "Floating toolbar secondary to device",
+      "Switch device mid-session",
+      "DevTools as drawers not takeover",
+      "Local testing tunnel path"
+    ]
+  },
+  {
+    "id": "sauce",
+    "name": "Sauce Labs Live",
+    "cat": "device-farm",
+    "source": "RES",
+    "bullets": [
+      "Real vs virtual tabs",
+      "Filter by OEM/OS",
+      "Live logs alongside stream",
+      "IDE-embedded device panel",
+      "Screenshot/record one-click"
+    ]
+  },
+  {
+    "id": "vsphone",
+    "name": "VSPhone",
+    "cat": "cloud-phone",
+    "source": "RES",
+    "bullets": [
+      "Model+Android+region+duration buy form",
+      "Multi-instance AFK grid",
+      "In-client app market",
+      "Proxy bind affordance",
+      "Cross-client sync claim"
+    ]
+  },
+  {
+    "id": "geelark",
+    "name": "GeeLark",
+    "cat": "cloud-phone",
+    "source": "RES",
+    "bullets": [
+      "Workspace groups for phones",
+      "Synchronizer live preview grid",
+      "Visual RPA builder",
+      "Team roles/permissions",
+      "Per-device proxy health"
+    ]
+  },
+  {
+    "id": "multilogin",
+    "name": "Multilogin Cloud Phone",
+    "cat": "cloud-phone",
+    "source": "RES",
+    "bullets": [
+      "Browser+phone one dashboard",
+      "Launch phone in same tab",
+      "Built-in proxies with profile",
+      "API automation parity marketing",
+      "Identity isolation messaging"
+    ]
+  },
+  {
+    "id": "redfinger",
+    "name": "Redfinger",
+    "cat": "cloud-phone",
+    "source": "RES",
+    "bullets": [
+      "VIP ladder exposes RAM/ROM/Android",
+      "Region list on price page",
+      "Legacy Android 8.1 still offered",
+      "Spec-first purchasing",
+      "Trial entry path"
+    ]
+  },
+  {
+    "id": "nowgg",
+    "name": "now.gg",
+    "cat": "cloud-gaming",
+    "source": "RES",
+    "bullets": [
+      "Homepage tile \u2192 instant stream",
+      "Zero install browser play",
+      "Curated catalog simplicity",
+      "Ads/queue as cautionary UX",
+      "Instant-play mental model"
+    ]
+  },
+  {
+    "id": "geforce-now",
+    "name": "GeForce Now",
+    "cat": "cloud-gaming",
+    "source": "DOC",
+    "bullets": [
+      "Library sync from stores",
+      "Queue position honesty",
+      "Settings for bitrate/latency",
+      "Rig tier comparison",
+      "Session time remaining"
+    ]
+  },
+  {
+    "id": "xbox-cloud",
+    "name": "Xbox Cloud Gaming",
+    "cat": "cloud-gaming",
+    "source": "DOC",
+    "bullets": [
+      "Game Pass catalog browse",
+      "Controller pairing UX",
+      "Quick resume cloud",
+      "Friends activity",
+      "Touch controls overlay"
+    ]
+  },
+  {
+    "id": "parsec",
+    "name": "Parsec",
+    "cat": "remote",
+    "source": "DOC",
+    "bullets": [
+      "Low-latency remote desktop",
+      "Host/client role clarity",
+      "Bandwidth adaptive",
+      "Multi-monitor handling",
+      "Friend share hosts"
+    ]
+  },
+  {
+    "id": "cashapp",
+    "name": "Cash App",
+    "cat": "fintech",
+    "source": "DOC",
+    "bullets": [
+      "$cashtag identity",
+      "Investing adjacent to pay",
+      "Bold monochrome brand UI",
+      "Instant verify flows",
+      "Card controls simple"
+    ]
+  },
+  {
+    "id": "revolut",
+    "name": "Revolut",
+    "cat": "fintech",
+    "source": "DOC",
+    "bullets": [
+      "Multi-currency vaults",
+      "Crypto/metal adjacent tabs",
+      "Spending analytics rings",
+      "Card freeze one-tap",
+      "Vault goals"
+    ]
+  },
+  {
+    "id": "robinhood",
+    "name": "Robinhood",
+    "cat": "fintech",
+    "source": "DOC",
+    "bullets": [
+      "Gesture trade confirm",
+      "Sparkline-first holdings",
+      "Fractional share education",
+      "Push for price moves",
+      "Clean onboarding risk disclosures"
+    ]
+  },
+  {
+    "id": "phonepe",
+    "name": "PhonePe",
+    "cat": "fintech",
+    "source": "DOC",
+    "bullets": [
+      "UPI intent ubiquity",
+      "Scan & pay camera",
+      "Billers hub",
+      "Reward scratch cards",
+      "Switch/linked accounts"
+    ]
+  },
+  {
+    "id": "gpay-india",
+    "name": "Google Pay India",
+    "cat": "fintech",
+    "source": "DOC",
+    "bullets": [
+      "UPI + chat-like passbook",
+      "Offers nearby",
+      "Group spend",
+      "Autopay mandates",
+      "QR primary"
+    ]
+  },
+  {
+    "id": "canva",
+    "name": "Canva",
+    "cat": "creative",
+    "source": "DOC",
+    "bullets": [
+      "Template-first creation",
+      "Brand kit consistency",
+      "Magic Studio AI assists",
+      "Resize magic",
+      "Team permissions"
+    ]
+  },
+  {
+    "id": "procreate",
+    "name": "Procreate",
+    "cat": "creative",
+    "source": "DOC",
+    "bullets": [
+      "Gesture-centric drawing",
+      "Brush studio depth",
+      "Time-lapse replay",
+      "Layer UX on iPad",
+      "QuickShape assist"
+    ]
+  },
+  {
+    "id": "figjam",
+    "name": "FigJam",
+    "cat": "creative",
+    "source": "DOC",
+    "bullets": [
+      "Sticky notes + stamps fun",
+      "Timer for workshops",
+      "Cursor chat",
+      "Templates for rituals",
+      "Voting affordances"
+    ]
+  },
+  {
+    "id": "vercel",
+    "name": "Vercel",
+    "cat": "devtools",
+    "source": "DOC",
+    "bullets": [
+      "Preview deploy per PR",
+      "Instant rollback",
+      "Domain/DNS clarity",
+      "Analytics tasteful",
+      "Edge config UX"
+    ]
+  },
+  {
+    "id": "github",
+    "name": "GitHub",
+    "cat": "devtools",
+    "source": "DOC",
+    "bullets": [
+      "PR conversation + checks",
+      "Actions status dots",
+      "Codespaces one-click env",
+      "Mobile triage app",
+      "Security alerts severity"
+    ]
+  },
+  {
+    "id": "vscode",
+    "name": "VS Code",
+    "cat": "devtools",
+    "source": "DOC",
+    "bullets": [
+      "Command palette ubiquity",
+      "Extensions marketplace trust",
+      "Split editor layouts",
+      "Problems panel triage",
+      "Remote SSH continuity"
+    ]
+  },
+  {
+    "id": "supabase",
+    "name": "Supabase",
+    "cat": "devtools",
+    "source": "DOC",
+    "bullets": [
+      "Table editor",
+      "Auth UI",
+      "Realtime",
+      "Storage",
+      "Edge functions"
+    ]
+  },
+  {
+    "id": "firebase",
+    "name": "Firebase",
+    "cat": "devtools",
+    "source": "DOC",
+    "bullets": [
+      "Console overview",
+      "Auth providers",
+      "Crashlytics",
+      "Remote Config",
+      "App Check"
+    ]
+  },
+  {
+    "id": "1password",
+    "name": "1Password",
+    "cat": "security",
+    "source": "DOC",
+    "bullets": [
+      "Watchtower security",
+      "Autofill reliability",
+      "Travel mode",
+      "SSH agent",
+      "Family sharing"
+    ]
+  },
+  {
+    "id": "signal",
+    "name": "Signal",
+    "cat": "social",
+    "source": "DOC",
+    "bullets": [
+      "Privacy as primary brand UI",
+      "Disappearing messages clear",
+      "Sealed sender trust",
+      "Minimal metadata cues",
+      "Call quality focus"
+    ]
+  },
+  {
+    "id": "zoom",
+    "name": "Zoom",
+    "cat": "productivity",
+    "source": "DOC",
+    "bullets": [
+      "One-tap join",
+      "Gallery vs speaker views",
+      "Reaction nonverbal",
+      "Breakout rooms IA",
+      "Waiting room safety"
+    ]
+  },
+  {
+    "id": "superhuman",
+    "name": "Superhuman",
+    "cat": "productivity",
+    "source": "DOC",
+    "bullets": [
+      "Keyboard triage speed",
+      "Reminders snooze",
+      "Split inbox",
+      "AI summarize/compose",
+      "Instant open feel"
+    ]
+  },
+  {
+    "id": "calendly",
+    "name": "Calendly",
+    "cat": "productivity",
+    "source": "DOC",
+    "bullets": [
+      "One-link booking",
+      "Buffer times",
+      "Round robin",
+      "Payment collect",
+      "Reminder SMS"
+    ]
+  },
+  {
+    "id": "typeform",
+    "name": "Typeform",
+    "cat": "productivity",
+    "source": "DOC",
+    "bullets": [
+      "One-question focus",
+      "Conversational forms",
+      "Logic jumps",
+      "Beautiful endings",
+      "Embed polish"
+    ]
+  },
+  {
+    "id": "loom",
+    "name": "Loom",
+    "cat": "media",
+    "source": "DOC",
+    "bullets": [
+      "Async video record",
+      "CTA links on video",
+      "Trim silence",
+      "Viewer insights",
+      "Emoji react on timeline"
+    ]
+  },
+  {
+    "id": "twitch",
+    "name": "Twitch",
+    "cat": "streaming",
+    "source": "DOC",
+    "bullets": [
+      "Chat + stream split",
+      "Bits/cheers economy",
+      "Clip creation",
+      "Category browse",
+      "Raids continuity"
+    ]
+  },
+  {
+    "id": "tesla",
+    "name": "Tesla App",
+    "cat": "mobility",
+    "source": "DOC",
+    "bullets": [
+      "Car as UI remote",
+      "Climate precondition",
+      "Summon/controls map",
+      "Charging visualizations",
+      "Software update progress"
+    ]
+  },
+  {
+    "id": "peloton",
+    "name": "Peloton",
+    "cat": "health",
+    "source": "DOC",
+    "bullets": [
+      "Class schedule browse",
+      "Instructor follow",
+      "Leaderboard opt-in",
+      "Scenic rides",
+      "Hardware+app unit"
+    ]
+  },
+  {
+    "id": "letterboxd",
+    "name": "Letterboxd",
+    "cat": "social",
+    "source": "DOC",
+    "bullets": [
+      "Diary logging films",
+      "Lists culture",
+      "Poster grid beauty",
+      "Review length flexibility",
+      "Friends watch activity"
+    ]
+  },
+  {
+    "id": "kindle",
+    "name": "Kindle",
+    "cat": "media",
+    "source": "DOC",
+    "bullets": [
+      "Typography controls",
+      "Whispersync position",
+      "Vocabulary builder",
+      "X-Ray",
+      "Cool light tones"
+    ]
+  },
+  {
+    "id": "shopify",
+    "name": "Shopify",
+    "cat": "commerce",
+    "source": "DOC",
+    "bullets": [
+      "Admin mobile glance",
+      "POS continuity",
+      "Theme editor preview",
+      "Checkout extensibility",
+      "Analytics home cards"
+    ]
+  },
+  {
+    "id": "amazon",
+    "name": "Amazon",
+    "cat": "commerce",
+    "source": "DOC",
+    "bullets": [
+      "Search domination IA",
+      "1-Click trust/risk",
+      "Prime badge clarity",
+      "Buy Box competition UI",
+      "Returns self-serve"
+    ]
+  },
+  {
+    "id": "wechat",
+    "name": "WeChat",
+    "cat": "social",
+    "source": "DOC",
+    "bullets": [
+      "Super-app mini programs",
+      "Pay + chat fused",
+      "Moments social layer",
+      "Official accounts",
+      "Search as discovery"
+    ]
+  },
+  {
+    "id": "ios-control",
+    "name": "iOS Control Center",
+    "cat": "os",
+    "source": "DOC",
+    "bullets": [
+      "Continuous vertical gesture",
+      "Module expand deep links",
+      "Haptic density",
+      "Focus integration",
+      "Brightness/volume absolute"
+    ]
+  },
+  {
+    "id": "pixel-launcher",
+    "name": "Pixel Launcher",
+    "cat": "os",
+    "source": "DOC",
+    "bullets": [
+      "At a Glance widgets",
+      "Material You dynamic color",
+      "App search from swipe",
+      "Themed icons",
+      "Minimal dock"
+    ]
+  },
+  {
+    "id": "material3",
+    "name": "Material You apps",
+    "cat": "os",
+    "source": "DOC",
+    "bullets": [
+      "Dynamic color tokens",
+      "Predictive back",
+      "Large typography scales",
+      "Expressive motion",
+      "Navigation bar vs rail"
+    ]
+  },
+  {
+    "id": "sentry",
+    "name": "Sentry",
+    "cat": "devtools",
+    "source": "DOC",
+    "bullets": [
+      "Issue grouping quality",
+      "Release health",
+      "Suspect commits",
+      "Breadcrumbs timeline",
+      "Quota clarity"
+    ]
+  },
+  {
+    "id": "intercom",
+    "name": "Intercom",
+    "cat": "support",
+    "source": "DOC",
+    "bullets": [
+      "Messenger as product surface",
+      "Fin AI triage",
+      "Series campaigns",
+      "Help center search",
+      "Inbox assignment"
+    ]
+  },
+  {
+    "id": "algolia",
+    "name": "Algolia",
+    "cat": "devtools",
+    "source": "DOC",
+    "bullets": [
+      "InstantSearch components",
+      "Relevance tuning",
+      "Query suggestions",
+      "Analytics",
+      "Rules merchandising"
+    ]
+  },
+  {
+    "id": "neon",
+    "name": "Neon",
+    "cat": "devtools",
+    "source": "DOC",
+    "bullets": [
+      "Serverless Postgres branches",
+      "Scale-to-zero",
+      "Time Travel",
+      "Launchpad",
+      "Driver serverless"
+    ]
+  },
+  {
+    "id": "auth0",
+    "name": "Auth0",
+    "cat": "security",
+    "source": "DOC",
+    "bullets": [
+      "Hosted login consistency",
+      "Social connection buttons",
+      "Branding hooks",
+      "MFA step-up",
+      "Error localization"
+    ]
+  },
+  {
+    "id": "miro",
+    "name": "Miro",
+    "cat": "creative",
+    "source": "DOC",
+    "bullets": [
+      "Infinite workshop canvas",
+      "Private mode",
+      "Voting",
+      "Frames present",
+      "AI clustering"
+    ]
+  },
+  {
+    "id": "trello",
+    "name": "Trello",
+    "cat": "productivity",
+    "source": "DOC",
+    "bullets": [
+      "Lists/cards simplicity",
+      "Butler automation",
+      "Power-Ups",
+      "Calendar",
+      "Mirror cards"
+    ]
+  },
+  {
+    "id": "asana",
+    "name": "Asana",
+    "cat": "productivity",
+    "source": "DOC",
+    "bullets": [
+      "My Tasks ritual",
+      "Timeline view",
+      "Workloads",
+      "Rules automation",
+      "Forms intake"
+    ]
+  },
+  {
+    "id": "notion-cal",
+    "name": "Notion Calendar",
+    "cat": "productivity",
+    "source": "DOC",
+    "bullets": [
+      "Scheduling links",
+      "AI event drafting",
+      "Multi-cal overlay",
+      "Availability sharing",
+      "Minimal chrome"
+    ]
+  },
+  {
+    "id": "gmaps",
+    "name": "Google Maps",
+    "cat": "nav",
+    "source": "DOC",
+    "bullets": [
+      "Live traffic layers",
+      "Lane guidance clarity",
+      "Contribute UX loops",
+      "Explore local packs",
+      "Timeline privacy controls"
+    ]
+  },
+  {
+    "id": "maps-apple",
+    "name": "Apple Maps",
+    "cat": "nav",
+    "source": "DOC",
+    "bullets": [
+      "Look Around immersion",
+      "Transit clarity",
+      "Guides collections",
+      "Offline download maps",
+      "Siri integration handoff"
+    ]
+  },
+  {
+    "id": "imessage",
+    "name": "Apple Messages",
+    "cat": "social",
+    "source": "DOC",
+    "bullets": [
+      "Tapbacks micro-ack",
+      "Inline apps/stickers",
+      "Shared with You continuity",
+      "Focus filter integration",
+      "Audio message raise-to-listen"
+    ]
+  },
+  {
+    "id": "apple-photos",
+    "name": "Apple Photos",
+    "cat": "media",
+    "source": "DOC",
+    "bullets": [
+      "Memories storytelling",
+      "Clean years/months scrub",
+      "iCloud Shared Library",
+      "Edit non-destructive",
+      "Search people/pets"
+    ]
+  },
+  {
+    "id": "safari",
+    "name": "Safari",
+    "cat": "browsers",
+    "source": "DOC",
+    "bullets": [
+      "Compact tab bar iOS",
+      "Reader mode calm",
+      "Privacy report cues",
+      "Profiles separation",
+      "Shared tab groups"
+    ]
+  },
+  {
+    "id": "beereal",
+    "name": "BeReal",
+    "cat": "social",
+    "source": "DOC",
+    "bullets": [
+      "Simultaneous dual camera",
+      "Notification-timed authenticity",
+      "Friends Real grid",
+      "Low likes pressure classic",
+      "Late Real honesty"
+    ]
+  },
+  {
+    "id": "snapchat",
+    "name": "Snapchat",
+    "cat": "social",
+    "source": "DOC",
+    "bullets": [
+      "Camera-first home",
+      "Ephemeral default",
+      "Snap Map social",
+      "Lenses AR entry",
+      "Streaks retention"
+    ]
+  },
+  {
+    "id": "pinterest",
+    "name": "Pinterest",
+    "cat": "social",
+    "source": "DOC",
+    "bullets": [
+      "Masonry discovery grid",
+      "Save to board taxonomy",
+      "Visual search camera",
+      "Idea pins format",
+      "Shopping tags"
+    ]
+  },
+  {
+    "id": "coinbase",
+    "name": "Coinbase",
+    "cat": "fintech",
+    "source": "DOC",
+    "bullets": [
+      "Learn & earn",
+      "Asset clarity",
+      "Send/receive QR",
+      "Advanced trade toggle",
+      "Security keys education"
+    ]
+  },
+  {
+    "id": "square",
+    "name": "Square",
+    "cat": "fintech",
+    "source": "DOC",
+    "bullets": [
+      "Tap-to-pay simplicity",
+      "Dashboard sales pulse",
+      "Invoice create fast",
+      "Hardware setup wizards",
+      "Team clock-in"
+    ]
+  },
+  {
+    "id": "dropbox",
+    "name": "Dropbox",
+    "cat": "productivity",
+    "source": "DOC",
+    "bullets": [
+      "Selective sync",
+      "Transfer large files",
+      "Replay/rewind",
+      "Doc scanning",
+      "Share link permissions"
+    ]
+  },
+  {
+    "id": "obsidian",
+    "name": "Obsidian",
+    "cat": "productivity",
+    "source": "DOC",
+    "bullets": [
+      "Local-first vault",
+      "Graph view relationships",
+      "Plugin ecosystem",
+      "Daily notes ritual",
+      "Backlinks panel"
+    ]
+  },
+  {
+    "id": "things3",
+    "name": "Things 3",
+    "cat": "productivity",
+    "source": "DOC",
+    "bullets": [
+      "Areas/projects elegance",
+      "Today/Upcoming ritual",
+      "Checkoff satisfaction",
+      "Typewriter quick entry",
+      "Macintosh craft polish"
+    ]
+  },
+  {
+    "id": "excalidraw",
+    "name": "Excalidraw",
+    "cat": "creative",
+    "source": "DOC",
+    "bullets": [
+      "Hand-drawn feel digital",
+      "Library shapes",
+      "Collaboration room",
+      "Export scene",
+      "Open-source embed"
+    ]
+  },
+  {
+    "id": "framer",
+    "name": "Framer",
+    "cat": "creative",
+    "source": "DOC",
+    "bullets": [
+      "Design\u2192site publish",
+      "CMS collections",
+      "Effects timeline",
+      "Breakpoints",
+      "AI wireframe"
+    ]
+  },
+  {
+    "id": "calcom",
+    "name": "Cal.com",
+    "cat": "productivity",
+    "source": "DOC",
+    "bullets": [
+      "Open-source scheduling",
+      "Availability matrix",
+      "Routing forms",
+      "Embed booking",
+      "Team event types"
+    ]
+  },
+  {
+    "id": "posthog",
+    "name": "PostHog",
+    "cat": "devtools",
+    "source": "DOC",
+    "bullets": [
+      "Product analytics self-host",
+      "Session replay privacy",
+      "Feature flags colocated",
+      "Surveys",
+      "SQL insights"
+    ]
+  },
+  {
+    "id": "mux",
+    "name": "Mux",
+    "cat": "devtools",
+    "source": "DOC",
+    "bullets": [
+      "Video API simplicity",
+      "Data quality of experience",
+      "Player themes",
+      "Live streams",
+      "Webhooks"
+    ]
+  },
+  {
+    "id": "livekit",
+    "name": "LiveKit",
+    "cat": "devtools",
+    "source": "DOC",
+    "bullets": [
+      "Realtime rooms",
+      "Egress/ingress",
+      "Agents framework",
+      "Playground",
+      "Latency focus"
+    ]
+  },
+  {
+    "id": "roblox",
+    "name": "Roblox",
+    "cat": "games",
+    "source": "DOC",
+    "bullets": [
+      "Experience discovery",
+      "Avatar economy",
+      "Create continue",
+      "Age guidelines",
+      "Party join"
+    ]
+  },
+  {
+    "id": "minecraft",
+    "name": "Minecraft",
+    "cat": "games",
+    "source": "DOC",
+    "bullets": [
+      "Marketplace clarity",
+      "Realm invites",
+      "Cross-play friends",
+      "Skin/cape identity",
+      "Education edition modes"
+    ]
+  },
+  {
+    "id": "fortnite",
+    "name": "Fortnite",
+    "cat": "games",
+    "source": "DOC",
+    "bullets": [
+      "Lobby social",
+      "Battle Pass track",
+      "Creative island browse",
+      "Emote wheel",
+      "Seasonal UI themes"
+    ]
+  },
+  {
+    "id": "pokemon-go",
+    "name": "Pok\u00e9mon GO",
+    "cat": "games",
+    "source": "DOC",
+    "bullets": [
+      "AR catch ritual",
+      "Nearby radar",
+      "Raid lobby",
+      "Buddy adventure",
+      "Community day events"
+    ]
+  },
+  {
+    "id": "chesscom",
+    "name": "Chess.com",
+    "cat": "games",
+    "source": "DOC",
+    "bullets": [
+      "Daily puzzles",
+      "Lesson trees",
+      "Live match seek",
+      "Analysis board",
+      "Club team battles"
+    ]
+  },
+  {
+    "id": "flightradar",
+    "name": "Flightradar24",
+    "cat": "utility",
+    "source": "DOC",
+    "bullets": [
+      "Live sky map",
+      "Playback historic",
+      "Aircraft detail cards",
+      "Alerts",
+      "3D view"
+    ]
+  },
+  {
+    "id": "nytimes",
+    "name": "NYTimes",
+    "cat": "media",
+    "source": "DOC",
+    "bullets": [
+      "Sections IA",
+      "Cooking/Games upsells",
+      "Audio articles",
+      "Saving lists",
+      "Paywall after value"
+    ]
+  },
+  {
+    "id": "substack",
+    "name": "Substack",
+    "cat": "media",
+    "source": "DOC",
+    "bullets": [
+      "Writer-owned readers",
+      "App reading calm",
+      "Chat/notes social",
+      "Pledges clarity",
+      "Discovery charts"
+    ]
+  },
+  {
+    "id": "medium",
+    "name": "Medium",
+    "cat": "media",
+    "source": "DOC",
+    "bullets": [
+      "Typography-first reading",
+      "Member clap economy",
+      "Highlight notes",
+      "Topic follows",
+      "Partner program"
+    ]
+  },
+  {
+    "id": "basecamp",
+    "name": "Basecamp",
+    "cat": "productivity",
+    "source": "DOC",
+    "bullets": [
+      "Hill charts",
+      "Card table",
+      "Hey menu",
+      "Check-ins",
+      "Calm company UX"
+    ]
+  },
+  {
+    "id": "height-app",
+    "name": "Height",
+    "cat": "productivity",
+    "source": "DOC",
+    "bullets": [
+      "Autopilot tasks",
+      "Chat+tasks fusion",
+      "Live projects",
+      "Attributes",
+      "Productive aesthetic"
+    ]
+  },
+  {
+    "id": "okta",
+    "name": "Okta",
+    "cat": "security",
+    "source": "DOC",
+    "bullets": [
+      "App tile SSO home",
+      "FastPass passwordless",
+      "Device trust cues",
+      "Admin directory clarity",
+      "Access request flows"
+    ]
+  },
+  {
+    "id": "datadog",
+    "name": "Datadog",
+    "cat": "devtools",
+    "source": "DOC",
+    "bullets": [
+      "Unified service map",
+      "Notebooks incident",
+      "Watchdog AI",
+      "Dashboard sharing",
+      "Log pattern clustering"
+    ]
+  },
+  {
+    "id": "twilio",
+    "name": "Twilio",
+    "cat": "devtools",
+    "source": "DOC",
+    "bullets": [
+      "Console try-it",
+      "Docs quickstarts",
+      "Debugger",
+      "Phone number buy UX",
+      "Usage triggers"
+    ]
+  },
+  {
+    "id": "shop-app",
+    "name": "Shop",
+    "cat": "commerce",
+    "source": "DOC",
+    "bullets": [
+      "Order tracking unified",
+      "Store follows",
+      "Checkout Shop Pay",
+      "Package map",
+      "Rewards"
+    ]
+  },
+  {
+    "id": "flipkart",
+    "name": "Flipkart",
+    "cat": "commerce",
+    "source": "DOC",
+    "bullets": [
+      "India-first vernacular cues",
+      "Exchange flows",
+      "EMI clarity",
+      "SuperCoin loyalty",
+      "Grocery vs mall modes"
+    ]
+  },
+  {
+    "id": "lyft",
+    "name": "Lyft",
+    "cat": "mobility",
+    "source": "DOC",
+    "bullets": [
+      "Friendly tone + map",
+      "Wait time honesty",
+      "Mode comparison cards",
+      "Tips post-ride flow",
+      "Scheduled rides"
+    ]
+  },
+  {
+    "id": "calm",
+    "name": "Calm",
+    "cat": "health",
+    "source": "DOC",
+    "bullets": [
+      "Scene soundscapes",
+      "Sleep stories format",
+      "Daily calm ritual",
+      "Paywall after value taste",
+      "Visual stillness"
+    ]
+  },
+  {
+    "id": "fitbit",
+    "name": "Fitbit",
+    "cat": "health",
+    "source": "DOC",
+    "bullets": [
+      "Today scores",
+      "Sleep stages",
+      "Challenge friends",
+      "Premium readiness",
+      "Device battery"
+    ]
+  },
+  {
+    "id": "nike-run",
+    "name": "Nike Run Club",
+    "cat": "health",
+    "source": "DOC",
+    "bullets": [
+      "Guided runs audio",
+      "Mile celebrations",
+      "Plan adaptive",
+      "Friend activity",
+      "Shoe tracking"
+    ]
+  },
+  {
+    "id": "audible",
+    "name": "Audible",
+    "cat": "media",
+    "source": "DOC",
+    "bullets": [
+      "Narrator samples",
+      "Sleep timer",
+      "Bookmarks clips",
+      "Plus catalog",
+      "Whispersync nab"
+    ]
+  },
+  {
+    "id": "apple-music",
+    "name": "Apple Music",
+    "cat": "streaming",
+    "source": "DOC",
+    "bullets": [
+      "Spatial Audio badges",
+      "Sing lyrics mode",
+      "Replay year wrap",
+      "Radio live",
+      "SharePlay listen"
+    ]
+  },
+  {
+    "id": "gmail",
+    "name": "Gmail",
+    "cat": "productivity",
+    "source": "DOC",
+    "bullets": [
+      "Tabs Primary/Social/Promos",
+      "Smart Reply",
+      "Priority inbox",
+      "Multiple inboxes",
+      "Confidential mode"
+    ]
+  },
+  {
+    "id": "hey-email",
+    "name": "HEY",
+    "cat": "productivity",
+    "source": "DOC",
+    "bullets": [
+      "Screener for strangers",
+      "Imbox/Feed/Paper Trail",
+      "Reply Later",
+      "Bundles",
+      "No folder anxiety"
+    ]
+  },
+  {
+    "id": "bitwarden",
+    "name": "Bitwarden",
+    "cat": "security",
+    "source": "DOC",
+    "bullets": [
+      "Open-source trust",
+      "Org collections",
+      "Send secure",
+      "TOTP built-in",
+      "Self-host option"
+    ]
+  },
+  {
+    "id": "crisp",
+    "name": "Crisp",
+    "cat": "support",
+    "source": "DOC",
+    "bullets": [
+      "Chat soft UI",
+      "Knowledge base",
+      "CRM sidebar",
+      "Status page link",
+      "Push campaigns"
+    ]
+  },
+  {
+    "id": "zendesk",
+    "name": "Zendesk",
+    "cat": "support",
+    "source": "DOC",
+    "bullets": [
+      "Ticket statuses",
+      "Macro replies",
+      "Help Center themes",
+      "Satisfaction surveys",
+      "Omnichannel"
+    ]
+  },
+  {
+    "id": "azure-portal",
+    "name": "Azure Portal",
+    "cat": "devtools",
+    "source": "DOC",
+    "bullets": [
+      "Resource blade IA",
+      "Favorites",
+      "Cloud Shell",
+      "Advisor recommendations",
+      "Density caution lessons"
+    ]
+  },
+  {
+    "id": "one-ui",
+    "name": "Samsung One UI",
+    "cat": "os",
+    "source": "DOC",
+    "bullets": [
+      "One-handed reachability",
+      "Edge panels",
+      "DeX desktop continuity",
+      "Modes and Routines",
+      "Good Lock customization"
+    ]
+  },
+  {
+    "id": "macos-stage",
+    "name": "macOS Stage Manager",
+    "cat": "os",
+    "source": "DOC",
+    "bullets": [
+      "App sets staging",
+      "Window strip glance",
+      "Focus without fullscreen force",
+      "External display behavior",
+      "Mission Control coexistence"
+    ]
+  }
+]

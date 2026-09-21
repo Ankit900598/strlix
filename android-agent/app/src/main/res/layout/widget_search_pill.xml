@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strlix home search bar — sole search UI (replaces Google QSB) -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widgetRoot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_search_pill"
+    android:contentDescription="@string/widget_description"
+    android:elevation="6dp"
+    android:gravity="center_vertical"
+    android:minHeight="48dp"
+    android:orientation="horizontal"
+    android:paddingStart="12dp"
+    android:paddingEnd="10dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
+
+    <ImageView
+        android:id="@+id/widgetLogo"
+        android:layout_width="26dp"
+        android:layout_height="26dp"
+        android:contentDescription="@string/app_name"
+        android:importantForAccessibility="no"
+        android:src="@drawable/ic_zevi_z" />
+
+    <TextView
+        android:id="@+id/widgetHint"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="8dp"
+        android:layout_weight="1"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="@string/widget_hint"
+        android:textColor="#5F6368"
+        android:textSize="15sp" />
+
+    <ImageView
+        android:id="@+id/widgetMic"
+        android:contentDescription="@string/widget_voice"
+        android:focusable="true"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:padding="8dp"
+        android:src="@drawable/ic_mic" />
+
+    <!-- Keep id for RemoteViews compatibility; gone so no fake Assistant dots -->
+    <ImageView
+        android:id="@+id/widgetDots"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone"
+        android:contentDescription="@string/assistant"
+        android:src="@drawable/ic_assistant_dots" />
+</LinearLayout>

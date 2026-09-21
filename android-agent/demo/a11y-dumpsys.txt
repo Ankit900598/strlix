@@ -1,0 +1,2 @@
+     Bound services:{Service[label=Zevi Copilot, feedbackType[FEEDBACK_GENERIC], capabilities=33, eventTypes=[TYPE_VIEW_CLICKED, TYPE_VIEW_FOCUSED, TYPE_WINDOW_STATE_CHANGED, TYPE_WINDOW_CONTENT_CHANGED], notificationTimeout=100, requestA11yBtn=false]}
+     Enabled services:{{com.zevi.agent/com.zevi.agent.ZeviAccessibilityService}}

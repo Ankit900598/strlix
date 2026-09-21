@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="zevi_bg">#0B1020</color><color name="zevi_surface">#151B2E</color><color name="zevi_surface2">#1E2640</color>
+    <color name="zevi_accent">#8FA8FF</color><color name="zevi_accent2">#9B7BFF</color><color name="zevi_text">#E8ECF8</color><color name="zevi_muted">#B5BED2</color>
+    <color name="zevi_user_bubble">#2A3A6A</color><color name="zevi_agent_bubble">#1A2238</color><color name="zevi_green">#3DDC97</color><color name="zevi_orange">#FFB020</color>
+    <color name="strlix_live_violet">#7C6BFF</color><color name="strlix_surface_1">#12151C</color><color name="strlix_hairline">#252A35</color><color name="strlix_text_2">#9BA3B4</color>
+    <color name="white">#FFFFFF</color><color name="black">#000000</color>
+</resources>

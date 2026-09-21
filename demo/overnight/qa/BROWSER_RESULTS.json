@@ -1,0 +1,46 @@
+{
+  "gmail": {
+    "open_ms": null,
+    "focus": null
+  },
+  "geo_gmail": {
+    "x": 531.828125,
+    "y": 370.0460069444444,
+    "mapped": {
+      "x": 162,
+      "y": 987
+    },
+    "viewRect": {
+      "left": 2.842170943040401e-14,
+      "top": 6.5972222222222285,
+      "width": 309.06249999999994,
+      "height": 686.8055555555555,
+      "scale": 0.28616898148148145
+    },
+    "deviceW": 1080,
+    "deviceH": 2400
+  },
+  "stats": {
+    "ok": true,
+    "max_clients": 12,
+    "running": true,
+    "subscribers": 2,
+    "peak_subscribers": 6,
+    "frames_produced": 386,
+    "errors": 0,
+    "aborted_captures": 7,
+    "restarts": 0,
+    "last_error": null,
+    "quality": 50,
+    "max_width": 480,
+    "interval_ms": 250,
+    "last_capture_ms": 450,
+    "last_encode_ms": 50,
+    "frame_age_ms": 311,
+    "frame_bytes": 19650,
+    "device": [
+      1080,
+      2400
+    ]
+  }
+}

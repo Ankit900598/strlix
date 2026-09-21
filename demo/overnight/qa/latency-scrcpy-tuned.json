@@ -1,0 +1,125 @@
+{
+  "tag": "scrcpy-tuned",
+  "swipe_duration_ms": 80,
+  "swipe_to_au_ms": [
+    313.4,
+    269.9,
+    294.3,
+    259.9,
+    270.1
+  ],
+  "median_ms": 270.1,
+  "min_ms": 259.9,
+  "max_ms": 313.4,
+  "source": "scrcpy",
+  "size": [
+    360,
+    800
+  ],
+  "bitrate": 800000,
+  "scrcpy_max_size": 800,
+  "scrcpy_codec_options": "i-frame-interval:int=1,latency:int=1",
+  "results": [
+    {
+      "label": "join1_coldish",
+      "source": "scrcpy",
+      "gop_ready": true,
+      "join_to_first_au_ms": 3018.7,
+      "join_to_key_au_ms": 3018.7,
+      "swipe_http_ms": 313.2,
+      "swipe_http_status": 200,
+      "swipe_to_au_ms": 313.4,
+      "swipe_duration_ms": 80,
+      "aus": 4,
+      "stats_fps": 5.0,
+      "stats_size": [
+        360,
+        800
+      ],
+      "stats_bitrate": 800000,
+      "scrcpy_max_size": 800,
+      "scrcpy_codec_options": "i-frame-interval:int=1,latency:int=1"
+    },
+    {
+      "label": "join2_warm",
+      "source": "scrcpy",
+      "gop_ready": true,
+      "join_to_first_au_ms": 3004.7,
+      "join_to_key_au_ms": 3004.7,
+      "swipe_http_ms": 269.7,
+      "swipe_http_status": 200,
+      "swipe_to_au_ms": 269.9,
+      "swipe_duration_ms": 80,
+      "aus": 4,
+      "stats_fps": 14.6,
+      "stats_size": [
+        360,
+        800
+      ],
+      "stats_bitrate": 800000,
+      "scrcpy_max_size": 800,
+      "scrcpy_codec_options": "i-frame-interval:int=1,latency:int=1"
+    },
+    {
+      "label": "join3_warm",
+      "source": "scrcpy",
+      "gop_ready": true,
+      "join_to_first_au_ms": 3005.7,
+      "join_to_key_au_ms": 3005.7,
+      "swipe_http_ms": 294.2,
+      "swipe_http_status": 200,
+      "swipe_to_au_ms": 294.3,
+      "swipe_duration_ms": 80,
+      "aus": 4,
+      "stats_fps": 16.0,
+      "stats_size": [
+        360,
+        800
+      ],
+      "stats_bitrate": 800000,
+      "scrcpy_max_size": 800,
+      "scrcpy_codec_options": "i-frame-interval:int=1,latency:int=1"
+    },
+    {
+      "label": "join4_warm",
+      "source": "scrcpy",
+      "gop_ready": true,
+      "join_to_first_au_ms": 3004.0,
+      "join_to_key_au_ms": 3004.0,
+      "swipe_http_ms": 259.8,
+      "swipe_http_status": 200,
+      "swipe_to_au_ms": 259.9,
+      "swipe_duration_ms": 80,
+      "aus": 4,
+      "stats_fps": 15.3,
+      "stats_size": [
+        360,
+        800
+      ],
+      "stats_bitrate": 800000,
+      "scrcpy_max_size": 800,
+      "scrcpy_codec_options": "i-frame-interval:int=1,latency:int=1"
+    },
+    {
+      "label": "join5_warm",
+      "source": "scrcpy",
+      "gop_ready": true,
+      "join_to_first_au_ms": 3004.7,
+      "join_to_key_au_ms": 3004.7,
+      "swipe_http_ms": 270.0,
+      "swipe_http_status": 200,
+      "swipe_to_au_ms": 270.1,
+      "swipe_duration_ms": 80,
+      "aus": 4,
+      "stats_fps": 11.9,
+      "stats_size": [
+        360,
+        800
+      ],
+      "stats_bitrate": 800000,
+      "scrcpy_max_size": 800,
+      "scrcpy_codec_options": "i-frame-interval:int=1,latency:int=1"
+    }
+  ],
+  "glass_to_glass_under_100ms": false
+}

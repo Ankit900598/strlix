@@ -1,0 +1,12 @@
+{
+  "success": true,
+  "verified_at_ist": "2026-09-21 00:49 IST",
+  "browser_gmail_tap_http_ms": 55,
+  "browser_gmail_activity_ms": 446,
+  "browser_chrome_activity_ms": 1622,
+  "stream": "ws binary JPEG /ws/stream",
+  "frame_age_ms_typical": "9-400 while subscribed",
+  "max_stream_clients": 12,
+  "producer_auto_restart": true,
+  "sprint_done": true
+}

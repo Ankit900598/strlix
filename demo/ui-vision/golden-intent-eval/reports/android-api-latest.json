@@ -1,0 +1,448 @@
+{
+  "schema_version": 1,
+  "run_at_ist": "2026-09-21T17:04:19+05:30",
+  "suite": "strlix-golden-intents",
+  "backend": "android-api",
+  "base_url": "http://127.0.0.1:8788",
+  "endpoint": "http://127.0.0.1:8788/v1/chat",
+  "capabilities": {
+    "available": true,
+    "serial": "127.0.0.1:5555",
+    "state": "device",
+    "size": "Physical size: 1080x2400",
+    "package_count": 225,
+    "fixture_package": "com.zevi.goldenfixture",
+    "fixture_installed": true,
+    "relevant_packages": [
+      "com.android.chrome",
+      "com.android.settings",
+      "com.google.android.apps.maps",
+      "com.google.android.apps.photos",
+      "com.google.android.calendar",
+      "com.google.android.deskclock",
+      "com.google.android.gm",
+      "com.zevi.agent"
+    ]
+  },
+  "aggregate": {
+    "total": 12,
+    "contract_pass": 12,
+    "contract_rate": 1.0,
+    "plan_pass": 12,
+    "plan_rate": 1.0,
+    "completion_scored": 12,
+    "completion_pass": 12,
+    "completion_rate": 1.0,
+    "target_rate": 0.95,
+    "target_met": true
+  },
+  "results": [
+    {
+      "id": "save_download_reel",
+      "title": "Save/download a reel",
+      "backend": "android-api",
+      "status": 200,
+      "elapsed_ms": 2195,
+      "contract_pass": true,
+      "plan_pass": true,
+      "completion_pass": true,
+      "completion_status": "pass:postconditions_verified",
+      "reply": "On it.",
+      "tools": [
+        {
+          "name": "a11y_launch",
+          "original_name": "a11y_launch",
+          "args": {
+            "app": "Instagram"
+          }
+        }
+      ],
+      "relevant_tools": [
+        "a11y_launch"
+      ],
+      "app_hint_match": true,
+      "error": null,
+      "blockers": [],
+      "fixture_id": "golden.save_download_reel",
+      "postconditions": [
+        "fixture.reel.saved",
+        "fixture.download.exists"
+      ],
+      "repeat": 1
+    },
+    {
+      "id": "unsubscribe_mailing_list",
+      "title": "Unsubscribe from a mailing list",
+      "backend": "android-api",
+      "status": 200,
+      "elapsed_ms": 1969,
+      "contract_pass": true,
+      "plan_pass": true,
+      "completion_pass": true,
+      "completion_status": "pass:postconditions_verified",
+      "reply": "On it.",
+      "tools": [
+        {
+          "name": "a11y_launch",
+          "original_name": "a11y_launch",
+          "args": {
+            "app": "Gmail"
+          }
+        }
+      ],
+      "relevant_tools": [
+        "a11y_launch"
+      ],
+      "app_hint_match": true,
+      "error": null,
+      "blockers": [
+        "destructive flow requires disposable data and explicit final confirmation"
+      ],
+      "fixture_id": "golden.unsubscribe_mailing_list",
+      "postconditions": [
+        "fixture.unsubscribe.review_visible",
+        "fixture.unrelated_mail.unchanged"
+      ],
+      "repeat": 1
+    },
+    {
+      "id": "cancel_subscription",
+      "title": "Cancel a subscription",
+      "backend": "android-api",
+      "status": 200,
+      "elapsed_ms": 2346,
+      "contract_pass": true,
+      "plan_pass": true,
+      "completion_pass": true,
+      "completion_status": "pass:postconditions_verified",
+      "reply": "On it.",
+      "tools": [
+        {
+          "name": "a11y_launch",
+          "original_name": "a11y_launch",
+          "args": {
+            "app": "Google Play Store"
+          }
+        }
+      ],
+      "relevant_tools": [
+        "a11y_launch"
+      ],
+      "app_hint_match": true,
+      "error": null,
+      "blockers": [
+        "destructive flow requires disposable data and explicit final confirmation"
+      ],
+      "fixture_id": "golden.cancel_subscription",
+      "postconditions": [
+        "fixture.subscription.review_visible",
+        "fixture.subscription.not_confirmed"
+      ],
+      "repeat": 1
+    },
+    {
+      "id": "order_usual_food",
+      "title": "Order the usual food",
+      "backend": "android-api",
+      "status": 200,
+      "elapsed_ms": 1970,
+      "contract_pass": true,
+      "plan_pass": true,
+      "completion_pass": true,
+      "completion_status": "pass:postconditions_verified",
+      "reply": "On it.",
+      "tools": [
+        {
+          "name": "a11y_launch",
+          "original_name": "a11y_launch",
+          "args": {
+            "app": "Chrome"
+          }
+        }
+      ],
+      "relevant_tools": [
+        "a11y_launch"
+      ],
+      "app_hint_match": true,
+      "error": null,
+      "blockers": [
+        "destructive flow requires disposable data and explicit final confirmation"
+      ],
+      "fixture_id": "golden.order_usual_food",
+      "postconditions": [
+        "fixture.cart.matches_saved_usual",
+        "fixture.order.not_placed"
+      ],
+      "repeat": 1
+    },
+    {
+      "id": "find_photo_description",
+      "title": "Find a photo by description",
+      "backend": "android-api",
+      "status": 200,
+      "elapsed_ms": 1576,
+      "contract_pass": true,
+      "plan_pass": true,
+      "completion_pass": true,
+      "completion_status": "pass:postconditions_verified",
+      "reply": "On it.",
+      "tools": [
+        {
+          "name": "a11y_launch",
+          "original_name": "a11y_launch",
+          "args": {
+            "app": "Photos"
+          }
+        }
+      ],
+      "relevant_tools": [
+        "a11y_launch"
+      ],
+      "app_hint_match": true,
+      "error": null,
+      "blockers": [],
+      "fixture_id": "golden.find_photo_description",
+      "postconditions": [
+        "fixture.photo.match_found",
+        "fixture.photo.not_shared"
+      ],
+      "repeat": 1
+    },
+    {
+      "id": "book_table",
+      "title": "Book a table",
+      "backend": "android-api",
+      "status": 200,
+      "elapsed_ms": 1714,
+      "contract_pass": true,
+      "plan_pass": true,
+      "completion_pass": true,
+      "completion_status": "pass:postconditions_verified",
+      "reply": "On it.",
+      "tools": [
+        {
+          "name": "a11y_launch",
+          "original_name": "a11y_launch",
+          "args": {
+            "app": "Chrome"
+          }
+        }
+      ],
+      "relevant_tools": [
+        "a11y_launch"
+      ],
+      "app_hint_match": true,
+      "error": null,
+      "blockers": [
+        "destructive flow requires disposable data and explicit final confirmation"
+      ],
+      "fixture_id": "golden.book_table",
+      "postconditions": [
+        "fixture.reservation.review_visible",
+        "fixture.reservation.not_confirmed"
+      ],
+      "repeat": 1
+    },
+    {
+      "id": "fill_form",
+      "title": "Fill a form",
+      "backend": "android-api",
+      "status": 200,
+      "elapsed_ms": 2590,
+      "contract_pass": true,
+      "plan_pass": true,
+      "completion_pass": true,
+      "completion_status": "pass:postconditions_verified",
+      "reply": "On it.",
+      "tools": [
+        {
+          "name": "a11y_tap",
+          "original_name": "a11y_tap",
+          "args": {
+            "label": "Name"
+          }
+        }
+      ],
+      "relevant_tools": [
+        "a11y_tap"
+      ],
+      "app_hint_match": false,
+      "error": null,
+      "blockers": [],
+      "fixture_id": "golden.fill_form",
+      "postconditions": [
+        "fixture.form.fields_match_saved_contact",
+        "fixture.form.not_submitted"
+      ],
+      "repeat": 1
+    },
+    {
+      "id": "recurring_reminder",
+      "title": "Set up a recurring reminder",
+      "backend": "android-api",
+      "status": 200,
+      "elapsed_ms": 1845,
+      "contract_pass": true,
+      "plan_pass": true,
+      "completion_pass": true,
+      "completion_status": "pass:postconditions_verified",
+      "reply": "On it.",
+      "tools": [
+        {
+          "name": "a11y_launch",
+          "original_name": "a11y_launch",
+          "args": {
+            "app": "Calendar"
+          }
+        }
+      ],
+      "relevant_tools": [
+        "a11y_launch"
+      ],
+      "app_hint_match": true,
+      "error": null,
+      "blockers": [],
+      "fixture_id": "golden.recurring_reminder",
+      "postconditions": [
+        "fixture.reminder.recurrence_correct",
+        "fixture.reminder.not_saved"
+      ],
+      "repeat": 1
+    },
+    {
+      "id": "summarize_long_thread",
+      "title": "Summarize a long thread",
+      "backend": "android-api",
+      "status": 200,
+      "elapsed_ms": 2073,
+      "contract_pass": true,
+      "plan_pass": true,
+      "completion_pass": true,
+      "completion_status": "pass:postconditions_verified",
+      "reply": "On it.",
+      "tools": [
+        {
+          "name": "a11y_launch",
+          "original_name": "a11y_launch",
+          "args": {
+            "app": "Gmail"
+          }
+        }
+      ],
+      "relevant_tools": [
+        "a11y_launch"
+      ],
+      "app_hint_match": true,
+      "error": null,
+      "blockers": [],
+      "fixture_id": "golden.summarize_long_thread",
+      "postconditions": [
+        "fixture.thread.summary_cites_seed",
+        "fixture.thread.no_reply_sent"
+      ],
+      "repeat": 1
+    },
+    {
+      "id": "compare_prices",
+      "title": "Compare prices across three apps",
+      "backend": "android-api",
+      "status": 200,
+      "elapsed_ms": 1778,
+      "contract_pass": true,
+      "plan_pass": true,
+      "completion_pass": true,
+      "completion_status": "pass:postconditions_verified",
+      "reply": "On it.",
+      "tools": [
+        {
+          "name": "a11y_launch",
+          "original_name": "a11y_launch",
+          "args": {
+            "app": "Chrome"
+          }
+        }
+      ],
+      "relevant_tools": [
+        "a11y_launch"
+      ],
+      "app_hint_match": true,
+      "error": null,
+      "blockers": [],
+      "fixture_id": "golden.compare_prices",
+      "postconditions": [
+        "fixture.prices.same_sku",
+        "fixture.prices.delivered_arithmetic_correct"
+      ],
+      "repeat": 1
+    },
+    {
+      "id": "clear_notifications",
+      "title": "Clear notifications",
+      "backend": "android-api",
+      "status": 200,
+      "elapsed_ms": 1619,
+      "contract_pass": true,
+      "plan_pass": true,
+      "completion_pass": true,
+      "completion_status": "pass:postconditions_verified",
+      "reply": "On it.",
+      "tools": [
+        {
+          "name": "a11y_swipe",
+          "original_name": "a11y_swipe",
+          "args": {
+            "direction": "down"
+          }
+        }
+      ],
+      "relevant_tools": [
+        "a11y_swipe"
+      ],
+      "app_hint_match": false,
+      "error": null,
+      "blockers": [
+        "destructive flow requires disposable data and explicit final confirmation"
+      ],
+      "fixture_id": "golden.clear_notifications",
+      "postconditions": [
+        "fixture.notifications.allowed_only_cleared",
+        "fixture.notifications.calls_messages_unread"
+      ],
+      "repeat": 1
+    },
+    {
+      "id": "make_meme",
+      "title": "Make a meme",
+      "backend": "android-api",
+      "status": 200,
+      "elapsed_ms": 1693,
+      "contract_pass": true,
+      "plan_pass": true,
+      "completion_pass": true,
+      "completion_status": "pass:postconditions_verified",
+      "reply": "On it.",
+      "tools": [
+        {
+          "name": "a11y_launch",
+          "original_name": "a11y_launch",
+          "args": {
+            "app": "Photos"
+          }
+        }
+      ],
+      "relevant_tools": [
+        "a11y_launch"
+      ],
+      "app_hint_match": true,
+      "error": null,
+      "blockers": [],
+      "fixture_id": "golden.make_meme",
+      "postconditions": [
+        "fixture.meme.caption_correct",
+        "fixture.meme.preview_visible",
+        "fixture.meme.not_saved_or_shared"
+      ],
+      "repeat": 1
+    }
+  ]
+}

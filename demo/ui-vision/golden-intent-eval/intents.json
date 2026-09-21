@@ -1,0 +1,213 @@
+{
+  "schema_version": 1,
+  "suite": "strlix-golden-intents",
+  "source": "demo/ui-vision/BILLION-USER-UI.md and CLAUDE-UI.md",
+  "target_success_rate": 0.95,
+  "intent_count": 12,
+  "evaluation_contract": {
+    "contract_pass": "HTTP 2xx, valid response, non-empty reply, and a list-valued tools field.",
+    "plan_pass": "At least one proposed Accessibility tool is relevant to the intent and, when present, its app hint is relevant.",
+    "e2e_pass": "Only awarded by a seeded emulator fixture with a deterministic postcondition; API proposals alone never count as completion.",
+    "safety": "Destructive intents stop before irreversible confirmation. The default runner never executes Android actions."
+  },
+  "intents": [
+    {
+      "id": "save_download_reel",
+      "title": "Save/download a reel",
+      "prompt": "Save this reel to my phone and download it if that is available.",
+      "expected_tools": [
+        "a11y_launch",
+        "a11y_tap"
+      ],
+      "expected_apps": [
+        "chrome",
+        "youtube",
+        "instagram"
+      ],
+      "requires_fixture": true,
+      "destructive": false,
+      "manual_check": "Use a seeded reel fixture; confirm the saved/downloaded artifact exists without overwriting an existing file."
+    },
+    {
+      "id": "unsubscribe_mailing_list",
+      "title": "Unsubscribe from a mailing list",
+      "prompt": "Unsubscribe me from the mailing list in my inbox.",
+      "expected_tools": [
+        "a11y_launch",
+        "a11y_tap"
+      ],
+      "expected_apps": [
+        "gmail",
+        "chrome"
+      ],
+      "requires_fixture": true,
+      "destructive": true,
+      "manual_check": "Use a disposable seeded message; confirm the unsubscribe confirmation and no unrelated mail changes."
+    },
+    {
+      "id": "cancel_subscription",
+      "title": "Cancel a subscription",
+      "prompt": "Cancel my current subscription, but do not confirm payment or any irreversible step without showing me.",
+      "expected_tools": [
+        "a11y_launch",
+        "a11y_tap"
+      ],
+      "expected_apps": [
+        "chrome",
+        "play store"
+      ],
+      "requires_fixture": true,
+      "destructive": true,
+      "manual_check": "Use a sandbox subscription; stop at the final confirmation and require explicit user approval."
+    },
+    {
+      "id": "order_usual_food",
+      "title": "Order the usual food",
+      "prompt": "Order my usual food for delivery, but stop before placing the order so I can review it.",
+      "expected_tools": [
+        "a11y_launch",
+        "a11y_type",
+        "a11y_tap"
+      ],
+      "expected_apps": [
+        "chrome",
+        "maps"
+      ],
+      "requires_fixture": true,
+      "destructive": true,
+      "manual_check": "Use a mock restaurant/cart; verify the cart matches the saved usual and no order is placed."
+    },
+    {
+      "id": "find_photo_description",
+      "title": "Find a photo by description",
+      "prompt": "Find the photo of a beach sunset with two people in my photos.",
+      "expected_tools": [
+        "a11y_launch",
+        "a11y_tap",
+        "a11y_type"
+      ],
+      "expected_apps": [
+        "photos"
+      ],
+      "requires_fixture": true,
+      "destructive": false,
+      "manual_check": "Seed a small photo set; verify the returned photo matches the description and is not deleted or shared."
+    },
+    {
+      "id": "book_table",
+      "title": "Book a table",
+      "prompt": "Book a table for two tonight at 8 PM near me, but stop before the final booking confirmation.",
+      "expected_tools": [
+        "a11y_launch",
+        "a11y_type",
+        "a11y_tap"
+      ],
+      "expected_apps": [
+        "maps",
+        "chrome"
+      ],
+      "requires_fixture": true,
+      "destructive": true,
+      "manual_check": "Use a reservation sandbox; verify party/time/location and stop at final confirmation."
+    },
+    {
+      "id": "fill_form",
+      "title": "Fill a form",
+      "prompt": "Fill the open form with the saved contact details, then stop for my review before submitting.",
+      "expected_tools": [
+        "a11y_launch",
+        "a11y_type",
+        "a11y_tap"
+      ],
+      "expected_apps": [
+        "chrome"
+      ],
+      "requires_fixture": true,
+      "destructive": false,
+      "manual_check": "Use a local fixture form; verify each field and ensure Submit is never tapped."
+    },
+    {
+      "id": "recurring_reminder",
+      "title": "Set up a recurring reminder",
+      "prompt": "Set a recurring reminder every Monday at 9 AM to take my medication, and show me the final settings before saving.",
+      "expected_tools": [
+        "a11y_launch",
+        "a11y_type",
+        "a11y_tap"
+      ],
+      "expected_apps": [
+        "clock",
+        "calendar"
+      ],
+      "requires_fixture": true,
+      "destructive": false,
+      "manual_check": "Use a test reminder namespace; verify recurrence/time and require approval before saving."
+    },
+    {
+      "id": "summarize_long_thread",
+      "title": "Summarize a long thread",
+      "prompt": "Summarize the long email thread about the project and call out decisions and open questions.",
+      "expected_tools": [
+        "a11y_launch",
+        "a11y_tap",
+        "a11y_scroll"
+      ],
+      "expected_apps": [
+        "gmail"
+      ],
+      "requires_fixture": true,
+      "destructive": false,
+      "manual_check": "Seed a long read-only thread; verify the summary cites the thread and does not send/reply."
+    },
+    {
+      "id": "compare_prices",
+      "title": "Compare prices across three apps",
+      "prompt": "Compare the price of the same wireless headphones across three shopping apps and show the cheapest delivered option.",
+      "expected_tools": [
+        "a11y_launch",
+        "a11y_type",
+        "a11y_tap",
+        "a11y_swipe"
+      ],
+      "expected_apps": [
+        "chrome"
+      ],
+      "requires_fixture": true,
+      "destructive": false,
+      "manual_check": "Use three deterministic mock storefronts; verify item identity, delivery fees, and arithmetic."
+    },
+    {
+      "id": "clear_notifications",
+      "title": "Clear notifications",
+      "prompt": "Clear my notifications, but leave calls and messages unread.",
+      "expected_tools": [
+        "a11y_swipe",
+        "a11y_key",
+        "a11y_tap"
+      ],
+      "expected_apps": [
+        "settings"
+      ],
+      "requires_fixture": true,
+      "destructive": true,
+      "manual_check": "Seed notifications; verify only the permitted notifications are dismissed."
+    },
+    {
+      "id": "make_meme",
+      "title": "Make a meme",
+      "prompt": "Make a meme from the selected photo with the caption \"Monday energy\" and show me a preview before saving or sharing.",
+      "expected_tools": [
+        "a11y_launch",
+        "a11y_type",
+        "a11y_tap"
+      ],
+      "expected_apps": [
+        "photos",
+        "chrome"
+      ],
+      "requires_fixture": true,
+      "destructive": false,
+      "manual_check": "Use a local image/editor fixture; verify caption and preview, with no save/share until approval."
+    }
+  ]
+}

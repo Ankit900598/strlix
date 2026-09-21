@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "id": "655c4236e6",
+  "title": "Open Chrome",
+  "steps": [
+    "Open Chrome",
+    "On it\u2026"
+  ],
+  "frame_count": 5,
+  "gif": "/demo/replay/replay-20260921-075044-655c4236e6.gif",
+  "json": "/demo/replay/replay-20260921-075044-655c4236e6.json",
+  "created_at": "20260921-075044"
+}

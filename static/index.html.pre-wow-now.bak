@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Strlix — Cloud Phone</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #05070c;
+      --bg-glow: #0a1020;
+      --fg: #eef2ff;
+      --muted: #7d8eab;
+      --accent: #5b8cff;
+      --accent-2: #7c5cff;
+      --accent-glow: rgba(91, 140, 255, 0.4);
+      --ok: #34d399;
+      --warn: #fbbf24;
+      --err: #f87171;
+      --border: rgba(148, 163, 184, 0.12);
+      --bezel: #0c0e14;
+      --bezel-edge: #1a1f2e;
+      --panel: rgba(18, 24, 40, 0.92);
+      --shadow-phone: 0 40px 100px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.06);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+      background:
+        radial-gradient(900px 500px at 50% -15%, rgba(91,140,255,0.16), transparent 55%),
+        radial-gradient(700px 400px at 80% 100%, rgba(124,92,255,0.1), transparent 50%),
+        var(--bg);
+      color: var(--fg);
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    /* ── Top chrome (minimal) ── */
+    .topbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+      height: 52px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 18px;
+      background: rgba(5, 7, 12, 0.72);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .brand {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .logo {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      display: grid; place-items: center;
+      font-weight: 700; font-size: 13px; color: #fff;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.1), 0 4px 14px var(--accent-glow);
+    }
+    .brand h1 {
+      margin: 0; font-size: 14px; font-weight: 650; letter-spacing: -0.02em;
+    }
+    .brand span {
+      font-size: 11px; color: var(--muted); font-weight: 500;
+      margin-left: 2px;
+    }
+    .top-right {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end;
+    }
+    .pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 10px; border-radius: 999px;
+      background: rgba(18,24,40,0.8); border: 1px solid var(--border);
+      font-size: 11px; color: var(--muted); white-space: nowrap;
+    }
+    .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--muted); flex-shrink: 0;
+    }
+    .dot.ok { background: var(--ok); box-shadow: 0 0 8px rgba(52,211,153,0.55); }
+    .dot.warn { background: var(--warn); }
+    .dot.err { background: var(--err); }
+
+    #liveBtn {
+      appearance: none; border: 1px solid rgba(91,140,255,0.4);
+      background: linear-gradient(135deg, rgba(91,140,255,0.22), rgba(124,92,255,0.22));
+      color: #fff; padding: 6px 12px; border-radius: 999px;
+      font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 7px;
+    }
+    #liveBtn .pulse {
+      width: 7px; height: 7px; border-radius: 50%; background: var(--ok);
+      box-shadow: 0 0 8px rgba(52,211,153,.7);
+    }
+    #liveBtn.active {
+      background: linear-gradient(135deg, #ef4444, #b91c1c);
+      border-color: rgba(248,113,113,.5);
+    }
+    #liveBtn.active .pulse { background: #fff; animation: blink 1s infinite; }
+    @keyframes blink { 50% { opacity: .35; } }
+
+    #topLang {
+      appearance: none; background: rgba(18,24,40,0.8); color: var(--fg);
+      border: 1px solid var(--border); border-radius: 999px;
+      padding: 5px 28px 5px 10px; font: inherit; font-size: 11px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237d8eab'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center;
+      cursor: pointer; max-width: 140px;
+    }
+    .ghost-btn {
+      appearance: none; border: 1px solid var(--border);
+      background: rgba(18,24,40,0.8); color: var(--fg);
+      padding: 5px 10px; border-radius: 999px; font: inherit; font-size: 11px;
+      cursor: pointer;
+    }
+    .ghost-btn:hover { border-color: rgba(91,140,255,0.45); }
+    .ghost-btn:disabled { opacity: .45; cursor: wait; }
+
+    /* ── Stage: full-bleed phone ── */
+    .stage {
+      height: 100dvh;
+      padding: 68px 16px 24px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 14px;
+    }
+
+    /* Pixel-like device */
+    .device {
+      position: relative;
+      height: min(calc(100dvh - 172px), 840px);
+      aspect-ratio: 9 / 19.5;
+      max-width: min(420px, 92vw);
+      background: var(--bezel);
+      border-radius: 44px;
+      padding: 12px;
+      box-shadow: var(--shadow-phone);
+      border: 1.5px solid var(--bezel-edge);
+    }
+    .device::before {
+      content: "";
+      position: absolute; inset: 0; border-radius: 44px; pointer-events: none;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+    }
+    .device-screen {
+      position: relative;
+      width: 100%; height: 100%;
+      border-radius: 34px;
+      overflow: hidden;
+      background: #000;
+    }
+    .punch {
+      position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+      width: 22%; height: 11px; border-radius: 999px;
+      background: #050505; z-index: 3;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.04);
+    }
+    /* Canvas (WS stream) and img (MJPEG fallback) are positioned+sized by JS to
+       the exact letterbox rect, so coordinate mapping never depends on
+       naturalWidth / object-fit guesswork. */
+    #liveCanvas, #liveShot {
+      position: absolute; left: 0; top: 0;
+      width: 100%; height: 100%;
+      object-fit: fill;
+      display: block; background: #05070d;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      pointer-events: none;
+      z-index: 2;
+    }
+    #liveCanvas[hidden], #liveShot[hidden] { display: none; }
+    /* Transparent hit target above EVERYTHING in the screen. Pointer input is
+       bound here, never to the image, so a stalled/blank frame still accepts
+       taps. */
+    #touchLayer {
+      position: absolute; inset: 0; z-index: 8;
+      touch-action: none; cursor: crosshair;
+      background: transparent;
+      user-select: none; -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .punch, .phone-empty { pointer-events: none; }
+    .device-screen { touch-action: none; }
+
+    /* Android nav bar */
+    .navbar {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      width: min(420px, 92vw); margin-top: 2px;
+    }
+    .navbar button {
+      flex: 1; max-width: 116px; height: 38px;
+      border-radius: 12px; cursor: pointer;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.10);
+      color: var(--fg); font-size: 15px; line-height: 1;
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      transition: background .12s, transform .08s, border-color .12s;
+    }
+    .navbar button:hover { background: rgba(255,255,255,0.09); border-color: rgba(255,255,255,0.2); }
+    .navbar button:active { transform: scale(0.95); background: rgba(91,140,255,0.28); }
+    .navbar button span.lbl { font-size: 11px; color: var(--muted); }
+    #pressRipple {
+      position: absolute; width: 28px; height: 28px; margin: -14px 0 0 -14px;
+      border-radius: 50%; pointer-events: none; z-index: 5;
+      background: rgba(91,140,255,0.45);
+      border: 2px solid rgba(255,255,255,0.85);
+      box-shadow: 0 0 16px rgba(91,140,255,0.7);
+      opacity: 0; transform: scale(0.4);
+      transition: opacity .18s, transform .18s;
+    }
+    #pressRipple.show {
+      opacity: 1; transform: scale(1);
+    }
+    #tapHint {
+      position: absolute; left: 10px; bottom: 10px; z-index: 4;
+      font-size: 10px; color: rgba(255,255,255,0.55);
+      background: rgba(0,0,0,0.45); padding: 3px 8px; border-radius: 999px;
+      pointer-events: none; letter-spacing: 0.02em;
+    }
+    .phone-empty {
+      position: absolute; inset: 0; display: grid; place-items: center;
+      color: var(--muted); font-size: 13px; text-align: center; padding: 32px;
+      background: linear-gradient(180deg, #0a0e18, #05070c);
+      z-index: 1;
+    }
+    .phone-empty.hidden { display: none; }
+    .phone-empty strong { display: block; color: var(--fg); margin-bottom: 6px; font-size: 15px; }
+
+    .device-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      width: min(420px, 92vw);
+      font-size: 11px; color: var(--muted);
+      padding: 0 4px;
+    }
+    .live-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+      font-size: 10px;
+    }
+    .live-badge .blink {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--ok);
+      box-shadow: 0 0 8px rgba(52,211,153,0.7);
+      animation: blink 1.4s infinite;
+    }
+    .live-badge.off .blink { background: var(--muted); box-shadow: none; animation: none; }
+    /* Instrumented-but-quiet telemetry: transport, fps, kbps, tap-to-pixels. */
+    #streamHud {
+      font-variant-numeric: tabular-nums; font-size: 10px; letter-spacing: 0.02em;
+      color: var(--muted); opacity: 0.85; white-space: nowrap;
+    }
+    #streamHud .lat { color: var(--ok); }
+    #streamHud .warn { color: var(--warn); }
+
+    /* ── Floating Ask (optional, not main) ── */
+    #askFab {
+      position: fixed; right: 22px; bottom: 22px; z-index: 30;
+      appearance: none; border: 0; cursor: pointer;
+      width: 52px; height: 52px; border-radius: 16px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #fff; font: inherit; font-weight: 650; font-size: 13px;
+      box-shadow: 0 8px 28px var(--accent-glow), 0 0 0 1px rgba(255,255,255,0.12);
+      transition: transform .15s, opacity .15s;
+    }
+    #askFab:hover { transform: translateY(-2px); }
+    #askFab:active { transform: scale(0.97); }
+    #askFab.open { opacity: 0; pointer-events: none; }
+
+    .ask-drawer {
+      position: fixed; right: 16px; bottom: 16px; z-index: 35;
+      width: min(360px, calc(100vw - 32px));
+      max-height: min(52vh, 480px);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.55);
+      backdrop-filter: blur(20px);
+      display: none; flex-direction: column;
+      overflow: hidden;
+    }
+    .ask-drawer.open { display: flex; }
+    .ask-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 14px; border-bottom: 1px solid var(--border);
+    }
+    .ask-head h2 { margin: 0; font-size: 13px; font-weight: 600; }
+    .ask-head .hint { font-size: 11px; color: var(--muted); font-weight: 400; }
+    #askClose {
+      appearance: none; border: 0; background: transparent; color: var(--muted);
+      font-size: 18px; cursor: pointer; line-height: 1; padding: 4px 8px;
+    }
+    #askLog {
+      flex: 1; overflow: auto; padding: 12px 14px; min-height: 120px;
+      font-size: 13px; line-height: 1.45;
+    }
+    .ask-msg { margin: 0 0 10px; }
+    .ask-msg.user { color: #a8c4ff; }
+    .ask-msg.bot { color: var(--fg); }
+    .ask-msg .role {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--muted); margin-bottom: 2px;
+    }
+    .ask-form {
+      display: flex; gap: 8px; padding: 10px 12px 12px;
+      border-top: 1px solid var(--border);
+    }
+    #askQ {
+      flex: 1; border: 1px solid var(--border); border-radius: 12px;
+      background: rgba(5,7,12,0.6); color: var(--fg);
+      padding: 10px 12px; font: inherit; font-size: 13px; outline: none;
+    }
+    #askQ:focus { border-color: rgba(91,140,255,0.5); }
+    #askGo {
+      appearance: none; border: 0; cursor: pointer;
+      padding: 10px 14px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #fff; font: inherit; font-weight: 600; font-size: 12px;
+    }
+    #askGo:disabled { opacity: .45; cursor: wait; }
+    .ask-chips {
+      display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 8px;
+    }
+    .ask-chips button {
+      appearance: none; border: 1px solid var(--border);
+      background: rgba(5,7,12,0.5); color: var(--muted);
+      padding: 5px 10px; border-radius: 999px; font: inherit; font-size: 11px;
+      cursor: pointer;
+    }
+    .ask-chips button:hover { color: var(--fg); border-color: rgba(91,140,255,0.4); }
+
+    /* Live overlay */
+    #liveOverlay {
+      display: none; position: fixed; inset: 0; z-index: 50;
+      background: rgba(3,6,14,.82); backdrop-filter: blur(10px);
+      align-items: center; justify-content: center; padding: 24px;
+    }
+    #liveOverlay.open { display: flex; }
+    .live-card {
+      width: min(440px, 100%); background: var(--panel);
+      border: 1px solid var(--border); border-radius: 24px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.5); padding: 28px 24px 22px; text-align: center;
+    }
+    .live-card h2 { margin: 0 0 6px; font-size: 20px; letter-spacing: -0.02em; }
+    .live-card .sub { color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+    .wave {
+      height: 64px; display: flex; align-items: center; justify-content: center;
+      gap: 4px; margin: 12px 0 18px;
+    }
+    .wave i {
+      display: block; width: 4px; border-radius: 4px; background: var(--accent);
+      height: 12px; animation: wave 1.1s ease-in-out infinite;
+    }
+    .wave i:nth-child(2) { animation-delay: .1s; }
+    .wave i:nth-child(3) { animation-delay: .2s; }
+    .wave i:nth-child(4) { animation-delay: .3s; }
+    .wave i:nth-child(5) { animation-delay: .4s; }
+    .wave i:nth-child(6) { animation-delay: .15s; }
+    .wave i:nth-child(7) { animation-delay: .25s; }
+    .wave i:nth-child(8) { animation-delay: .35s; }
+    .wave.idle i { animation: none; height: 8px; opacity: .45; }
+    .wave.speaking i { background: var(--ok); }
+    @keyframes wave {
+      0%,100% { height: 10px; }
+      50% { height: 52px; }
+    }
+    #liveTranscript {
+      min-height: 44px; color: var(--fg); font-size: 15px; line-height: 1.45;
+      margin: 0 0 8px; white-space: pre-wrap;
+    }
+    #liveReply {
+      min-height: 36px; color: var(--muted); font-size: 13px; line-height: 1.45;
+      margin: 0 0 16px; white-space: pre-wrap;
+    }
+    .live-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .live-actions button {
+      appearance: none; border: 1px solid var(--border); background: rgba(18,24,40,0.9);
+      color: var(--fg); padding: 10px 16px; border-radius: 12px;
+      font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .live-actions #liveTalk {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border: 0; color: #fff;
+    }
+    .live-actions #liveLeave { color: var(--err); border-color: rgba(248,113,113,.35); }
+    #liveMeta { font-size: 11px; color: var(--muted); margin-top: 14px; }
+
+    @media (max-width: 560px) {
+      .topbar { padding: 0 10px; height: 48px; }
+      .brand span { display: none; }
+      .device { border-radius: 36px; padding: 10px; }
+      .device-screen { border-radius: 28px; }
+      #askFab { right: 14px; bottom: 14px; width: 48px; height: 48px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">S</div>
+      <h1>Strlix</h1>
+      <span>Cloud Phone</span>
+    </div>
+    <div class="top-right">
+      <button type="button" id="liveBtn" title="Live voice on this laptop"><span class="pulse"></span>Live</button>
+      <select id="topLang" aria-label="Language"></select>
+      <span class="pill"><span class="dot" id="adbDot"></span><span id="adbLabel">ADB …</span></span>
+      <button type="button" class="ghost-btn" id="refreshShot" title="Fresh screenshot">↻</button>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div class="device" id="device">
+      <div class="device-screen">
+        <div class="punch" aria-hidden="true"></div>
+        <canvas id="liveCanvas" hidden></canvas>
+        <img id="liveShot" alt="Phone screen" draggable="false" hidden />
+        <div id="pressRipple" aria-hidden="true"></div>
+        <div id="tapHint">Tap or drag to control</div>
+        <div class="phone-empty" id="phoneEmpty">
+          <div>
+            <strong>Connecting to your phone…</strong>
+            Live preview appears when ADB is connected.
+          </div>
+        </div>
+        <div id="touchLayer" role="application" aria-label="Phone screen — tap or drag to control"></div>
+      </div>
+    </div>
+    <nav class="navbar" aria-label="Phone navigation">
+      <button type="button" data-key="BACK" title="Back">◀<span class="lbl">Back</span></button>
+      <button type="button" data-key="HOME" title="Home">●<span class="lbl">Home</span></button>
+      <button type="button" data-key="APP_SWITCH" title="Recent apps">■<span class="lbl">Recents</span></button>
+    </nav>
+    <div class="device-footer">
+      <span class="live-badge off" id="streamBadge"><span class="blink"></span> Preview</span>
+      <span id="streamHud" title="transport · frame rate · bitrate · tap-to-pixels"></span>
+      <span id="shotStamp">—</span>
+    </div>
+  </div>
+
+  <button type="button" id="askFab" title="Ask Strlix (optional)">Ask</button>
+  <aside class="ask-drawer" id="askDrawer" aria-label="Ask Strlix">
+    <div class="ask-head">
+      <div>
+        <h2>Ask <span class="hint">· optional · AI lives on the phone</span></h2>
+      </div>
+      <button type="button" id="askClose" aria-label="Close">×</button>
+    </div>
+    <div id="askLog"></div>
+    <div class="ask-chips" id="askChips">
+      <button type="button" data-prompt="Go home">Go home</button>
+      <button type="button" data-prompt="Open Settings">Settings</button>
+      <button type="button" data-prompt="Take a screenshot and describe the screen">Describe</button>
+    </div>
+    <form class="ask-form" id="askForm">
+      <input id="askQ" placeholder="Tell the phone what to do…" autocomplete="off" />
+      <button id="askGo" type="submit">Send</button>
+    </form>
+  </aside>
+
+  <div id="liveOverlay" role="dialog" aria-modal="true" aria-label="Live voice session">
+    <div class="live-card">
+      <h2>Live with Strlix</h2>
+      <p class="sub">Mic → Strlix → reply on <strong>this laptop</strong>. Phone stays silent.</p>
+      <div class="wave idle" id="liveWave" aria-hidden="true">
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+      </div>
+      <div id="liveTranscript">Tap Talk and speak…</div>
+      <div id="liveReply"></div>
+      <div class="live-actions">
+        <button type="button" id="liveTalk">Talk</button>
+        <button type="button" id="liveLeave">Leave</button>
+      </div>
+      <div id="liveMeta">Audio: host TTS → browser · scrcpy --no-audio</div>
+    </div>
+  </div>
+
+  <script>
+    // ═══════════════════════════════════════════════════════════════════
+    //  Live viewer + touch control
+    //  Transport: WebSocket binary JPEG  →  MJPEG  →  polled /adb/preview
+    //  Coordinate mapping is derived from the DEVICE aspect (/adb/size), never
+    //  from img.naturalWidth — an MJPEG <img> reports 0 until its first frame
+    //  decodes, which used to make every early tap a silent no-op.
+    // ═══════════════════════════════════════════════════════════════════
+    const liveCanvas = document.getElementById('liveCanvas');
+    const liveShot = document.getElementById('liveShot');
+    const touchLayer = document.getElementById('touchLayer');
+    const screenEl = document.querySelector('.device-screen');
+    const phoneEmpty = document.getElementById('phoneEmpty');
+    const shotStamp = document.getElementById('shotStamp');
+    const streamBadge = document.getElementById('streamBadge');
+    const streamHud = document.getElementById('streamHud');
+    const pressRipple = document.getElementById('pressRipple');
+    const tapHint = document.getElementById('tapHint');
+    const askLog = document.getElementById('askLog');
+    const askDrawer = document.getElementById('askDrawer');
+    const askFab = document.getElementById('askFab');
+    const ctx = liveCanvas.getContext('2d', { alpha: false, desynchronized: true });
+
+    let history = [];
+    let connected = false;
+    let deviceW = 1080, deviceH = 2400;
+    let viewRect = { left: 0, top: 0, width: 0, height: 0, scale: 1 };
+    let transport = 'ws';          // h264 | ws | mjpeg | poll
+    let streamWs = null;
+    let lastInputAt = 0;           // for the tap-to-pixels readout
+    let wsFailures = 0;
+    let pendingMeta = null;
+    let lastDrawnVersion = 0;
+    let firstFrameAt = 0;
+    let pollBusy = false;
+    let pollTimer = null;
+    let interactiveUntil = 0;
+
+    // ---- layout: exact letterbox rect for the device aspect ----
+    function layoutView() {
+      const sr = screenEl.getBoundingClientRect();
+      if (!sr.width || !sr.height || !deviceW || !deviceH) return;
+      const scale = Math.min(sr.width / deviceW, sr.height / deviceH);
+      const w = deviceW * scale, h = deviceH * scale;
+      viewRect = { left: (sr.width - w) / 2, top: (sr.height - h) / 2, width: w, height: h, scale };
+      for (const el of [liveCanvas, liveShot]) {
+        el.style.left = viewRect.left + 'px';
+        el.style.top = viewRect.top + 'px';
+        el.style.width = w + 'px';
+        el.style.height = h + 'px';
+      }
+    }
+    window.addEventListener('resize', layoutView);
+    if (window.ResizeObserver) new ResizeObserver(layoutView).observe(screenEl);
+    layoutView();
+
+    function setDeviceSize(w, h) {
+      if (!w || !h) return;
+      if (w === deviceW && h === deviceH) return;
+      deviceW = w; deviceH = h;
+      layoutView();
+    }
+
+    function markLive(label) {
+      connected = true;
+      phoneEmpty.classList.add('hidden');
+      streamBadge.classList.remove('off');
+      // Keep the blinking dot; update the visible label.
+      const _lbl = streamBadge.childNodes[streamBadge.childNodes.length-1];
+      if (_lbl && _lbl.nodeType === 3) {
+        _lbl.textContent = transport === 'h264' ? ' Live · H.264' : ' Live';
+      }
+      if (tapHint && firstFrameAt) tapHint.style.display = 'none';
+      if (!firstFrameAt) firstFrameAt = Date.now();
+      document.getElementById('adbDot').className = 'dot ok';
+      document.getElementById('adbLabel').textContent = 'Phone on';
+      if (label) shotStamp.textContent = label;
+    }
+
+    // ═══════════ Transport 0: H.264 / WebCodecs (preferred) ═══════════
+    //  Device `screenrecord` → Annex-B access units on /ws/h264 → VideoDecoder.
+    //  ~15-30fps for ~800kbps instead of ~3fps of JPEG, and the encoder only
+    //  emits when the screen actually changes.
+    //  The JPEG socket below stays up until the first H.264 frame paints, so a
+    //  browser without WebCodecs — or a device without screenrecord — never
+    //  sees a blank phone. Anything that goes wrong here falls back, silently.
+    const H264_OK = typeof window.VideoDecoder === 'function'
+                 && typeof window.EncodedVideoChunk === 'function';
+    const AU_HEADER_BYTES = 16;   // u8 ver | u8 flags | u16 pad | u32 seq | f64 ts_us
+    const h264 = {
+      ws: null, dec: null, codec: null, needKey: true,
+      frames: 0, bytes: 0, failures: 0, giveUp: !H264_OK,
+      connectedAt: 0, lastFrameAt: 0, fps: 0, kbps: 0, window: [],
+      latency: null, watchdog: null, closing: false,
+      // AU arrival times keyed by timestamp, so we can separate "the device
+      // was slow" from "decoding was slow" instead of guessing.
+      arrivals: new Map(), decodeMs: null,
+      catchup: null, pokes: 0,
+    };
+
+    function h264Connect() {
+      if (h264.giveUp || h264.ws) return;
+      let ws;
+      try {
+        const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+        ws = new WebSocket(proto + '://' + location.host + '/ws/h264');
+      } catch (e) { h264Fail('construct: ' + e.message); return; }
+      ws.binaryType = 'arraybuffer';
+      h264.ws = ws;
+      h264.closing = false;
+      h264.connectedAt = Date.now();
+      ws.onmessage = (ev) => {
+        if (typeof ev.data === 'string') {
+          let m; try { m = JSON.parse(ev.data); } catch (_) { return; }
+          h264Control(m);
+        } else {
+          h264Feed(ev.data);
+        }
+      };
+      ws.onerror = () => {};
+      ws.onclose = (ev) => {
+        h264.ws = null;
+        h264TeardownDecoder();
+        if (h264.closing) return;                 // our own close (hidden tab)
+        if (ev.code === 1013) { h264Fail('server: ' + (ev.reason || 'capacity')); return; }
+        if (transport === 'h264') {
+          // We were live on H.264 — try once more before dropping to JPEG.
+          h264.failures += 1;
+          if (h264.failures <= 3) { setTimeout(h264Connect, 500 * h264.failures); return; }
+          transport = 'ws';
+          connectStreamWs();
+        }
+        h264Fail('closed ' + ev.code);
+      };
+      // No first frame in time ⇒ this path is not going to work here.
+      clearTimeout(h264.watchdog);
+      h264.watchdog = setTimeout(() => {
+        if (!h264.frames) h264Fail('no frame in 9s');
+      }, 9000);
+    }
+
+    function h264Control(m) {
+      if (m.type === 'hello') {
+        if (m.device_width && m.device_height) setDeviceSize(m.device_width, m.device_height);
+        h264Configure(m.codec || 'avc1.42E01E');
+      } else if (m.type === 'ping') {
+        h264Send({ type: 'pong' });               // keeps our viewer slot alive
+      } else if (m.type === 'bye') {
+        // Server is out of viewer slots (or H.264 is off): stop retrying.
+        h264Fail(m.reason || 'server declined');
+      } else if (m.type === 'stall' && !h264.frames) {
+        shotStamp.textContent = 'h264 starting…';
+      }
+    }
+
+    function h264Send(obj) {
+      try { if (h264.ws && h264.ws.readyState === 1) h264.ws.send(JSON.stringify(obj)); }
+      catch (_) {}
+    }
+
+    async function h264Configure(codec) {
+      if (h264.dec && h264.codec === codec && h264.dec.state === 'configured') return;
+      h264TeardownDecoder();
+      const config = { codec, optimizeForLatency: true, hardwareAcceleration: 'no-preference' };
+      try {
+        if (window.VideoDecoder.isConfigSupported) {
+          const probe = await window.VideoDecoder.isConfigSupported(config);
+          if (probe && probe.supported === false) { h264Fail('codec ' + codec + ' unsupported'); return; }
+        }
+        const dec = new window.VideoDecoder({
+          output: (frame) => { try { h264Paint(frame); } finally { frame.close(); } },
+          error: (e) => h264DecoderError(e),
+        });
+        dec.configure(config);
+        h264.dec = dec;
+        h264.codec = codec;
+        h264.needKey = true;
+      } catch (e) { h264Fail('configure: ' + e.message); }
+    }
+
+    function h264Feed(buf) {
+      const dec = h264.dec;
+      if (!dec || dec.state !== 'configured' || buf.byteLength <= AU_HEADER_BYTES) return;
+      const dv = new DataView(buf);
+      const key = (dv.getUint8(1) & 1) === 1;
+      const ts = dv.getFloat64(8, true);
+      if (h264.needKey && !key) return;            // decoding deltas first = garbage
+      try {
+        dec.decode(new window.EncodedVideoChunk({
+          type: key ? 'key' : 'delta',
+          timestamp: ts,
+          data: new Uint8Array(buf, AU_HEADER_BYTES),
+        }));
+        h264.needKey = false;
+        if (h264.arrivals.size > 240) h264.arrivals.clear();
+        h264.arrivals.set(ts, performance.now());
+        h264.bytes += buf.byteLength - AU_HEADER_BYTES;
+        h264.window.push([performance.now(), buf.byteLength - AU_HEADER_BYTES]);
+      } catch (e) { h264DecoderError(e); }
+    }
+
+    function h264DecoderError(e) {
+      // Lost reference frames (dropped AUs, restored tab): only an IDR fixes it.
+      h264.needKey = true;
+      h264Send({ type: 'keyframe' });
+      if (h264.dec && h264.dec.state === 'closed') h264Configure(h264.codec || 'avc1.42E01E');
+      shotStamp.textContent = 'video resync…';
+    }
+
+    function h264Paint(frame) {
+      const w = frame.displayWidth || frame.codedWidth;
+      const h = frame.displayHeight || frame.codedHeight;
+      if (!w || !h) return;
+      if (liveCanvas.width !== w || liveCanvas.height !== h) {
+        liveCanvas.width = w; liveCanvas.height = h;
+      }
+      liveCanvas.hidden = false;
+      liveShot.hidden = true;
+      ctx.drawImage(frame, 0, 0, w, h);
+      h264.frames += 1;
+      h264.lastFrameAt = Date.now();
+      const arrivedAt = h264.arrivals.get(frame.timestamp);
+      if (arrivedAt != null) {
+        h264.decodeMs = Math.round(performance.now() - arrivedAt);
+        h264.arrivals.delete(frame.timestamp);
+      }
+      if (h264.frames === 1) adoptH264();
+      if (lastInputAt) { h264.latency = Math.round(performance.now() - lastInputAt); lastInputAt = 0; }
+      markLive(null);
+      h264Hud();
+    }
+
+    /** First decoded frame: H.264 owns the canvas, JPEG transports stand down. */
+    function adoptH264() {
+      transport = 'h264';
+      h264.failures = 0;
+      clearTimeout(h264.watchdog);
+      try { if (streamWs) streamWs.close(1000, 'h264 adopted'); } catch (_) {}
+      streamWs = null;
+      clearTimeout(pollTimer);
+      liveShot.onerror = null;
+      liveShot.onload = null;
+      liveShot.removeAttribute('src');
+      liveShot.hidden = true;
+      if (tapHint) tapHint.style.display = 'none';
+    }
+
+    const jpegHud = { window: [] };
+
+    /** Shared telemetry readout: whichever transport is painting, report it. */
+    function h264Hud() {
+      const now = performance.now();
+      const win = transport === 'h264' ? h264.window : jpegHud.window;
+      while (win.length && now - win[0][0] > 3000) win.shift();
+      const span = win.length ? Math.max(500, now - win[0][0]) : 1000;
+      const fps = win.length / (span / 1000);
+      const kbps = (win.reduce((a, x) => a + x[1], 0) * 8 / 1000) / (span / 1000);
+      if (transport === 'h264') { h264.fps = fps; h264.kbps = kbps; }
+      const bits = [
+        transport === 'h264' ? 'H.264' : (transport === 'ws' ? 'JPEG/ws' : transport.toUpperCase()),
+        fps.toFixed(0) + 'fps',
+        Math.round(kbps) + 'kbps',
+      ];
+      let html = bits.join(' · ');
+      if (h264.latency != null) {
+        const cls = h264.latency < 400 ? 'lat' : 'warn';
+        html += ' · <span class="' + cls + '">⌁ ' + h264.latency + 'ms</span>';
+      }
+      streamHud.innerHTML = html;
+      streamHud.title = 'transport ' + transport
+        + ' · decode ' + (h264.decodeMs == null ? '—' : h264.decodeMs + 'ms')
+        + ' · frames ' + h264.frames
+        + (h264.pokes ? ' · jpeg pokes ' + h264.pokes : '');
+    }
+
+    /** Bridge the one case where JPEG beats video.
+     *
+     *  A keypress that produces no animation (HOME onto a settled launcher)
+     *  can leave the device encoder quiet for most of a second, while the JPEG
+     *  broker would have force-captured the new screen in ~300ms. So: after an
+     *  input, if no access unit has arrived in a while, paint exactly one
+     *  cached JPEG frame over the canvas. The next real video frame replaces
+     *  it. Costs one screencap per stalled input, never runs a second stream.
+     */
+    function h264CatchUp() {
+      if (transport !== 'h264') return;
+      clearTimeout(h264.catchup);
+      h264.catchup = setTimeout(async () => {
+        if (transport !== 'h264') return;
+        if (Date.now() - h264.lastFrameAt < 400) return;      // video kept up
+        try {
+          const r = await fetch('/adb/preview?t=' + Date.now(), { cache: 'no-store' });
+          if (!r.ok) return;
+          const buf = await r.arrayBuffer();
+          if (transport !== 'h264' || Date.now() - h264.lastFrameAt < 400) return;
+          const bm = window.createImageBitmap
+            ? await createImageBitmap(new Blob([buf], { type: 'image/jpeg' }))
+            : null;
+          if (!bm) return;
+          // Keep the canvas at the video's geometry so the next decoded frame
+          // lands pixel-for-pixel on top of this one.
+          ctx.drawImage(bm, 0, 0, liveCanvas.width, liveCanvas.height);
+          if (bm.close) bm.close();
+          h264.pokes += 1;
+          if (lastInputAt) { h264.latency = Math.round(performance.now() - lastInputAt); lastInputAt = 0; }
+          markLive(null);
+          h264Hud();
+        } catch (_) {}
+      }, 420);
+    }
+
+    function h264TeardownDecoder() {
+      const dec = h264.dec;
+      h264.dec = null;
+      h264.needKey = true;
+      if (dec && dec.state !== 'closed') { try { dec.close(); } catch (_) {} }
+    }
+
+    function h264Close(why) {
+      h264.closing = true;
+      clearTimeout(h264.watchdog);
+      try { if (h264.ws) h264.ws.close(1000, why || 'client'); } catch (_) {}
+      h264.ws = null;
+      h264TeardownDecoder();
+    }
+
+    /** Give up on H.264 for this page load and let the JPEG ladder carry on. */
+    function h264Fail(why) {
+      clearTimeout(h264.watchdog);
+      h264TeardownDecoder();
+      try { if (h264.ws) h264.ws.close(); } catch (_) {}
+      h264.ws = null;
+      h264.giveUp = true;
+      if (transport === 'h264') { transport = 'ws'; connectStreamWs(); }
+      streamHud.innerHTML = 'JPEG fallback';
+      setTimeout(h264Hud, 1200);
+      console.info('[strlix] h264 unavailable → JPEG fallback:', why);
+    }
+
+    // ───────────── Transport 1: WebSocket binary JPEG (fastest) ─────────────
+    function connectStreamWs() {
+      if (transport !== 'ws') return;
+      if (streamWs && (streamWs.readyState === 0 || streamWs.readyState === 1)) return;
+      let ws;
+      try {
+        const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+        ws = new WebSocket(proto + '://' + location.host + '/ws/stream');
+      } catch (e) { fallbackToMjpeg('ws construct failed'); return; }
+      ws.binaryType = 'arraybuffer';
+      streamWs = ws;
+      ws.onopen = () => { wsFailures = 0; };
+      ws.onmessage = (ev) => {
+        if (typeof ev.data === 'string') {
+          let m; try { m = JSON.parse(ev.data); } catch (_) { return; }
+          if (m.type === 'frame') {
+            pendingMeta = m;
+            setDeviceSize(m.device_width, m.device_height);
+          } else if (m.type === 'hello') {
+            setDeviceSize(m.device_width, m.device_height);
+          } else if (m.type === 'stall') {
+            shotStamp.textContent = 'stream stalled' + (m.error ? ' · ' + m.error : '');
+          }
+          return;
+        }
+        const meta = pendingMeta; pendingMeta = null;
+        drawJpeg(ev.data, meta);
+      };
+      ws.onerror = () => {};
+      ws.onclose = (ev) => {
+        streamWs = null;
+        if (transport !== 'ws') return;
+        wsFailures += 1;
+        if (wsFailures >= 3 || ev.code === 1013) { fallbackToMjpeg('ws closed ' + ev.code); return; }
+        setTimeout(connectStreamWs, 400 * wsFailures);
+      };
+    }
+
+    function drawJpeg(buf, meta) {
+      if (transport === 'h264') return;   // video owns the canvas now
+      const version = meta ? meta.version : 0;
+      const blob = new Blob([buf], { type: 'image/jpeg' });
+      const paint = (src, w, h) => {
+        if (version && version < lastDrawnVersion) return;   // out-of-order decode
+        lastDrawnVersion = version || lastDrawnVersion;
+        if (liveCanvas.width !== w || liveCanvas.height !== h) {
+          liveCanvas.width = w; liveCanvas.height = h;
+        }
+        liveCanvas.hidden = false;
+        liveShot.hidden = true;
+        ctx.drawImage(src, 0, 0, w, h);
+        jpegHud.window.push([performance.now(), buf.byteLength || 0]);
+        if (lastInputAt) { h264.latency = Math.round(performance.now() - lastInputAt); lastInputAt = 0; }
+        markLive(new Date().toLocaleTimeString());
+        h264Hud();
+      };
+      if (window.createImageBitmap) {
+        createImageBitmap(blob).then((bm) => {
+          paint(bm, bm.width, bm.height);
+          if (bm.close) bm.close();
+        }).catch(() => {});
+      } else {
+        const url = URL.createObjectURL(blob);
+        const im = new Image();
+        im.onload = () => { paint(im, im.naturalWidth, im.naturalHeight); URL.revokeObjectURL(url); };
+        im.onerror = () => URL.revokeObjectURL(url);
+        im.src = url;
+      }
+    }
+
+    // ───────────── Transport 2: MJPEG <img> ─────────────
+    function fallbackToMjpeg(why) {
+      if (transport === 'poll' || transport === 'h264') return;
+      transport = 'mjpeg';
+      try { if (streamWs) streamWs.close(); } catch (_) {}
+      streamWs = null;
+      shotStamp.textContent = 'mjpeg fallback';
+      startMjpeg();
+    }
+    function startMjpeg() {
+      if (transport !== 'mjpeg') return;
+      liveCanvas.hidden = true;
+      liveShot.hidden = false;
+      liveShot.onload = () => markLive('live · mjpeg');
+      liveShot.onerror = () => { transport = 'poll'; liveShot.onload = null; schedulePoll(); };
+      liveShot.src = '/adb/mjpeg?t=' + Date.now();
+      layoutView();
+    }
+
+    // ───────────── Transport 3: polled /adb/preview ─────────────
+    async function grabPreview(force) {
+      if (pollBusy && !force) return;
+      pollBusy = true;
+      try {
+        const r = await fetch('/adb/preview?t=' + Date.now(), { cache: 'no-store' });
+        if (!r.ok) throw new Error('preview ' + r.status);
+        setDeviceSize(
+          parseInt(r.headers.get('X-Device-Width') || '', 10),
+          parseInt(r.headers.get('X-Device-Height') || '', 10)
+        );
+        const buf = await r.arrayBuffer();
+        liveCanvas.hidden = false;
+        liveShot.hidden = true;
+        drawJpeg(buf, null);
+      } catch (err) {
+        if (!lastDrawnVersion && !firstFrameAt) shotStamp.textContent = 'Waiting for ADB…';
+      } finally {
+        pollBusy = false;
+      }
+    }
+    function pollDelay() { return Date.now() < interactiveUntil ? 300 : 700; }
+    function schedulePoll() {
+      clearTimeout(pollTimer);
+      if (transport !== 'poll') return;
+      if (document.visibilityState !== 'visible') {
+        pollTimer = setTimeout(schedulePoll, 1200);
+        return;
+      }
+      grabPreview(false).finally(() => { pollTimer = setTimeout(schedulePoll, pollDelay()); });
+    }
+
+    // Legacy name used by Ask / Live voice callbacks
+    async function grabShot() { nudgeStream(); if (transport === 'poll') return grabPreview(true); }
+
+    /** Ask the server to capture immediately (used right after an input). */
+    function nudgeStream() {
+      // On H.264 the encoder already pushes a frame the moment the screen
+      // changes — nudging would start a second, pointless capture pipeline.
+      if (transport === 'h264') return;
+      if (streamWs && streamWs.readyState === 1) {
+        try { streamWs.send(JSON.stringify({ type: 'nudge' })); return; } catch (_) {}
+      }
+      fetch('/adb/stream/nudge', { method: 'POST' }).catch(() => {});
+    }
+
+    function startStream() {
+      // Try video first; the JPEG ladder keeps running underneath until the
+      // first decoded frame arrives, so there is never a blank phone.
+      h264Connect();
+      if (transport === 'h264') return;
+      if (transport === 'ws') connectStreamWs();
+      else if (transport === 'mjpeg') startMjpeg();
+      else schedulePoll();
+    }
+    function stopStream() {
+      h264Close('hidden');
+      try { if (streamWs) streamWs.close(); } catch (_) {}
+      streamWs = null;
+      if (transport === 'mjpeg') { liveShot.onerror = null; liveShot.removeAttribute('src'); }
+      clearTimeout(pollTimer);
+    }
+
+    /** Legacy: Ask/voice used to push a saved demo/*.png. The live stream is
+     *  strictly fresher than a saved screenshot, so just force a capture. */
+    function setLive(url, label) {
+      nudgeStream();
+      if (label) shotStamp.textContent = label;
+    }
+    function showPreviewFrame() { /* superseded by the canvas path */ }
+
+    function askBubble(role, text) {
+      const row = document.createElement('div');
+      row.className = 'ask-msg ' + (role === 'user' ? 'user' : 'bot');
+      row.innerHTML = '<div class="role">' + (role === 'user' ? 'You' : 'Strlix') + '</div>';
+      const body = document.createElement('div');
+      body.textContent = text;
+      row.appendChild(body);
+      askLog.appendChild(row);
+      askLog.scrollTop = askLog.scrollHeight;
+    }
+
+    async function refreshHealth() {
+      const adbDot = document.getElementById('adbDot');
+      const adbLabel = document.getElementById('adbLabel');
+      try {
+        const r = await fetch('/health');
+        const j = await r.json();
+        const state = (j.adb_state || '').toString();
+        connected = state === 'device' || state.includes('device');
+        const err = state.startsWith('error') || state === '';
+        adbDot.className = 'dot ' + (connected ? 'ok' : err ? 'err' : 'warn');
+        adbLabel.textContent = connected ? 'Phone on' : ('Phone ' + (state || 'offline'));
+        if (!connected) streamBadge.classList.add('off');
+        if (j.stream && j.stream.device) setDeviceSize(j.stream.device[0], j.stream.device[1]);
+      } catch (e) {
+        connected = false;
+        adbDot.className = 'dot err';
+        adbLabel.textContent = 'Offline';
+        streamBadge.classList.add('off');
+      }
+    }
+
+    async function refreshSize() {
+      try {
+        const r = await fetch('/adb/size');
+        const j = await r.json();
+        if (j && j.width && j.height) setDeviceSize(j.width, j.height);
+      } catch (_) {}
+    }
+
+    // ───────────── Pointer → device coordinates ─────────────
+    const EDGE_TOL = 40;  // device px of slack into the letterbox bars
+    function clientToDevice(clientX, clientY) {
+      const sr = screenEl.getBoundingClientRect();
+      if (!sr.width || !sr.height) return null;
+      if (!viewRect.width) layoutView();
+      if (!viewRect.width || !viewRect.scale) return null;
+      const ix = (clientX - sr.left - viewRect.left) / viewRect.scale;
+      const iy = (clientY - sr.top - viewRect.top) / viewRect.scale;
+      if (ix < -EDGE_TOL || iy < -EDGE_TOL || ix > deviceW + EDGE_TOL || iy > deviceH + EDGE_TOL) {
+        return null;
+      }
+      return {
+        x: Math.max(0, Math.min(deviceW - 1, Math.round(ix))),
+        y: Math.max(0, Math.min(deviceH - 1, Math.round(iy))),
+      };
+    }
+
+    function showRipple(clientX, clientY) {
+      const sr = screenEl.getBoundingClientRect();
+      pressRipple.style.left = (clientX - sr.left) + 'px';
+      pressRipple.style.top = (clientY - sr.top) + 'px';
+      pressRipple.classList.remove('show');
+      void pressRipple.offsetWidth;
+      pressRipple.classList.add('show');
+      clearTimeout(showRipple._t);
+      showRipple._t = setTimeout(() => pressRipple.classList.remove('show'), 280);
+    }
+
+    // ───────────── Pointer control (mouse + touch + pen) ─────────────
+    let ptrDown = null;
+    const SWIPE_PX = 14;
+
+    function onPtrDown(ev) {
+      if (ev.pointerType === 'mouse' && ev.button !== 0) return;
+      const pt = clientToDevice(ev.clientX, ev.clientY);
+      if (!pt) return;
+      ev.preventDefault();
+      try { touchLayer.setPointerCapture(ev.pointerId); } catch (_) {}
+      ptrDown = { id: ev.pointerId, ...pt, cx: ev.clientX, cy: ev.clientY, t: Date.now() };
+      showRipple(ev.clientX, ev.clientY);
+      interactiveUntil = Date.now() + 5000;
+    }
+
+    function onPtrUp(ev) {
+      if (!ptrDown || ptrDown.id !== ev.pointerId) return;
+      ev.preventDefault();
+      const start = ptrDown;
+      ptrDown = null;
+      try { touchLayer.releasePointerCapture(ev.pointerId); } catch (_) {}
+      const end = clientToDevice(ev.clientX, ev.clientY) || { x: start.x, y: start.y };
+      showRipple(ev.clientX, ev.clientY);
+      interactiveUntil = Date.now() + 5000;
+      const clientDist = Math.hypot(ev.clientX - start.cx, ev.clientY - start.cy);
+      const dt = Date.now() - start.t;
+
+      // Fire-and-forget: never block the UI on the ADB round-trip.
+      if (clientDist < SWIPE_PX) {
+        shotStamp.textContent = 'tap ' + start.x + ',' + start.y;
+        sendInput('/adb/tap', { x: start.x, y: start.y }, 'tap ' + start.x + ',' + start.y);
+      } else {
+        const dur = Math.max(80, Math.min(800, dt));
+        shotStamp.textContent = 'swipe ' + start.x + ',' + start.y + ' → ' + end.x + ',' + end.y;
+        sendInput('/adb/swipe',
+          { x1: start.x, y1: start.y, x2: end.x, y2: end.y, duration_ms: dur },
+          'swipe → ' + end.x + ',' + end.y);
+      }
+    }
+
+    function sendInput(url, body, label) {
+      const t0 = performance.now();
+      lastInputAt = t0;
+      // Optimistic: wake the producer immediately so the opened app appears ASAP.
+      nudgeStream();
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        keepalive: true,
+      }).then((r) => {
+        const ms = Math.round(performance.now() - t0);
+        if (!r.ok) { shotStamp.textContent = label + ' ✗ ' + r.status; return; }
+        shotStamp.textContent = label + ' · ' + ms + 'ms';
+        if (transport === 'h264') { h264CatchUp(); return; }
+        nudgeStream();
+        if (transport === 'poll') {
+          grabPreview(true);
+          setTimeout(() => grabPreview(true), 280);
+          setTimeout(() => grabPreview(true), 600);
+        } else if (transport === 'mjpeg') {
+          // Some browsers stall MJPEG decode after a long idle; soft-kick.
+          setTimeout(() => { if (transport === 'mjpeg') startMjpeg(); }, 900);
+        }
+      }).catch(() => { shotStamp.textContent = label + ' ✗ offline'; });
+    }
+
+    function onPtrCancel(ev) {
+      if (ptrDown && ptrDown.id === ev.pointerId) ptrDown = null;
+    }
+    touchLayer.addEventListener('pointerdown', onPtrDown);
+    touchLayer.addEventListener('pointerup', onPtrUp);
+    touchLayer.addEventListener('pointercancel', onPtrCancel);
+    touchLayer.addEventListener('dragstart', (e) => e.preventDefault());
+    touchLayer.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    // ───────────── Nav bar (BACK / HOME / RECENTS) ─────────────
+    document.querySelector('.navbar').addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-key]');
+      if (!b) return;
+      const keycode = b.dataset.key;
+      interactiveUntil = Date.now() + 5000;
+      sendInput('/adb/key', { keycode }, keycode.toLowerCase());
+    });
+
+    // ───────────── Boot ─────────────
+    refreshHealth();
+    refreshSize();
+    setInterval(refreshHealth, 12000);
+    setInterval(refreshSize, 60000);
+    startStream();
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        startStream();
+        // A restored tab has a cold decoder; ask for an IDR rather than
+        // decoding deltas against frames it no longer holds.
+        h264.needKey = true;
+        h264Send({ type: 'keyframe' });
+        nudgeStream();
+      } else {
+        // Keep the shared producer warm for a bit — other tabs / tunnels may
+        // still be watching. Only drop OUR subscription.
+        stopStream();
+      }
+    });
+
+    document.getElementById('refreshShot').addEventListener('click', async () => {
+      const btn = document.getElementById('refreshShot');
+      btn.disabled = true;
+      nudgeStream();
+      if (transport === 'h264') { h264.needKey = true; h264Send({ type: 'keyframe' }); }
+      else if (transport === 'poll') await grabPreview(true);
+      else if (transport === 'mjpeg') startMjpeg();
+      else connectStreamWs();
+      setTimeout(() => { btn.disabled = false; }, 250);
+    });
+
+    // Ask drawer
+    function openAsk() {
+      askDrawer.classList.add('open');
+      askFab.classList.add('open');
+      document.getElementById('askQ').focus();
+    }
+    function closeAsk() {
+      askDrawer.classList.remove('open');
+      askFab.classList.remove('open');
+    }
+    askFab.addEventListener('click', openAsk);
+    document.getElementById('askClose').addEventListener('click', closeAsk);
+
+    async function sendAsk(message) {
+      if (!message) return;
+      askBubble('user', message);
+      document.getElementById('askQ').value = '';
+      const btn = document.getElementById('askGo');
+      btn.disabled = true;
+      try {
+        const r = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message, history }),
+        });
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.detail || JSON.stringify(j));
+        history = j.history || history;
+        askBubble('bot', j.reply || '(empty)');
+        for (const s of (j.screenshots || [])) {
+          const name = (s.path || '').split('/').pop();
+          setLive('/demo/' + name + '?t=' + Date.now(), name);
+        }
+        grabShot();
+      } catch (err) {
+        askBubble('bot', 'Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    document.getElementById('askForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      sendAsk(document.getElementById('askQ').value.trim());
+    });
+    document.getElementById('askChips').addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-prompt]');
+      if (b) sendAsk(b.dataset.prompt);
+    });
+
+    // ---- Language ----
+    const LANG_KEY = 'strlix.live.language';
+    const topLang = document.getElementById('topLang');
+    let liveLanguage = localStorage.getItem(LANG_KEY) || '';
+    const LANG_FALLBACKS = [
+      {id:'en-US', name:'English', native:'English'},
+      {id:'hi-IN', name:'Hindi', native:'हिन्दी'},
+      {id:'es-ES', name:'Spanish', native:'Español'},
+      {id:'fr-FR', name:'French', native:'Français'},
+      {id:'zh-CN', name:'Mandarin', native:'中文'},
+      {id:'ar-SA', name:'Arabic', native:'العربية'},
+      {id:'pt-BR', name:'Portuguese', native:'Português'},
+      {id:'ja-JP', name:'Japanese', native:'日本語'},
+    ];
+    function matchDeviceLang(list) {
+      const nav = (navigator.language || 'en-US').replace('_','-');
+      const ids = list.map(x => x.id);
+      if (ids.includes(nav)) return nav;
+      const primary = nav.split('-')[0].toLowerCase();
+      const map = {en:'en-US',hi:'hi-IN',es:'es-ES',fr:'fr-FR',zh:'zh-CN',ar:'ar-SA',pt:'pt-BR',ja:'ja-JP'};
+      if (map[primary] && ids.includes(map[primary])) return map[primary];
+      const hit = list.find(x => x.id.toLowerCase().startsWith(primary + '-'));
+      return hit ? hit.id : 'en-US';
+    }
+    function fillLangSelect(list) {
+      topLang.innerHTML = '';
+      for (const L of list) {
+        const opt = document.createElement('option');
+        opt.value = L.id;
+        opt.textContent = L.name;
+        topLang.appendChild(opt);
+      }
+      if (!liveLanguage || ![...topLang.options].some(o => o.value === liveLanguage)) {
+        liveLanguage = matchDeviceLang(list);
+      }
+      topLang.value = liveLanguage;
+      localStorage.setItem(LANG_KEY, liveLanguage);
+    }
+    fillLangSelect(LANG_FALLBACKS);
+    topLang.addEventListener('change', () => {
+      liveLanguage = topLang.value;
+      localStorage.setItem(LANG_KEY, liveLanguage);
+      if (recognition) { try { recognition.lang = liveLanguage; } catch(_){} }
+      setLiveServer(liveOpen);
+    });
+    fetch('/voice/languages').then(r => r.json()).then(j => {
+      if (j && j.languages && j.languages.length) fillLangSelect(j.languages);
+    }).catch(() => {});
+
+    // ---- Live Voice ----
+    const liveBtn = document.getElementById('liveBtn');
+    const liveOverlay = document.getElementById('liveOverlay');
+    const liveWave = document.getElementById('liveWave');
+    const liveTranscript = document.getElementById('liveTranscript');
+    const liveReply = document.getElementById('liveReply');
+    const liveTalk = document.getElementById('liveTalk');
+    const liveLeave = document.getElementById('liveLeave');
+    const liveMeta = document.getElementById('liveMeta');
+    let liveOpen = false;
+    let liveBusy = false;
+    let liveWs = null;
+    let liveAudio = null;
+    let recognition = null;
+
+    function setWave(mode) {
+      liveWave.classList.remove('idle', 'speaking');
+      if (mode === 'idle') liveWave.classList.add('idle');
+      else if (mode === 'speaking') liveWave.classList.add('speaking');
+    }
+    function playHostAudio(url) {
+      if (!url) return;
+      try { if (liveAudio) { liveAudio.pause(); liveAudio = null; } } catch (_) {}
+      liveAudio = new Audio(url);
+      setWave('speaking');
+      liveAudio.onended = () => { if (!liveBusy) setWave('idle'); };
+      liveAudio.onerror = () => setWave('idle');
+      liveAudio.play().catch(err => {
+        liveMeta.textContent = 'Playback blocked: ' + err.message;
+        setWave('idle');
+      });
+    }
+    function connectLiveWs() {
+      if (liveWs && (liveWs.readyState === 0 || liveWs.readyState === 1)) return;
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+      liveWs = new WebSocket(proto + '://' + location.host + '/ws/live');
+      liveWs.onmessage = (ev) => {
+        try {
+          const msg = JSON.parse(ev.data);
+          if (msg.type === 'speak' && msg.audio_url) {
+            if (msg.text) liveReply.textContent = msg.text;
+            playHostAudio(msg.audio_url);
+          } else if (msg.type === 'hello' && msg.voice) {
+            liveMeta.textContent = 'TTS: ' + (msg.voice.provider || '?') + ' · clients ' + (msg.clients || 0);
+          } else if (msg.type === 'turn') {
+            if (msg.user) liveTranscript.textContent = msg.user;
+            if (msg.reply) liveReply.textContent = msg.reply;
+            if (msg.audio_url) playHostAudio(msg.audio_url);
+          }
+        } catch (_) {}
+      };
+      liveWs.onclose = () => { liveWs = null; if (liveOpen) setTimeout(connectLiveWs, 1500); };
+    }
+    async function setLiveServer(active) {
+      try {
+        await fetch('/voice/live', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ active, source: 'browser', language: liveLanguage }),
+        });
+      } catch (_) {}
+    }
+    function enterLive() {
+      liveOpen = true;
+      liveOverlay.classList.add('open');
+      liveBtn.classList.add('active');
+      liveBtn.innerHTML = '<span class="pulse"></span>Leave';
+      setWave('idle');
+      liveTranscript.textContent = 'Tap Talk and speak…';
+      liveReply.textContent = '';
+      connectLiveWs();
+      setLiveServer(true);
+    }
+    function leaveLive() {
+      liveOpen = false;
+      liveOverlay.classList.remove('open');
+      liveBtn.classList.remove('active');
+      liveBtn.innerHTML = '<span class="pulse"></span>Live';
+      stopRecognition();
+      try { if (liveAudio) liveAudio.pause(); } catch (_) {}
+      setLiveServer(false);
+    }
+    liveBtn.addEventListener('click', () => { if (liveOpen) leaveLive(); else enterLive(); });
+    liveLeave.addEventListener('click', leaveLive);
+
+    function getRecognition() {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) return null;
+      if (recognition) return recognition;
+      recognition = new SR();
+      recognition.lang = liveLanguage || 'en-US';
+      recognition.interimResults = true;
+      recognition.continuous = false;
+      recognition.onstart = () => {
+        liveBusy = true; setWave('listen');
+        liveTalk.textContent = 'Listening…';
+        liveTranscript.textContent = 'Listening…';
+      };
+      recognition.onresult = (ev) => {
+        let interim = '', final = '';
+        for (let i = ev.resultIndex; i < ev.results.length; i++) {
+          const t = ev.results[i][0].transcript;
+          if (ev.results[i].isFinal) final += t; else interim += t;
+        }
+        liveTranscript.textContent = final || interim || '…';
+        if (final) { stopRecognition(); runLiveTurn(final.trim()); }
+      };
+      recognition.onerror = (ev) => {
+        liveBusy = false; liveTalk.textContent = 'Talk'; setWave('idle');
+        liveMeta.textContent = 'Mic error: ' + (ev.error || 'unknown');
+      };
+      recognition.onend = () => {
+        liveTalk.textContent = 'Talk';
+        if (!liveBusy) setWave('idle');
+      };
+      return recognition;
+    }
+    function stopRecognition() {
+      try { if (recognition) recognition.stop(); } catch (_) {}
+      liveBusy = false; liveTalk.textContent = 'Talk';
+    }
+    async function runLiveTurn(message) {
+      if (!message) return;
+      liveBusy = true; liveTalk.disabled = true;
+      liveReply.textContent = 'Thinking…'; setWave('idle');
+      try {
+        const r = await fetch('/voice/turn', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message, history, speak: true, source: 'browser', language: liveLanguage }),
+        });
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.detail || JSON.stringify(j));
+        history = j.history || history;
+        const reply = j.reply || '(empty)';
+        liveReply.textContent = reply;
+        const url = (j.audio && j.audio.url) ? j.audio.url : null;
+        if (url) playHostAudio(url);
+        for (const s of (j.screenshots || [])) {
+          const name = (s.path || '').split('/').pop();
+          setLive('/demo/' + name + '?t=' + Date.now(), name);
+        }
+        grabShot();
+        if (j.audio && j.audio.provider) {
+          liveMeta.textContent = 'TTS ' + j.audio.provider + ' · ' + (j.audio.language || liveLanguage);
+        }
+      } catch (err) {
+        liveReply.textContent = 'Error: ' + err.message;
+      } finally {
+        liveBusy = false; liveTalk.disabled = false; liveTalk.textContent = 'Talk';
+      }
+    }
+    liveTalk.addEventListener('click', () => {
+      const rec = getRecognition();
+      if (!rec) {
+        const fallback = prompt('Mic unavailable. Type what you would say:');
+        if (fallback) { liveTranscript.textContent = fallback; runLiveTurn(fallback.trim()); }
+        return;
+      }
+      try {
+        if (!liveAudio) { liveAudio = new Audio(); liveAudio.play().catch(() => {}); }
+        rec.start();
+      } catch (e) {
+        liveMeta.textContent = 'Could not start mic: ' + e.message;
+      }
+    });
+    fetch('/voice/status').then(r => r.json()).then(j => {
+      if (j && j.provider) liveMeta.textContent = 'TTS ready: ' + j.provider;
+    }).catch(() => {});
+  </script>
+</body>
+</html>

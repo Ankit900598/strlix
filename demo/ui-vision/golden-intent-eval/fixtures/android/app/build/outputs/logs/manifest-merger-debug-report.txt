@@ -1,0 +1,53 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /workspace/zevi-cloudphone/demo/ui-vision/golden-intent-eval/fixtures/android/app/src/main/AndroidManifest.xml:2:1-18:12
+INJECTED from /workspace/zevi-cloudphone/demo/ui-vision/golden-intent-eval/fixtures/android/app/src/main/AndroidManifest.xml:2:1-18:12
+INJECTED from /workspace/zevi-cloudphone/demo/ui-vision/golden-intent-eval/fixtures/android/app/src/main/AndroidManifest.xml:2:1-18:12
+INJECTED from /workspace/zevi-cloudphone/demo/ui-vision/golden-intent-eval/fixtures/android/app/src/main/AndroidManifest.xml:2:1-18:12
+	package
+		INJECTED from /workspace/zevi-cloudphone/demo/ui-vision/golden-intent-eval/fixtures/android/app/src/main/AndroidManifest.xml
+	android:versionName
+		INJECTED from /workspace/zevi-cloudphone/demo/ui-vision/golden-intent-eval/fixtures/android/app/src/main/AndroidManifest.xml
+	android:versionCode
+		INJECTED from /workspace/zevi-cloudphone/demo/ui-vision/golden-intent-eval/fixtures/android/app/src/main/AndroidManifest.xml
+	xmlns:android
+		ADDED from /workspace/zevi-cloudphone/demo/ui-vision/golden-intent-eval/fixtures/android/app/src/main/AndroidManifest.xml:2:11-69
+application
+ADDED from /workspace/zevi-cloudphone/demo/ui-vision/golden-intent-eval/fixtures/android/app/src/main/AndroidManifest.xml:3:5-17:19
+INJECTED from /workspace/zevi-cloudphone/demo/ui-vision/golden-intent-eval/fixtures/android/app/src/main/AndroidManifest.xml:3:5-17:19
+	android:extractNativeLibs
+		INJECTED from /workspace/zevi-cloudphone/demo/ui-vision/golden-intent-eval/fixtures/android/app/src/main/AndroidManifest.xml
+	android:supportsRtl
+		ADDED from /workspace/zevi-cloudphone/demo/ui-vision/golden-intent-eval/fixtures/android/app/src/main/AndroidManifest.xml:6:9-35
+	android:label
+		ADDED from /workspace/zevi-cloudphone/demo/ui-vision/golden-intent-eval/fixtures/android/app/src/main/AndroidManifest.xml:5:9-46
+	android:allowBackup
+		ADDED from /workspace/zevi-cloudphone/demo/ui-vision/golden-intent-eval/fixtures/android/app/src/main/AndroidManifest.xml:4:9-36
+	android:theme
+		ADDED from /workspace/zevi-cloudphone/demo/ui-vision/golden-intent-eval/fixtures/android/app/src/main/AndroidManifest.xml:7:9-72
+activity#com.zevi.goldenfixture.MainActivity
+ADDED from /workspace/zevi-cloudphone/demo/ui-vision/golden-intent-eval/fixtures/android/app/src/main/AndroidManifest.xml:8:9-16:20
+	android:screenOrientation
+		ADDED from /workspace/zevi-cloudphone/demo/ui-vision/golden-intent-eval/fixtures/android/app/src/main/AndroidManifest.xml:11:13-49
+	android:exported
+		ADDED from /workspace/zevi-cloudphone/demo/ui-vision/golden-intent-eval/fixtures/android/app/src/main/AndroidManifest.xml:10:13-36
+	android:name
+		ADDED from /workspace/zevi-cloudphone/demo/ui-vision/golden-intent-eval/fixtures/android/app/src/main/AndroidManifest.xml:9:13-41
+intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
+ADDED from /workspace/zevi-cloudphone/demo/ui-vision/golden-intent-eval/fixtures/android/app/src/main/AndroidManifest.xml:12:13-15:29
+action#android.intent.action.MAIN
+ADDED from /workspace/zevi-cloudphone/demo/ui-vision/golden-intent-eval/fixtures/android/app/src/main/AndroidManifest.xml:13:17-69
+	android:name
+		ADDED from /workspace/zevi-cloudphone/demo/ui-vision/golden-intent-eval/fixtures/android/app/src/main/AndroidManifest.xml:13:25-66
+category#android.intent.category.LAUNCHER
+ADDED from /workspace/zevi-cloudphone/demo/ui-vision/golden-intent-eval/fixtures/android/app/src/main/AndroidManifest.xml:14:17-77
+	android:name
+		ADDED from /workspace/zevi-cloudphone/demo/ui-vision/golden-intent-eval/fixtures/android/app/src/main/AndroidManifest.xml:14:27-74
+uses-sdk
+INJECTED from /workspace/zevi-cloudphone/demo/ui-vision/golden-intent-eval/fixtures/android/app/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /workspace/zevi-cloudphone/demo/ui-vision/golden-intent-eval/fixtures/android/app/src/main/AndroidManifest.xml
+INJECTED from /workspace/zevi-cloudphone/demo/ui-vision/golden-intent-eval/fixtures/android/app/src/main/AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from /workspace/zevi-cloudphone/demo/ui-vision/golden-intent-eval/fixtures/android/app/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from /workspace/zevi-cloudphone/demo/ui-vision/golden-intent-eval/fixtures/android/app/src/main/AndroidManifest.xml
