@@ -9,10 +9,10 @@
 
 | Provider | Ticket / request | Scope | Status |
 |----------|------------------|-------|--------|
-| Azure Support | **2609210040005251** | `eastus2`: NCasT4v3 **0→8**, NVadsA10v5 **0→6** | **OPEN**; self-serve quota request rejected |
-| AWS | Case **179000526000600** / request `ab584e62c7f748b8908dd6e1e61c01bamRtt8Z1K` | `us-east-1`: G/VT On-Demand **0→4** | Pending / open |
+| Azure Support | **2609210040005251** | `eastus2`: NCasT4v3 **0→8**, NVadsA10v5 **0→6** | **OPEN**; limits still **0** — **do not** run `CREATE-gpu-worker.sh` with confirm |
+| AWS | Case **179000526000600** / request `ab584e62c7f748b8908dd6e1e61c01bamRtt8Z1K` | `us-east-1`: G/VT On-Demand **0→4** | **CASE_CLOSED**; quota **4**. Soft-launch worker: **`i-0531c567f620877c3`** `g4dn.xlarge` us-east-1b — see `aws/CREATE-aws-gpu-worker.md` |
 
-Spot/Low-priority capacity is still **0/3 usable** (regional limit remains 3 vCPUs); it is not enough for the preferred NC4as T4 worker. No GPU VM has been created.
+Azure Spot/Low-priority remains unusable for NC4as T4. **No Azure GPU VM** created. AWS path used for soft-launch instead.
 
 
 ## Portal path
@@ -40,4 +40,5 @@ Sponsored subscriptions sometimes need Microsoft for Startups / quota form rathe
 
 ## After approval
 
-Run `CREATE-gpu-worker.sh` **manually** (script refuses to run unless `CONFIRM_GPU_CREATE=yes`).
+Azure: only after NCasT4 limit ≥4, run `CREATE-gpu-worker.sh` with `CONFIRM_GPU_CREATE=yes`.
+AWS (preferred while Azure=0): `aws/CREATE-aws-gpu-worker.sh` with `CONFIRM_AWS_GPU_CREATE=yes` (one worker already live).

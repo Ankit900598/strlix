@@ -1,4 +1,4 @@
-# Soft-launch status snapshot — 2026-09-21 ~23:40 IST
+# Soft-launch status snapshot — 2026-09-21 ~23:46 IST
 
 **Operator:** box agent (not CloudAgent) · **RG lock:** `rg-zevi-cloudphone`  
 **Billing posture:** Ankit first calendar month **FREE** (soft-launch); do not enable Stripe **live** charges.  
@@ -12,16 +12,18 @@
 | Origin `ca-market-api…/health` | **200** · same payload · rev `ca-market-api--0000003` Healthy |
 | Origin `ca-android-api…/health` | **200** |
 | Managed Redis `redis-strlix-amr` | **Running** / Succeeded · SKU Balanced_B0 · eastus · public Enabled |
-| GPU VMs in RG | **None** — only `vm-zevi-cloudphone` = `Standard_D4nls_v6` (running) |
+| GPU VMs in RG | **None** (Azure) — only `vm-zevi-cloudphone` = `Standard_D4nls_v6` (running) |
+| AWS GPU worker | **`i-0531c567f620877c3`** `g4dn.xlarge` **running** us-east-1b · pub `44.201.216.57` · priv `172.31.82.79` · ≈$0.526/hr |
 
-## Applied in Azure this pass
+## Applied this pass
 
-- Action group `ag-strlix-ops` + 4 alerts (see `OPS-ALERTS.md`).
+- Azure: action group `ag-strlix-ops` + 4 alerts (see `OPS-ALERTS.md`) — unchanged this GPU pass.
+- AWS: created **one** `g4dn.xlarge` `strlix-gpu-worker-1` (`i-0531c567f620877c3`) + SSM IAM + SG (no public inbound). Runbook: `infra/gpu-worker/aws/CREATE-aws-gpu-worker.md`.
 
-## Docs-only this pass
+## Docs this pass
 
-- `OPS-ALERTS.md`, `PRIVATE-REDIS-PATH.md`, this file.
-- `demo/credit-burn/REMAINING.md` refresh (free-first-month + remaining list).
+- `infra/gpu-worker/aws/CREATE-aws-gpu-worker.md` + `CREATE-aws-gpu-worker.sh`
+- Quota/status: `QUOTA-TICKETS.md`, `REQUEST-quota.md`, this file.
 
 ## Blockers
 
@@ -30,6 +32,6 @@
 | Custom domain / branded URL | Still on `*.azurefd.net` — not configured this pass |
 | Entra / portal | No block for Monitor alerts (CLI OK) |
 | Azure GPU NCasT4 / NVadsA10 | **Still limit 0** in eastus2 — Support **2609210040005251**; do not create GPU VM |
-| AWS G/VT On-Demand | Quota **now 4** (case **179000526000600** / req `ab584e62…` **CASE_CLOSED**); still **do not create** GPU worker until product asks |
+| AWS G/VT On-Demand | Quota **4** (case **179000526000600** **CASE_CLOSED**); **worker created** `i-0531c567f620877c3` — see `infra/gpu-worker/aws/CREATE-aws-gpu-worker.md` |
 | Private Redis cutover | Region split CAE eastus2 vs VNet/Redis eastus — see `PRIVATE-REDIS-PATH.md` |
 | Stripe live | **Deferred** — pay_mode stays `test` |
