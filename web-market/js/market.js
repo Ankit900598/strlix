@@ -3,7 +3,24 @@
   const MARKET_API = cfg.marketApi || null; // e.g. http://127.0.0.1:8792
   const STREAM = cfg.streamUrl || "http://127.0.0.1:8789";
   const STREAM_FALLBACK = cfg.streamFallback || "http://127.0.0.1:8787";
-  const PAY_MODE = cfg.payMode || "test";
+  let PAY_MODE = cfg.payMode || "test";
+  async function refreshPayGates() {
+    if (!MARKET_API) return;
+    try {
+      const g = await fetch(MARKET_API.replace(/\/$/, "") + "/v1/payments/status").then((r) => r.json());
+      PAY_MODE = g.effective_mode || PAY_MODE;
+      const pill = document.querySelector(".pill.test, .top-actions .pill");
+      const payPill = [...document.querySelectorAll(".top-actions .pill")].find((el) => /PAY:/i.test(el.textContent || ""));
+      if (payPill) {
+        payPill.textContent = "PAY: " + String(PAY_MODE).toUpperCase();
+        payPill.classList.toggle("test", PAY_MODE !== "live");
+        payPill.title = PAY_MODE === "live"
+          ? "LIVE gated on — real charges possible"
+          : "Stripe/Razorpay test mode — no real charges";
+      }
+    } catch (_) { /* keep cfg default */ }
+  }
+  refreshPayGates();
 
   const els = {
     grid: document.getElementById("deviceGrid"),
@@ -373,7 +390,7 @@
         <button class="btn primary" data-plan="day">Pay ${money(device.price_day_cents)} / day</button>
         <button class="btn" id="payCancel">Cancel</button>
       </div>
-      <p style="margin-top:12px;font-size:11px">Stripe/Razorpay test keys via env · webhook stubs on market-api</p>`;
+      <p style="margin-top:12px;font-size:11px">Gated payments · intent id only stored · live needs PAYMENTS_LIVE + Key Vault keys</p>`;
     els.modalBody.querySelector("#payCancel").onclick = () => els.modal.classList.remove("open");
     els.modalBody.querySelectorAll("[data-plan]").forEach((btn) => {
       btn.onclick = () => confirmPay(device, btn.getAttribute("data-plan"));

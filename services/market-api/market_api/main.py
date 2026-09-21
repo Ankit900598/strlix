@@ -1,4 +1,4 @@
-"""Strlix market-api — catalog, JWT auth, test checkout, per-user Postgres RLS."""
+"""Strlix market-api — catalog, JWT auth, gated checkout, per-user Postgres RLS."""
 from __future__ import annotations
 import json, time
 from pathlib import Path
@@ -10,13 +10,13 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 
 from .settings import settings
-from . import db, auth, redis_client
+from . import db, auth, redis_client, payments
 from .jobs import create as create_job, get as get_job
 
 ROOT = Path("/workspace/zevi-cloudphone")
 DEVICES = ROOT / "web-market" / "devices.json"
 
-app = FastAPI(title="Strlix market-api", version="0.4.0")
+app = FastAPI(title="Strlix market-api", version="0.5.0")
 origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
@@ -72,11 +72,13 @@ async def security_headers(request: Request, call_next):
 
 @app.get("/health")
 def health():
+    gates = payments.gate_status()
     return {
         "ok": True,
         "service": "market-api",
-        "version": "0.4.0",
-        "pay_mode": settings.pay_mode,
+        "version": "0.5.0",
+        "pay_mode": gates["effective_mode"],
+        "pay_gates": gates,
         "db": "postgres" if settings.use_postgres else "sqlite",
         "redis": redis_client.redis_ok(),
         "redis_error": redis_client.redis_error(),
@@ -237,8 +239,7 @@ def logout(claims: dict = Depends(auth.require_user)):
 
 @app.post("/v1/checkout/session")
 def checkout(body: CheckoutIn, claims: dict = Depends(auth.require_user)):
-    if settings.pay_mode != "test":
-        raise HTTPException(503, "live charges disabled in this build")
+    """Create checkout + payment_intent row. Default TEST; live is triple-gated."""
     _rate(claims)
     devices = {d["id"]: d for d in _devices_payload().get("devices", [])}
     if body.device_id not in devices:
@@ -246,70 +247,73 @@ def checkout(body: CheckoutIn, claims: dict = Depends(auth.require_user)):
     d = devices[body.device_id]
     if not d.get("available", True):
         raise HTTPException(409, "device unavailable")
+    # Refuse half-enabled live configs early with a clear 503 (no charges).
+    if settings.pay_mode == "live" and not payments.live_charges_allowed():
+        raise HTTPException(
+            503,
+            "live charges disabled — set PAYMENTS_LIVE=true AND STRLIX_ALLOW_LIVE_CHARGES=true "
+            "AND STRLIX_PAY_MODE=live (and load live keys from Key Vault). Default remains TEST.",
+        )
     amount = d["price_hour_cents"] if body.plan == "hour" else d["price_day_cents"]
     provider = body.provider or settings.pay_provider
     oid = db.new_id()
-    pref = f"test_{provider}_{oid[:8]}"
     with db.session(user_id=claims["sub"]) as con:
         if settings.use_postgres:
             con.execute(
                 """INSERT INTO market.orders(id,user_id,device_id,plan,amount_cents,currency,provider,status,provider_ref)
                    VALUES (%s::uuid,%s::uuid,%s,%s,%s,'USD',%s,'checkout',%s)""",
-                (oid, claims["sub"], body.device_id, body.plan, amount, provider, pref),
+                (oid, claims["sub"], body.device_id, body.plan, amount, provider, ""),
             )
         else:
             con.execute(
                 "INSERT INTO orders(id,user_id,device_id,plan,amount_cents,currency,provider,status,provider_ref,created_at) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-                (oid, claims["sub"], body.device_id, body.plan, amount, "USD", provider, "checkout", pref, time.time()),
+                (oid, claims["sub"], body.device_id, body.plan, amount, "USD", provider, "checkout", "", time.time()),
             )
         db.audit(con, claims["sub"], "checkout", "order", oid, {"plan": body.plan, "provider": provider})
+    try:
+        result = payments.create_checkout_session(
+            user_id=claims["sub"],
+            order_id=oid,
+            device_id=body.device_id,
+            plan=body.plan,
+            amount_cents=amount,
+            provider=provider,
+            success_url=settings.checkout_success_url,
+            cancel_url=settings.checkout_cancel_url,
+        )
+    except RuntimeError as e:
+        raise HTTPException(503, str(e)) from e
     return {
-        "order_id": oid,
-        "mode": "test",
-        "provider": provider,
-        "amount_cents": amount,
-        "currency": "USD",
-        "publishable_key": settings.stripe_publishable_key if provider == "stripe" else settings.razorpay_key_id,
-        "checkout_url": f"/pay/stub?order={oid}",
-        "client_secret": f"stub_secret_{oid}",
-        "message": "TEST MODE — no real charge. Confirm via POST /v1/checkout/confirm",
+        "order_id": result.order_id,
+        "payment_intent_id": result.payment_intent_id,
+        "mode": result.mode,
+        "provider": result.provider,
+        "amount_cents": result.amount_cents,
+        "currency": result.currency,
+        "status": result.status,
+        "publishable_key": result.publishable_key,
+        "checkout_url": result.checkout_url,
+        "client_secret": result.client_secret,
+        "provider_ref": result.provider_ref,
+        "message": result.message,
         "device": d,
         "stream_after_pay": settings.stream_url,
+        "pay_gates": payments.gate_status(),
     }
 
 @app.post("/v1/checkout/confirm")
 def confirm(order_id: str, claims: dict = Depends(auth.require_user)):
+    """TEST-only confirm. Live path must complete via signed Stripe webhook."""
     _rate(claims)
-    with db.session(user_id=claims["sub"]) as con:
-        if settings.use_postgres:
-            cur = con.execute("SELECT * FROM market.orders WHERE id=%s::uuid AND deleted_at IS NULL", (order_id,))
-        else:
-            cur = con.execute("SELECT * FROM orders WHERE id=%s AND deleted_at IS NULL", (order_id,))
-        row = db.fetchone(cur)
-        if not row:
-            raise HTTPException(404, "order not found")
-        lid = db.new_id()
-        now = time.time()
-        hours = 1 if row["plan"] == "hour" else 24
-        if settings.use_postgres:
-            con.execute("UPDATE market.orders SET status=%s WHERE id=%s::uuid", ("paid_test", order_id))
-            con.execute(
-                """INSERT INTO market.leases(id,user_id,order_id,device_id,broker_sid,starts_at,ends_at,status)
-                   VALUES (%s::uuid,%s::uuid,%s::uuid,%s,NULL,to_timestamp(%s),to_timestamp(%s),'active')""",
-                (lid, claims["sub"], order_id, row["device_id"], now, now + hours * 3600),
-            )
-        else:
-            con.execute("UPDATE orders SET status=%s WHERE id=%s", ("paid_test", order_id))
-            con.execute(
-                "INSERT INTO leases(id,user_id,order_id,device_id,broker_sid,starts_at,ends_at,status) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
-                (lid, claims["sub"], order_id, row["device_id"], None, now, now + hours * 3600, "active"),
-            )
-        db.audit(con, claims["sub"], "paid_test", "order", order_id, {})
+    try:
+        out = payments.confirm_test_payment(user_id=claims["sub"], order_id=order_id)
+    except PermissionError as e:
+        raise HTTPException(503, str(e)) from e
+    except LookupError as e:
+        raise HTTPException(404, str(e)) from e
     return {
-        "status": "paid_test",
-        "lease_id": lid,
-        "device_id": row["device_id"],
-        "viewer_url": f"/phone?device={row['device_id']}&lease={lid}",
+        **out,
+        "viewer_url": f"/phone?device={out['device_id']}&lease={out['lease_id']}",
         "stream_url": settings.stream_url,
         "stream_fallback": settings.stream_fallback,
     }
@@ -351,12 +355,30 @@ def hard_delete_stub(claims: dict = Depends(auth.require_user)):
     return {"status": "accepted", "note": "Hard-delete job stubbed (phase-2).", "user_id": claims["sub"]}
 
 @app.post("/v1/webhooks/stripe")
-async def stripe_webhook():
-    return {"received": True, "mode": "test"}
+async def stripe_webhook(request: Request):
+    """Stripe webhook stub (test) / signature-verified handler (live gated).
+
+    Stores only intent id + status. Never logs secrets or raw card data.
+    """
+    payload = await request.body()
+    sig = request.headers.get("stripe-signature")
+    try:
+        return payments.handle_stripe_webhook(payload, sig)
+    except PermissionError as e:
+        raise HTTPException(400, str(e)) from e
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
 
 @app.post("/v1/webhooks/razorpay")
-async def razorpay_webhook():
-    return {"received": True, "mode": "test"}
+async def razorpay_webhook(request: Request):
+    """Razorpay webhook stub — parity endpoint; signature verify TBD when INR live."""
+    _ = await request.body()
+    return {"received": True, "mode": payments.effective_mode(), "provider": "razorpay", "note": "stub"}
+
+@app.get("/v1/payments/status")
+def payments_status():
+    """Public gate status for web-market PAY: TEST/LIVE pill (no secrets)."""
+    return payments.gate_status()
 
 @app.get("/")
 def root():

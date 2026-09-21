@@ -1,6 +1,6 @@
 # UI Vision — Implementation Status
 
-**Updated:** 2026-09-21 18:41 IST (Asia/Calcutta)  
+**Updated:** 2026-09-21 19:45 IST (Asia/Calcutta)  
 **Canonical vision:** `BILLION-USER-UI.md` (+ `CLAUDE-UI.md`)  
 **Shipped screenshots:** `demo/ui-vision/shipped/`  
 **Replay GIFs:** `demo/replay/`
@@ -190,10 +190,25 @@ build qualifies, obtains explicit system consent, and verifies
 `ON-DEVICE-AND-ASSISTANT.md` for the constraints, privacy checklist, and staged
 path.
 
+
+## Pass Q — Credit-burn: payments + barge worklet + hardening + latency (2026-09-21 IST)
+
+| Item | Status |
+|---|---|
+| market-api payments module (Stripe Checkout + webhook stub, intent id storage, RLS migration) | **Shipped** — `services/market-api/market_api/payments.py`, `migrations/005_payment_intents.sql`; default TEST; live triple-gated (`PAY_MODE` + `PAYMENTS_LIVE` + `ALLOW_LIVE_CHARGES`) |
+| Key Vault flip runbook (no secrets in git) | **Shipped** — `infra/hardening/PAYMENTS-KEYVAULT.md` |
+| web-market PAY pill refreshes from `/v1/payments/status` | **Shipped** |
+| AudioWorklet barge VAD (feature-flagged) + WebRTC APM notes | **Shipped** — `static/worklets/barge-vad-processor.js`, flag `?bargeWorklet=1` / `localStorage.strlix_barge_worklet`; falls back to AnalyserNode + Azure `/ws/stt` unchanged |
+| Front Door + WAF / Redis / PE / Entra hardening scripts | **Shipped (IaC/docs)** — `infra/hardening/*`; dry-run default; not applied to Azure tonight |
+| Real-device &lt;100ms path doc | **Shipped** — `demo/latency/REAL-DEVICE-SUB-100MS.md` |
+| GPU worker | **NO-GO** — quota unchanged |
+
+Phone-first constraint preserved: no outside chat UI. Live charges remain impossible until Ankit flips all three gates and loads live keys from Key Vault.
+
 ## Deferred (still backlog vs vision)
 
 ### Wow-now remainder
-- Loopback `RTCPeerConnection` AEC and AudioWorklet STT capture (deferred pending physical-device leakage/load evidence)
+- Loopback `RTCPeerConnection` AEC (deferred). AudioWorklet **barge VAD** is now flag-gated (Pass Q); STT capture still ScriptProcessor until physical-device evidence favors worklet for PCM too
 - APNG option
 - 12 golden intents @ ≥95% E2E completion in real apps (offline synthetic fixture now 12/12; production-app provider remains deferred)
 
@@ -215,6 +230,6 @@ path.
 1. Pilot `:8787` owns `/voice/*` and `/replay/gif`. Restart uvicorn after `app/main.py` changes (no `--reload`).
 2. Emulator has **no external network** — Azure chat primary fails DNS → localhost reverse.
 3. Barge mic needs browser permission; Playwright uses fake device. Real barge VAD needs a physical mic + AEC.
-4. Test hooks: `window.__strlixLive.playHostAudio / doBargeIn / stopTtsImmediate / bargeStats` (dev only). `bargeStats` reports RMS, learned floor, threshold, voice duration, and negotiated APM settings.
+4. Test hooks: `window.__strlixLive.playHostAudio / doBargeIn / stopTtsImmediate / bargeStats` (dev only). `bargeStats` reports `path` (`analyser`|`worklet`), RMS, floor, threshold, voiceMs, APM. Enable worklet via `?bargeWorklet=1`.
 5. Keep TTS on the HTML `Audio` element; do not route it through Web Audio, because browser AEC may lose the render reference.
 6. Claude judgment (prior): pointer-events Ask transitions and 17sp input remain; the hover rail is shipped in Pass H with focus/mobile fallbacks.

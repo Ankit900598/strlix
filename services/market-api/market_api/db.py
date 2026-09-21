@@ -16,6 +16,12 @@ CREATE TABLE IF NOT EXISTS orders (
   amount_cents INTEGER, currency TEXT, provider TEXT, status TEXT,
   provider_ref TEXT, created_at REAL, deleted_at REAL
 );
+CREATE TABLE IF NOT EXISTS payment_intents (
+  id TEXT PRIMARY KEY, user_id TEXT, order_id TEXT, provider TEXT,
+  provider_intent_id TEXT, status TEXT, amount_cents INTEGER, currency TEXT,
+  created_at REAL, updated_at REAL,
+  UNIQUE (provider, provider_intent_id)
+);
 CREATE TABLE IF NOT EXISTS leases (
   id TEXT PRIMARY KEY, user_id TEXT, order_id TEXT, device_id TEXT, broker_sid TEXT,
   starts_at REAL, ends_at REAL, status TEXT, deleted_at REAL

@@ -2139,6 +2139,16 @@
     let bargeStream = null, bargeCtx = null, bargeSource = null, bargeAnalyser = null, bargeRaf = 0, bargeVoiceMs = 0, bargeLast = 0, bargeFloor = 0.004, bargeTtsAt = 0, bargeRms = 0, bargeThreshold = 0, bargeApm = {}, lastBargeAt = 0, pendingAgentDone = false, lastAudioUrl = null, lastAudioAt = 0;
     let sttWs = null, sttAudioProcessor = null, sttAudioMute = null, sttStreaming = false, sttStopping = false, sttAvailable = null;
     let bargeMicPromise = null;
+    let bargeWorkletNode = null, bargePath = 'analyser';
+    const bargeWorkletWanted = (() => {
+      try {
+        const q = new URLSearchParams(location.search);
+        if (q.get('bargeWorklet') === '1' || q.get('bargeWorklet') === 'true') return true;
+        if (localStorage.getItem('strlix_barge_worklet') === '1') return true;
+        if (window.__STRLIX_FLAGS && window.__STRLIX_FLAGS.bargeWorklet) return true;
+      } catch (_) {}
+      return false;
+    })();
     const ORB = { CLOSED:'closed', IDLE:'idle', LISTENING:'listening', THINKING:'thinking', SPEAKING:'speaking', DOCKED:'docked', PAUSED:'paused' };
     let orbState = ORB.CLOSED;
     function caption(text) { liveCaption.textContent = text || ''; }
@@ -2174,21 +2184,49 @@
       return ms;
     }
     async function ensureBargeMic() {
-      if (bargeAnalyser) return true; if (bargeMicPromise) return bargeMicPromise; if (!navigator.mediaDevices?.getUserMedia) return false;
+      if (bargeAnalyser || bargeWorkletNode) return true; if (bargeMicPromise) return bargeMicPromise; if (!navigator.mediaDevices?.getUserMedia) return false;
       bargeMicPromise=(async()=>{try {
         bargeStream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1},video:false});
         bargeCtx = new (window.AudioContext||window.webkitAudioContext)();
         bargeSource = bargeCtx.createMediaStreamSource(bargeStream);
-        bargeAnalyser=bargeCtx.createAnalyser(); bargeAnalyser.fftSize=512; bargeAnalyser.smoothingTimeConstant=.4; bargeSource.connect(bargeAnalyser);
         const settings = bargeStream.getAudioTracks()[0]?.getSettings?.() || {};
         bargeApm = {aec: settings.echoCancellation, ns: settings.noiseSuppression, agc: settings.autoGainControl};
+        bargePath = 'analyser';
+        if (bargeWorkletWanted && bargeCtx.audioWorklet) {
+          try {
+            await bargeCtx.audioWorklet.addModule('/static/worklets/barge-vad-processor.js');
+            bargeWorkletNode = new AudioWorkletNode(bargeCtx, 'barge-vad-processor', {
+              processorOptions: { floor: 0.004, requiredMs: bargeApm.aec === false ? 150 : 90, aec: bargeApm.aec !== false, guardSec: 0.22 }
+            });
+            bargeWorkletNode.port.onmessage = (ev) => {
+              const m = ev.data || {};
+              if (m.type !== 'vad') return;
+              bargeRms = m.rms || 0; bargeFloor = m.floor != null ? m.floor : bargeFloor; bargeThreshold = m.threshold || bargeThreshold; bargeVoiceMs = m.voiceMs || 0;
+              if (m.barge && bargeArmed && ttsPlaying) doBargeIn('vad-worklet');
+            };
+            bargeSource.connect(bargeWorkletNode);
+            // Keep analyser as a silent meter fallback / STT share of the graph
+            bargeAnalyser=bargeCtx.createAnalyser(); bargeAnalyser.fftSize=512; bargeAnalyser.smoothingTimeConstant=.4; bargeSource.connect(bargeAnalyser);
+            bargePath = 'worklet';
+            return true;
+          } catch (err) {
+            console.warn('[strlix] barge worklet unavailable, falling back to analyser', err);
+            bargeWorkletNode = null; bargePath = 'analyser';
+          }
+        }
+        bargeAnalyser=bargeCtx.createAnalyser(); bargeAnalyser.fftSize=512; bargeAnalyser.smoothingTimeConstant=.4; bargeSource.connect(bargeAnalyser);
         return true;
       } catch (_) { caption('Mic unavailable — use Type instead'); return false; }})();
       try { return await bargeMicPromise; } finally { bargeMicPromise=null; }
     }
-    function stopBargeWatch() { bargeArmed=false; bargeVoiceMs=0; bargeLast=0; if(bargeRaf){cancelAnimationFrame(bargeRaf);bargeRaf=0;} }
+    function stopBargeWatch() {
+      bargeArmed=false; bargeVoiceMs=0; bargeLast=0;
+      if(bargeRaf){cancelAnimationFrame(bargeRaf);bargeRaf=0;}
+      try { bargeWorkletNode?.port.postMessage({ type: 'reset', guardSec: 0.22 }); } catch (_) {}
+    }
     function bargeLoop() {
       if(!bargeArmed||!ttsPlaying||!bargeAnalyser)return;
+      if(bargePath === 'worklet') return; // worklet posts barge events on its own
       const now=performance.now(), dt=Math.min(100, Math.max(0, now-(bargeLast||now))); bargeLast=now;
       const b=new Uint8Array(bargeAnalyser.fftSize);bargeAnalyser.getByteTimeDomainData(b);let sum=0;for(let i=0;i<b.length;i++){const v=(b[i]-128)/128;sum+=v*v;}
       const rms=Math.sqrt(sum/b.length); bargeRms=rms;
@@ -2199,7 +2237,14 @@
       const requiredMs=bargeApm.aec===false?150:90;
       if(bargeVoiceMs>=requiredMs){doBargeIn('vad');return;} bargeRaf=requestAnimationFrame(bargeLoop);
     }
-    async function startBargeWatch(){if(!liveOpen||!ttsPlaying)return; if(!await ensureBargeMic())return; if(bargeCtx?.state==='suspended'){try{await bargeCtx.resume();}catch(_){}} bargeArmed=true;bargeVoiceMs=0;if(bargeRaf)cancelAnimationFrame(bargeRaf);bargeRaf=requestAnimationFrame(bargeLoop);}
+    async function startBargeWatch(){
+      if(!liveOpen||!ttsPlaying)return; if(!await ensureBargeMic())return;
+      if(bargeCtx?.state==='suspended'){try{await bargeCtx.resume();}catch(_){}}
+      bargeArmed=true;bargeVoiceMs=0;
+      try { bargeWorkletNode?.port.postMessage({ type: 'reset', guardSec: 0.22 }); } catch (_) {}
+      if(bargePath === 'worklet') return; // AudioWorklet drives VAD
+      if(bargeRaf)cancelAnimationFrame(bargeRaf);bargeRaf=requestAnimationFrame(bargeLoop);
+    }
     function doBargeIn(reason) {
       if(!ttsPlaying&&reason!=='talk')return; const now=performance.now();if(now-lastBargeAt<400)return;lastBargeAt=now;stopBargeWatch();stopTtsImmediate(reason||'speech');turnGen+=1;liveBusy=false;setWave('listen');caption('Listening… (interrupted)');
       try{if(liveWs?.readyState===1)liveWs.send(JSON.stringify({type:'barge',source:'browser',reason:reason||'speech'}));}catch(_){ }
@@ -2209,7 +2254,7 @@
     function connectLiveWs(){if(liveWs&&(liveWs.readyState===0||liveWs.readyState===1))return;const proto=location.protocol==='https:'?'wss':'ws';liveWs=new WebSocket(proto+'://'+location.host+'/ws/live');liveWs.onmessage=ev=>{try{const msg=JSON.parse(ev.data);if(msg.type==='live_state'&&msg.source!=='browser'){if(msg.active&&!liveOpen)enterLive();else if(!msg.active&&liveOpen)leaveLive();return;}if(msg.type==='needs_you'){showNeedsYou(msg);return;}if(msg.type==='needs_you_resolved'||msg.type==='needs_you_done'){hideNeedsYou(true);return;}if(msg.type==='agent'){if(msg.state==='acting')setAgentActive(true,msg.line||'Working…');else if(msg.state==='done'){pendingAgentDone=true;if(!ttsPlaying)setAgentActive(false,msg.line);}return;}if(msg.type==='barge'){if(ttsPlaying)doBargeIn(msg.source||'remote');return;}if(msg.type==='speak'&&msg.audio_url){if(msg.text)caption('Speaking…');playHostAudio(msg.audio_url);}else if(msg.type==='turn'){if(msg.user)addTranscript(msg.user,'You');if(msg.reply){addTranscript(msg.reply,'Strlix');caption(msg.reply);}}else if(msg.type==='transcript'&&msg.text){caption(msg.text);if(msg.final)addTranscript(msg.text,'You');}}catch(_){}};liveWs.onclose=()=>{liveWs=null;if(liveOpen)setTimeout(connectLiveWs,1500);};setInterval(()=>{if(liveWs?.readyState===1)liveWs.send(JSON.stringify({type:'ping'}));},20000);}
     async function setLiveServer(active){try{await fetch('/voice/live',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({active,source:'browser',language:liveLanguage})});}catch(_){} }
     function enterLive(){liveOpen=true;closeTranscript();liveList.replaceChildren();liveLayer.dataset.state='idle';setOrb(ORB.IDLE);liveBtn.classList.add('active');liveBtn.innerHTML='<span class="pulse"></span>Leave';caption(sttNote||'Go on, I’m here');connectLiveWs();setLiveServer(true);ensureBargeMic();startListeningTurn();}
-    function leaveLive(){liveOpen=false;setOrb(ORB.CLOSED);liveBtn.classList.remove('active');liveBtn.innerHTML='<span class="pulse"></span>Live';stopBargeWatch();stopRecognition();stopTtsImmediate(null);try{bargeStream?.getTracks().forEach(tr=>tr.stop());}catch(_){}bargeStream=null;bargeSource=null;bargeAnalyser=null;bargeApm={};try{bargeCtx?.close();}catch(_){}bargeCtx=null;setLiveServer(false);}
+    function leaveLive(){liveOpen=false;setOrb(ORB.CLOSED);liveBtn.classList.remove('active');liveBtn.innerHTML='<span class="pulse"></span>Live';stopBargeWatch();stopRecognition();stopTtsImmediate(null);try{bargeWorkletNode?.disconnect();}catch(_){}bargeWorkletNode=null;try{bargeStream?.getTracks().forEach(tr=>tr.stop());}catch(_){}bargeStream=null;bargeSource=null;bargeAnalyser=null;bargeApm={};bargePath='analyser';try{bargeCtx?.close();}catch(_){}bargeCtx=null;setLiveServer(false);}
     liveBtn.addEventListener('click',()=>liveOpen?leaveLive():enterLive());liveStop.addEventListener('click',leaveLive);liveOrb.addEventListener('click',()=>{if(agentActive)return;if(ttsPlaying){doBargeIn('talk');return;}startListeningTurn();});liveCaption.addEventListener('click',()=>{if(!agentActive)toggleTranscript();});liveKeyboard.addEventListener('click',()=>{leaveLive();setTimeout(()=>{if(typeof openAsk==='function')openAsk();},0);});liveMute.addEventListener('click',()=>{muted=liveMute.getAttribute('aria-pressed')!=='true';liveMute.setAttribute('aria-pressed',muted?'true':'false');liveMute.textContent=muted?'🔈':'🔇';try{bargeStream?.getAudioTracks().forEach(t=>t.enabled=!muted);}catch(_){}if(muted){stopRecognition();stopBargeWatch();setOrb(ORB.PAUSED);caption('Mic muted');}else{setOrb(ORB.IDLE);caption('Listening…');startListeningTurn();}});
     function downsamplePcm(input, inputRate, outputRate) {
       if (inputRate === outputRate) return input;
@@ -2289,7 +2334,7 @@
     liveLayer.addEventListener('keydown',e=>{if(e.key==='Escape'&&liveSheet.classList.contains('open'))closeTranscript();});
     let sttNote=null;fetch('/voice/status').then(r=>r.json()).then(j=>{sttAvailable=!!j?.stt?.available;sttNote=sttAvailable?'Azure Speech duplex active · 16 kHz PCM':(j?.stt?'Browser mic active · Azure Speech unavailable':null);}).catch(()=>{sttAvailable=null;});
     window.__strlixOrb={dock:()=>setAgentActive(true,'Working…'),undock:()=>setAgentActive(false),get state(){return orbState;}};
-    window.__strlixLive={playHostAudio,doBargeIn,stopTtsImmediate,startBargeWatch,shareReplayGif,get ttsPlaying(){return ttsPlaying;},get bargeArmed(){return bargeArmed;},get bargeStats(){return {rms:bargeRms,floor:bargeFloor,threshold:bargeThreshold,voiceMs:bargeVoiceMs,apm:{...bargeApm}};}};
+    window.__strlixLive={playHostAudio,doBargeIn,stopTtsImmediate,startBargeWatch,shareReplayGif,get ttsPlaying(){return ttsPlaying;},get bargeArmed(){return bargeArmed;},get bargeStats(){return {path:bargePath,workletWanted:bargeWorkletWanted,rms:bargeRms,floor:bargeFloor,threshold:bargeThreshold,voiceMs:bargeVoiceMs,apm:{...bargeApm}};}};
     window.__strlixReplay={open:openReplay,close:closeReplay,addEvent:replayAddEvent,select:replaySelect,share:shareReplayGif,get events(){return replay.events;}};
 
   </script>

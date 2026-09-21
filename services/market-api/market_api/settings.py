@@ -15,12 +15,19 @@ class Settings(BaseSettings):
     redis_url: str = ""
     redis_password: str = ""
 
+    # Payments — default TEST. Live requires pay_mode=live AND PAYMENTS_LIVE
+    # AND allow_live_charges (see payments.live_charges_allowed).
     pay_mode: str = "test"
     pay_provider: str = "stripe"
+    payments_live: bool = False  # STRLIX_PAYMENTS_LIVE; also read PAYMENTS_LIVE in payments.py
+    allow_live_charges: bool = False  # STRLIX_ALLOW_LIVE_CHARGES — second gate
     stripe_publishable_key: str = "pk_test_REPLACE_ME"
     stripe_secret_key: str = "sk_test_REPLACE_ME"
+    stripe_webhook_secret: str = "whsec_test_REPLACE_ME"
     razorpay_key_id: str = "rzp_test_REPLACE_ME"
     razorpay_key_secret: str = "REPLACE_ME"
+    checkout_success_url: str = "http://127.0.0.1:8080/market/?paid=1"
+    checkout_cancel_url: str = "http://127.0.0.1:8080/market/?canceled=1"
 
     stream_url: str = "http://127.0.0.1:8789"
     stream_fallback: str = "http://127.0.0.1:8787"

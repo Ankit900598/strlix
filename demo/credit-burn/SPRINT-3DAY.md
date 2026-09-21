@@ -233,6 +233,9 @@ Quota request helper: `infra/gpu-worker/REQUEST-quota.md`
 - `infra/gpu-worker/REQUEST-quota.md` — quota ask text
 - `infra/gpu-worker/gpu-worker.bicep` — draft IaC
 - `infra/hardening/NOTES.md` — AFD / Redis / Entra / payments checklist
+- `demo/credit-burn/STATUS-TONIGHT.md` — what shipped while GPU NO-GO
+- Hardening scripts: `CREATE-afd-waf.sh`, `CREATE-redis.sh`, `CREATE-private-endpoints.sh`, `afd-waf.bicep`, `PAYMENTS-KEYVAULT.md`, `ENTRA-EXTERNAL-ID.md`
+- Payments module + `005_payment_intents.sql`; barge worklet + latency doc
 
 ---
 
