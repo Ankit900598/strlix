@@ -2,7 +2,18 @@
 
 **Subscription:** `a3dc5296-f948-427e-8656-c6bc52afee21` (Sponsored)  
 **RG:** `rg-zevi-cloudphone`  
-**Preferred region:** `eastus2` (CAE co-location)
+**Preferred region:** `eastus2` (CAE co-location)  
+**Contact:** `ay186mnc@gmail.com`
+
+## Ticket status (2026-09-21)
+
+| Provider | Ticket / request | Scope | Status |
+|----------|------------------|-------|--------|
+| Azure Support | **2609210040005251** | `eastus2`: NCasT4v3 **0→8**, NVadsA10v5 **0→6** | **OPEN**; self-serve quota request rejected |
+| AWS | Case **179000526000600** / request `ab584e62c7f748b8908dd6e1e61c01bamRtt8Z1K` | `us-east-1`: G/VT On-Demand **0→4** | Pending / open |
+
+Spot/Low-priority capacity is still **0/3 usable** (regional limit remains 3 vCPUs); it is not enough for the preferred NC4as T4 worker. No GPU VM has been created.
+
 
 ## Portal path
 

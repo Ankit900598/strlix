@@ -93,21 +93,6 @@ resource ca 'Microsoft.App/containerApps@2024-03-01' = {
             }
           ]
         }
-        {
-          // ACA internal TCP ingress is unavailable on this Consumption environment;
-          // keep the session store in Redis, but in the market app's shared namespace.
-          name: 'redis-sidecar'
-          image: 'redis:7-alpine'
-          command: ['/bin/sh', '-c']
-          args: ['exec redis-server --bind 127.0.0.1 --protected-mode no --requirepass "$REDIS_PASSWORD" --appendonly yes']
-          resources: {
-            cpu: json('0.25')
-            memory: '0.5Gi'
-          }
-          env: [
-            { name: 'REDIS_PASSWORD', secretRef: 'redis-password' }
-          ]
-        }
       ]
       scale: {
         minReplicas: 1

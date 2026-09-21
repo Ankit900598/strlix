@@ -57,7 +57,7 @@ az keyvault secret show --vault-name kv-zevi-strlix -n redis-primary-key --query
 3. Forced revision **`ca-market-api--0000003`** (`STRLIX_HARDENING_MARK=amr-cutover-20260921T2130IST`). Secret host verified: `redis-strlix-amr.eastus.redis.azure.net`.
 4. Smoke: origin + AFD `/health` → **200** `redis:true`, `redis_error:null`, `pay_mode=test`. AMR reachable (box `PING` ok; connected_clients ≥1).
 5. Scaled **`ca-redis` minReplicas→0** (max=1). Resource **not deleted**. App may still show Running until idle scale-to-zero settles.
-6. Note: `ca-market-api` still has unused `redis-sidecar` container (127.0.0.1); traffic uses Managed Redis. Sidecar cleanup is a follow-up (not deleted this run).
+6. Note: the live `ca-market-api` still has unused `redis-sidecar` container (127.0.0.1); traffic uses Managed Redis. The checked-in ACA template now omits the sidecar; no live revision was changed by this cleanup.
 7. Rollback (if needed): restore prior secrets `redis-url=redis://127.0.0.1:6379/0` + prior `redis-password`, then `az containerapp update` to new revision.
 
 ### Leftover stub (not deleted)
@@ -146,10 +146,12 @@ Ran `infra/hardening/CREATE-private-endpoints.sh` dry-run only. Reasons:
 | Attempt | Result | ID |
 |---------|--------|-----|
 | `az quota update` Standard NCASv3_T4 → 8 | **Failed** `QuotaNotAvailableForResource` | `e5f1e109-cd66-43eb-9f20-2a44385f9f10` (2026-09-21 15:39:25Z / ~21:09 IST) |
-| `az quota update` StandardNVADSA10v5 → 8 | **Failed** `ContactSupport` | `f8d83db5-c9e3-4817-ae47-38f3f6366577` (2026-09-21 15:40:59Z / ~21:11 IST) |
+| `az quota update` StandardNVADSA10v5 → 6 | **Failed** `ContactSupport` | `f8d83db5-c9e3-4817-ae47-38f3f6366577` (2026-09-21 15:40:59Z / ~21:11 IST) |
 | `az support in-subscription tickets create` (Compute-VM cores) | **Blocked** `InvalidSupportPlan` (subscription is **Developer** — Support API needs higher plan) | n/a |
 
-**Portal follow-up:** Azure Portal → Help + support → Quota increase → Compute-VM (cores) → eastus2 → NCASv3_T4 / NVADSA10v5 → 8. Do **not** create GPU VM until `az vm list-usage -l eastus2` shows limit > 0.
+**Portal follow-up:** Azure Portal → Help + support → Quota increase → Compute-VM (cores) → eastus2 → NCASv3_T4 → 8 / NVADSA10v5 → 6. Do **not** create GPU VM until `az vm list-usage -l eastus2` shows limit > 0.
+
+**Current Support ticket:** **2609210040005251 — OPEN** (self-serve rejected). Spot/LP remains **0/3 usable**. Contact: `ay186mnc@gmail.com`.
 
 ### AWS us-east-1
 
