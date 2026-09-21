@@ -1,9 +1,23 @@
-# Remaining credit-burn work
+# Remaining work — soft-launch ledger
 
-Only these items remain:
+**Updated:** 2026-09-21 ~23:40 IST  
+**Billing:** Ankit **first month FREE** (soft-launch). Keep burn low; Stripe **live deferred** (`pay_mode=test`, no live charge gates).
 
-1. **GPU wait** — monitor Azure Support **2609210040005251** and AWS Case **179000526000600** / request `ab584e62c7f748b8908dd6e1e61c01bamRtt8Z1K`; create no GPU VM until quota is approved.
-2. **Key Vault PE (optional / later)** — SKIP for now: `kv-zevi-strlix` is eastus2 vs VNet eastus. Revisit only with CAE VNet integration or same-region KV; avoid a new eastus2 VNet if it pushes >$15/mo complexity.
-3. **Disable Redis public access (gated)** — only after market-api can reach `pe-redis-strlix-amr` privately (CAE↔eastus VNet path). Today public access stays **Enabled**.
-4. **Live Stripe keys (gated)** — provide live secrets through Key Vault only when ready; keep `pay_mode=test` and live-charge gates OFF.
-5. **Real-device latency proof** — run the physical-device measurement needed to certify the sub-100 ms target; emulator results do not qualify.
+Launch ops notes (alerts / private Redis path): `../launch/OPS-ALERTS.md`, `../launch/PRIVATE-REDIS-PATH.md`, `../launch/SOFT-LAUNCH-STATUS.md`.
+
+## Remaining list
+
+1. **GPU wait (Azure still 0)** — Support **2609210040005251**: eastus2 NCasT4v3 / NVadsA10v5 still **limit 0**. **Do not create** a GPU VM.  
+   - AWS G/VT On-Demand quota is **4** (case **179000526000600** / `ab584e62c7f748b8908dd6e1e61c01bamRtt8Z1K` CASE_CLOSED) — capacity available on paper; still no auto-provision until explicitly requested.
+2. **Custom domain + TLS on AFD** — still on `strlix-edge-….azurefd.net`; brand domain not attached.
+3. **Private Redis cutover (gated)** — PE exists on eastus `pe-subnet`; CAE is eastus2 without VNet. Keep AMR **public Enabled** until CAE↔PE path proven (`../launch/PRIVATE-REDIS-PATH.md`). Do **not** disable public access yet.
+4. **Key Vault PE (optional / later)** — SKIP: `kv-zevi-strlix` eastus2 vs VNet eastus; revisit with CAE VNet work only if needed.
+5. **Live Stripe keys (gated / deferred)** — Key Vault only when ready; keep live-charge gates OFF for free-first-month.
+6. **Real-device latency proof** — physical-device measurement for sub-100 ms; emulator does not qualify.
+7. **Action-group email confirm** — confirm `ay186mnc@gmail.com` received Azure Monitor “confirm” for `ag-strlix-ops` if not already.
+
+## Done enough for soft-launch (do not redo)
+
+- AFD + WAF edge healthy; market-api on Managed Redis (`redis:true`).
+- Cheap Monitor alerts applied (`ag-strlix-ops` + AFD origin / 5xx / CA restarts / Redis resource health).
+- No accidental GPU VMs in RG.
