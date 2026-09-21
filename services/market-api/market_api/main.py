@@ -10,13 +10,22 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 
 from .settings import settings
-from . import db, auth, redis_client, payments
+from . import db, auth, launch, redis_client, payments
 from .jobs import create as create_job, get as get_job
 
-ROOT = Path("/workspace/zevi-cloudphone")
+def _repo_root() -> Path:
+    """Prefer the historical /workspace/zevi-cloudphone checkout, else this repo."""
+    here = Path(__file__).resolve()
+    candidates = [Path("/workspace/zevi-cloudphone"), here.parents[3]]
+    for candidate in candidates:
+        if (candidate / "web-market" / "devices.json").is_file():
+            return candidate
+    return candidates[-1]
+
+ROOT = _repo_root()
 DEVICES = ROOT / "web-market" / "devices.json"
 
-app = FastAPI(title="Strlix market-api", version="0.5.0")
+app = FastAPI(title="Strlix market-api", version="0.6.0")
 origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
@@ -46,22 +55,39 @@ class JobCreateIn(BaseModel):
     """Create a status-only job; task content never crosses this boundary."""
     kind: Literal["phone_task", "device_wake", "replay_export"] = "phone_task"
 
+class WaitlistIn(BaseModel):
+    email: EmailStr
+    invite_code: Optional[str] = Field(default=None, max_length=64)
+
+class GrantIn(BaseModel):
+    device_id: Optional[str] = None
+    invite_code: Optional[str] = Field(default=None, max_length=64)
+
 def _devices_payload() -> dict[str, Any]:
     if DEVICES.is_file():
         return json.loads(DEVICES.read_text())
     return {"devices": []}
 
+def _client_key(request: Request, prefix: str) -> str:
+    # Only a short hash is sent to the limiter. Do not put raw client
+    # addresses or emails in Redis keys.
+    client_host = request.client.host if request.client else "unknown"
+    return prefix + auth.hash_ua(client_host)[:32]
+
 def _rate(claims: dict) -> None:
     if not redis_client.rate_limit(claims["sub"], settings.rate_limit_per_min):
         raise HTTPException(429, "rate limit exceeded")
 
+def _limited(key: str, limit: int, detail: str) -> None:
+    if not redis_client.rate_limit(key, limit):
+        raise HTTPException(429, detail)
+
 def _anonymous_rate(request: Request) -> None:
-    # Only a short-lived hash is sent to the limiter. Do not put raw client
-    # addresses in audit rows or Redis keys.
-    client_host = request.client.host if request.client else "unknown"
-    key = "anon_create:" + auth.hash_ua(client_host)[:32]
-    if not redis_client.rate_limit(key, min(settings.rate_limit_per_min, 5)):
-        raise HTTPException(429, "anonymous session rate limit exceeded")
+    _limited(
+        _client_key(request, "anon_create:"),
+        settings.anon_rate_per_min,
+        "anonymous session rate limit exceeded",
+    )
 
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
@@ -76,9 +102,13 @@ def health():
     return {
         "ok": True,
         "service": "market-api",
-        "version": "0.5.0",
+        "version": "0.6.0",
         "pay_mode": gates["effective_mode"],
         "pay_gates": gates,
+        "billing_mode": launch.billing_mode(),
+        "free_month_active": launch.free_month_active(),
+        "card_required": not launch.free_month_active(),
+        "auth_mode": auth.current_auth_mode(),
         "db": "postgres" if settings.use_postgres else "sqlite",
         "redis": redis_client.redis_ok(),
         "redis_error": redis_client.redis_error(),
@@ -127,8 +157,57 @@ def get_device(device_id: str):
             return d
     raise HTTPException(404, "device not found")
 
+@app.get("/v1/launch")
+def launch_status():
+    """Public free-month flags. No secrets, no Stripe calls."""
+    status = launch.public_status()
+    status["auth_mode"] = auth.current_auth_mode()
+    status["pay_gates"] = payments.gate_status()
+    return status
+
+@app.post("/v1/waitlist")
+def waitlist(body: WaitlistIn, request: Request):
+    """Open signup (or invite-coded) email capture. Does not charge a card."""
+    _limited(
+        _client_key(request, "waitlist:"),
+        settings.waitlist_rate_per_min,
+        "waitlist rate limit exceeded",
+    )
+    return launch.join_waitlist(str(body.email), body.invite_code)
+
+@app.post("/v1/access/grant")
+def grant_access(body: GrantIn, claims: dict = Depends(auth.require_user)):
+    """Phone lease for the free month. Payment endpoints are not required."""
+    _rate(claims)
+    if not launch.free_month_active():
+        raise HTTPException(
+            409,
+            "free month is not active — checkout remains available and test-gated",
+        )
+    launch.require_invite(body.invite_code)
+    devices = {d["id"]: d for d in _devices_payload().get("devices", [])}
+    device_id = body.device_id
+    if not device_id:
+        for device in _devices_payload().get("devices", []):
+            if device.get("available", True):
+                device_id = device["id"]
+                break
+    if not device_id or device_id not in devices:
+        raise HTTPException(404, "device not found")
+    if not devices[device_id].get("available", True):
+        raise HTTPException(409, "device unavailable")
+    granted = launch.grant_free_month(user_id=claims["sub"], device_id=device_id)
+    granted["stream_url"] = settings.stream_url
+    granted["stream_fallback"] = settings.stream_fallback
+    return granted
+
 @app.post("/v1/auth/login")
 def login(body: LoginIn, request: Request):
+    _limited(
+        _client_key(request, "login:") + ":" + auth.hash_ua(body.email.lower())[:16],
+        settings.login_rate_per_min,
+        "login rate limit exceeded",
+    )
     email = body.email.lower()
     with db.session() as con:
         if settings.use_postgres:
@@ -234,8 +313,10 @@ def refresh(body: RefreshIn):
 
 @app.post("/v1/auth/logout")
 def logout(claims: dict = Depends(auth.require_user)):
-    redis_client.revoke_session(claims["sub"], claims["jti"])
-    return {"ok": True}
+    jti = claims.get("jti")
+    if jti:
+        redis_client.revoke_session(claims["sub"], jti)
+    return {"ok": True, "auth": claims.get("auth", "local")}
 
 @app.post("/v1/checkout/session")
 def checkout(body: CheckoutIn, claims: dict = Depends(auth.require_user)):
@@ -296,6 +377,8 @@ def checkout(body: CheckoutIn, claims: dict = Depends(auth.require_user)):
         "client_secret": result.client_secret,
         "provider_ref": result.provider_ref,
         "message": result.message,
+        "card_required": not launch.free_month_active(),
+        "free_month_grant": "/v1/access/grant" if launch.free_month_active() else None,
         "device": d,
         "stream_after_pay": settings.stream_url,
         "pay_gates": payments.gate_status(),
@@ -345,7 +428,9 @@ def soft_delete(claims: dict = Depends(auth.require_user)):
             con.execute("UPDATE orders SET deleted_at=%s WHERE user_id=%s", (now, claims["sub"]))
             con.execute("UPDATE leases SET deleted_at=%s WHERE user_id=%s", (now, claims["sub"]))
         db.audit(con, claims["sub"], "soft_delete", "user", claims["sub"], {})
-    redis_client.revoke_session(claims["sub"], claims["jti"])
+    jti = claims.get("jti")
+    if jti:
+        redis_client.revoke_session(claims["sub"], jti)
     return {"status": "soft_deleted", "user_id": claims["sub"]}
 
 @app.post("/v1/privacy/hard-delete")
@@ -383,6 +468,10 @@ def payments_status():
 @app.get("/")
 def root():
     return {"service": "market-api", "docs": "/docs", "health": "/health", "ready": "/ready", "market_ui": "/market/"}
+
+_LEGAL = ROOT / "static" / "legal"
+if _LEGAL.is_dir():
+    app.mount("/legal", StaticFiles(directory=str(_LEGAL), html=True), name="legal")
 
 _WM = ROOT / "web-market"
 if _WM.is_dir():

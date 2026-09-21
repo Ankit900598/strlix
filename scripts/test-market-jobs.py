@@ -6,11 +6,16 @@ import os
 import sys
 import tempfile
 import time
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+CANDIDATES = [Path("/workspace/zevi-cloudphone"), ROOT]
+REPO = next((p for p in CANDIDATES if (p / "services" / "market-api").is_dir()), ROOT)
 
 with tempfile.NamedTemporaryFile(prefix="strlix-jobs-", suffix=".db") as db_file:
     os.environ["STRLIX_DATABASE_URL"] = ""
     os.environ["STRLIX_MARKET_DB"] = "sqlite:///" + db_file.name
-    sys.path.insert(0, "/workspace/zevi-cloudphone/services/market-api")
+    sys.path.insert(0, str(REPO / "services" / "market-api"))
 
     from fastapi.testclient import TestClient
     from market_api.main import app
