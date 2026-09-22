@@ -4,13 +4,14 @@
 
 ## One line
 
-> One Azure emulator is not a billion phones. Chat scales on `android-api`. Viewer sessions scale with the **device pool**.
+> One Azure emulator + one AWS Redroid T4 is not a billion phones. Chat scales on `android-api`. Viewer sessions scale with the **device pool**.
 
 ## Phase-1 numbers (what we run today)
 
 | Resource | Count | Notes |
 |----------|------:|-------|
-| Azure emulator / ADB serial | **1** | `pilot-emulator-1` via SSH tunnel |
+| Azure emulator / ADB serial | **1** | `pilot-emulator-1` via SSH tunnel (`scripts/adb-tunnel.sh`) |
+| AWS Redroid T4 / ADB serial | **1** | `aws-redroid-t4-1` via SSM (`scripts/adb-aws-redroid.sh` → `127.0.0.1:5556`) |
 | H.264 shared viewers / device | **12** | `H264_MAX_CLIENTS` |
 | Tap controllers / device | **1** | session `controller=true` |
 | android-api replicas | 1 (box) | chat/voice only — no screencap |
@@ -22,8 +23,8 @@
 | Kind of concurrent user | Scales with | Phase-1 realistic |
 |-------------------------|-------------|-------------------|
 | In-phone chat / voice (Android) | android-api + Azure OpenAI QPS | Design for 100k with Redis rate limits + PTU |
-| Desktop viewer watching a phone | devices × ~12 viewers | **12** today (1 device) |
-| Desktop viewer controlling taps | devices × 1 controller | **1** today |
+| Desktop viewer watching a phone | devices × ~12 viewers | **24** theoretical (2 devices × 12); broker still seeds **1** active |
+| Desktop viewer controlling taps | devices × 1 controller | **1** today (seeded device) |
 
 Path to more viewers = **grow the device fleet** (Azure VM scale set / Redroid-or-emulator pool / physical farm), not bigger FastAPI.
 

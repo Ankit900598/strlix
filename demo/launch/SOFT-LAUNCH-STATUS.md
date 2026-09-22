@@ -1,9 +1,16 @@
-# Soft-launch status snapshot — 2026-09-22 ~09:42 IST
+# Soft-launch status snapshot — 2026-09-22 ~09:55 IST
 
 **Operator:** box agent (not CloudAgent) · **RG lock:** `rg-zevi-cloudphone`  
 **Billing posture:** Ankit first calendar month **FREE** (soft-launch); do not enable Stripe **live** charges.  
 **CloudAgent note:** new launch docs live under `demo/launch/`. Prefer editing here over duplicating into `demo/credit-burn/` mid-flight to avoid merge fights; `REMAINING.md` was updated in credit-burn as the single remaining-work ledger.
 
+
+## Update 2026-09-22 ~09:55 IST — AWS Redroid in phone path
+
+- SSM ADB port-forward from box → `127.0.0.1:5556` **proven** (`boot_completed=1`, product `redroid_x86_64_only`).
+- Catalog id **`aws-redroid-t4-1`** in `web-market/devices.json` (free-month grant target); market-api **0.6.4** / `ca-market-api--0000010` redeployed (devices.json in image).
+- Script: `scripts/adb-aws-redroid.sh`. Runbook: `GLOBAL-LAUNCH-TODAY.md` + `WORKER-LIVE.md`.
+- SG ADB inbound still **closed** (SSM preferred). Stripe live still OFF. No Azure GPU create.
 
 ## Update 2026-09-22 ~09:42 IST
 
@@ -17,19 +24,21 @@
 
 | Check | Result |
 |-------|--------|
-| AFD `https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/health` | **200** · `ok:true` · `pay_mode=test` · `redis:true` · market-api **0.6.3** · `billing_mode=free_month` · `free_month_active:true` · `live_charges_allowed:false` |
+| AFD `https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/health` | **200** · `ok:true` · `pay_mode=test` · `redis:true` · market-api **0.6.4** · `billing_mode=free_month` · `free_month_active:true` · `live_charges_allowed:false` |
+| AFD `/v1/devices` | includes **`aws-redroid-t4-1`** `available:true` `preview:live` |
 | AFD `/market/legal/terms.html` | **200** · Soft-launch banner present |
-| Origin `ca-market-api` `/health` | **200** · rev **`ca-market-api--0000007`** · Healthy / RunningAtMaxScale |
+| Origin `ca-market-api` `/health` | **200** · rev **`ca-market-api--0000010`** · Healthy / RunningAtMaxScale |
 | Managed Redis `redis-strlix-amr` | **publicNetworkAccess=Enabled** (unchanged) — do not disable |
 | Azure GPU VMs in RG | **None** — do not create |
-| AWS GPU `i-0531c567f620877c3` / `strlix-gpu-worker-1` (`g4dn.xlarge`, us-east-1) | **RUNNING** · pub `44.204.83.61` · priv `172.31.82.79` · SSM Online · `nvidia-smi` green (T4 / 595.91.07 / CUDA 13.2) · Redroid **UP** ADB `127.0.0.1:5556` boot=1 Android 12 · ≈ **$0.526/hr** — `infra/gpu-worker/aws/WORKER-LIVE.md` |
+| AWS GPU `i-0531c567f620877c3` / `strlix-gpu-worker-1` (`g4dn.xlarge`, us-east-1) | **RUNNING** · pub `44.204.83.61` · priv `172.31.82.79` · SSM Online · Redroid **UP** ADB via SSM `127.0.0.1:5556` boot=1 Android 12 · ≈ **$0.526/hr** — `infra/gpu-worker/aws/WORKER-LIVE.md` |
 | Stripe live | **OFF** · `STRLIX_PAY_MODE=test` · `billing_mode=free_month` |
 | Custom domain | **SKIPPED** — azurefd.net only |
 
-## Applied this pass (2026-09-22 ~09:30–09:42 IST)
+## Applied this pass (2026-09-22 ~09:30–09:55 IST)
 
-- **Legal deploy:** market-api **0.6.3** / `ca-market-api--0000007`; PR #2 on main; AFD legal soft-launch banner smoked.
-- **AWS GPU start (item 3 → AWS):** `i-0531c567f620877c3` **stopped → running**. SSM Online. `nvidia-smi` green (Tesla T4, driver 595.91.07, CUDA 13.2). Docker + nvidia runtime verified. Redroid container `strlix-redroid-1` **UP** (`guest` GPU mode; ADB `127.0.0.1:5556`, `boot_completed=1`, Android 12). Host `:5555` = nv-hostengine. Runbook: `infra/gpu-worker/aws/WORKER-LIVE.md`.
+- **AWS Redroid phone path:** SSM forward proven; catalog `aws-redroid-t4-1`; market-api **0.6.4** / `ca-market-api--0000010`.
+- **Legal deploy:** market-api **0.6.3** / `ca-market-api--0000007` earlier; PR #2 on main; AFD legal soft-launch banner smoked.
+- **AWS GPU start:** `i-0531c567f620877c3` **stopped → running**. Redroid `strlix-redroid-1` **UP**. Runbook: `infra/gpu-worker/aws/WORKER-LIVE.md`.
 - **Azure GPU:** still **limit 0** — **do not create**.
 - **Stripe live:** still **OFF**.
 - **Domain:** SKIPPED — stay on azurefd.net.
@@ -41,7 +50,7 @@
 
 ## Docs this pass
 
-- This file; market-api 0.6.3 / legal rewrite; `QUOTA-TICKETS.md` AWS GPU **RUNNING**; `infra/gpu-worker/aws/WORKER-LIVE.md`. Domain SKIPPED in checklist / CUSTOM-DOMAIN / REMAINING.
+- This file; `GLOBAL-LAUNCH-TODAY.md`; `scripts/adb-aws-redroid.sh`; market-api 0.6.4 + devices.json; `CAPACITY-PHONE-POOL.md`; `WORKER-LIVE.md`. Domain SKIPPED in checklist / CUSTOM-DOMAIN / REMAINING.
 
 ## Blockers
 
@@ -52,17 +61,18 @@
 | Private Redis cutover | Region split CAE eastus2 vs VNet/Redis eastus — reserved `cae-infra-subnet` only; **no** public-access disable until eastus CAE Option B |
 | Stripe live | **Deferred** — pay_mode stays `test` |
 | Physical phone / counsel | Still external |
+| Broker multi-device | Phase-1 pool still seeds **one** env device — point at Redroid via env |
 
 ## Curl helpers
 
 ```bash
 curl -sS https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/health
+curl -sS https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/v1/devices | jq '.devices[]|select(.id=="aws-redroid-t4-1")'
 curl -sS -o /dev/null -w '%{http_code}\n' https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/market/legal/terms.html
 curl -sS -X POST https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/v1/waitlist \
   -H 'Content-Type: application/json' \
   -d '{"email":"you@example.com"}'
-# AWS GPU worker is RUNNING — health / session:
-aws ssm send-command --region us-east-1 --instance-ids i-0531c567f620877c3 --document-name AWS-RunShellScript --parameters 'commands=["nvidia-smi"]'
+./scripts/adb-aws-redroid.sh
 # Idle stop (do not terminate):
 # aws ec2 stop-instances --region us-east-1 --instance-ids i-0531c567f620877c3
 ```

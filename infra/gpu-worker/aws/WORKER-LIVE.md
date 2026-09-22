@@ -1,6 +1,6 @@
 # AWS GPU worker LIVE — Strlix soft-launch capacity
 
-**As of:** 2026-09-22 ~09:40 IST  
+**As of:** 2026-09-22 ~09:47 IST
 **Purpose:** Wire `strlix-gpu-worker-1` as **GPU capacity** for the phone pool while Azure NCasT4 / NVadsA10 remain **limit 0**.  
 **Do not:** terminate this instance · create Azure GPU · enable Stripe live.
 
@@ -55,53 +55,53 @@ aws ssm send-command --region us-east-1 --instance-ids i-0531c567f620877c3 \
 - Installed `adb` via apt.
 - Left Azure GPU create untouched; did not open SG inbound; did not enable Stripe live.
 
-## Phone-pool wiring
+## Phone-pool wiring (GLOBAL soft launch — proven 2026-09-22 ~09:47 IST)
+
+### Reach ADB (preferred: SSM port-forward — no public ADB)
+
+```bash
+# Box / Azure / any host with AWS CLI + session-manager-plugin:
+./scripts/adb-aws-redroid.sh
+# or manually:
+aws ssm start-session --region us-east-1 --target i-0531c567f620877c3 \
+  --document-name AWS-StartPortForwardingSession \
+  --parameters '{"portNumber":["5556"],"localPortNumber":["5556"]}'
+adb connect 127.0.0.1:5556
+adb -s 127.0.0.1:5556 shell getprop sys.boot_completed   # expect 1
+```
+
+**Proven from box:** `adb devices` line:
+
+```
+127.0.0.1:5556         device product:redroid_x86_64_only model:redroid12_x86_64_only device:redroid_x86_64_only
+```
+
+`boot_completed=1` · Android 12 · product `redroid_x86_64_only`.
+
+### Catalog / broker
+
+| Field | Value |
+|-------|--------|
+| Catalog / grant id | **`aws-redroid-t4-1`** (`web-market/devices.json`, `preview: live`) |
+| Broker env | `STRLIX_PILOT_DEVICE_ID=aws-redroid-t4-1` · `ADB_SERIAL=127.0.0.1:5556` |
+| Labels | `kind=redroid`, `host=strlix-gpu-worker-1` |
+
+Phase-1 `DevicePool` still seeds **one** device from env. Catalog can grant free-month onto `aws-redroid-t4-1`; point the stream host at Redroid with the env above after the SSM tunnel is up.
+
+### Alternate (not preferred): SG inbound to Azure VM only
+
+If SSM is unavailable on the stream host, allow TCP **5556** from **`20.115.117.71/32`** only on `sg-07cc11f2d8fdc0058`, and republish Redroid bind from `127.0.0.1:5556` to `0.0.0.0:5556`. **Never** `0.0.0.0/0` for ADB. Soft-launch path uses SSM; SG left closed.
 
 ### Current Redroid (already running)
 
 ```bash
-# On worker (SSM):
+# On worker (SSM shell / RunCommand):
 adb connect 127.0.0.1:5556
 adb -s 127.0.0.1:5556 shell getprop sys.boot_completed   # expect 1
 adb -s 127.0.0.1:5556 shell getprop ro.build.version.release  # 12
 docker ps --filter name=strlix-redroid-1
 nvidia-smi
 ```
-
-### Recreate if needed
-
-```bash
-sudo mkdir -p /dev/binderfs /opt/strlix/redroid-data
-sudo mountpoint -q /dev/binderfs || sudo mount -t binder binder /dev/binderfs
-sudo docker pull redroid/redroid:12.0.0_64only-latest
-sudo docker rm -f strlix-redroid-1 2>/dev/null || true
-# Use 5556 — 5555 is nv-hostengine on this AMI
-sudo docker run -d --name strlix-redroid-1 --restart unless-stopped \
-  --privileged --gpus all \
-  -v /opt/strlix/redroid-data:/data \
-  -p 127.0.0.1:5556:5555 \
-  redroid/redroid:12.0.0_64only-latest \
-  androidboot.redroid_gpu_mode=guest \
-  androidboot.redroid_width=720 androidboot.redroid_height=1280 androidboot.redroid_dpi=320
-```
-
-Optional later: retry `androidboot.redroid_gpu_mode=host` after confirming ADB stays online (host mode was flaky this pass).
-
-### Broker / pool
-
-1. SSM port-forward ADB to a trusted broker host — **do not** open SG `0.0.0.0/0`:
-
-```bash
-aws ssm start-session --region us-east-1 --target i-0531c567f620877c3 \
-  --document-name AWS-StartPortForwardingSession \
-  --parameters '{"portNumber":["5556"],"localPortNumber":["5556"]}'
-```
-
-2. Register pool device when multi-device lands (today phase-1 seed is still Azure pilot — see `infra/ops/CAPACITY-PHONE-POOL.md`):
-   - id example: `aws-gpu-redroid-1`
-   - serial: `127.0.0.1:5556` after forward
-   - labels: `kind=redroid`, `host=strlix-gpu-worker-1`
-3. Keep `vm-zevi-cloudphone` pilot emulator as fallback until broker multi-device is wired.
 
 ### Why not AVD on this box
 
@@ -123,4 +123,5 @@ aws ec2 start-instances --region us-east-1 --instance-ids i-0531c567f620877c3
 - Create/recreate: `CREATE-aws-gpu-worker.md` / `CREATE-aws-gpu-worker.sh`
 - Tickets: `../../../demo/credit-burn/QUOTA-TICKETS.md`
 - Soft-launch: `../../../demo/launch/SOFT-LAUNCH-STATUS.md`
+- GLOBAL today: `../../../demo/launch/GLOBAL-LAUNCH-TODAY.md`
 - Phone pool: `../../ops/CAPACITY-PHONE-POOL.md`

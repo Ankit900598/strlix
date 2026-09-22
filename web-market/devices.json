@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-21T13:45:00+05:30",
+  "updated": "2026-09-22T09:46:38+05:30",
   "currency": "USD",
   "devices": [
     {
@@ -19,6 +19,27 @@
       "available": true,
       "preview": "live",
       "network": "datacenter"
+    },
+    {
+      "id": "aws-redroid-t4-1",
+      "model": "Strlix Redroid T4",
+      "codename": "redroid-t4",
+      "android": 12,
+      "android_label": "Android 12",
+      "ram_gb": 4,
+      "rom_gb": 32,
+      "region": "US East (AWS)",
+      "tier": "gpu",
+      "price_hour_cents": 15,
+      "price_day_cents": 249,
+      "compatible_min_android": 12,
+      "notes": "Live AWS g4dn.xlarge Redroid on strlix-gpu-worker-1 (i-0531c567f620877c3). ADB via SSM forward 127.0.0.1:5556 \u2014 scripts/adb-aws-redroid.sh. Free-month grant target.",
+      "available": true,
+      "preview": "live",
+      "network": "datacenter",
+      "host": "strlix-gpu-worker-1",
+      "kind": "redroid",
+      "adb_hint": "127.0.0.1:5556 after SSM port-forward"
     },
     {
       "id": "pixel-6-a13",
