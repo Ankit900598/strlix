@@ -15,12 +15,14 @@ from app.audio_framing import (  # noqa: E402
     PACKET_FLAG_CONFIG,
     extract_opus_head,
     is_opus_head,
+    is_opus_tags,
     normalize_annexb,
     opus_head_info,
     pack_audio,
     parse_preface,
     pop_packets,
 )
+from app.h264_stream import align_screenrecord_size, choose_aligned_max_size  # noqa: E402
 from app.audio_stream import AudioBroker, AudioPacket  # noqa: E402
 from app.scrcpy_source import encoder_bitrate, encoder_fps  # noqa: E402
 
@@ -52,6 +54,24 @@ def test_opus_head_is_config_flag() -> None:
         payload=packets[1].payload, pts_us=1000, config=False, seq=2,
     ))
     assert media[1] & 1 == 0
+
+
+def test_unflagged_opus_tags_still_marked() -> None:
+    tags = b"OpusTags" + b"\x00" * 8
+    raw = (12345).to_bytes(8, "big") + len(tags).to_bytes(4, "big") + tags
+    packets, left = pop_packets(raw)
+    assert left == b"" and packets[0].config and packets[0].pts_us == 0
+    assert is_opus_tags(packets[0].payload)
+    wire = pack_audio(AudioPacket(payload=packets[0].payload, pts_us=0, config=True, seq=1))
+    assert wire[1] & 1 == 1
+
+
+def test_encode_size_is_macroblock_aligned() -> None:
+    # Live health reported 484×1080; scrcpy encoded 486×1080. Neither % 16 == 0.
+    ew, eh, max_size = choose_aligned_max_size(1080, 2400, 1080)
+    assert (ew, eh, max_size) == (432, 960, 960), (ew, eh, max_size)
+    sw, sh = align_screenrecord_size(1080, 2400, 1080)
+    assert sw % 16 == 0 and sh % 16 == 0, (sw, sh)
 
 
 def test_unflagged_opus_head_still_marked() -> None:
@@ -134,13 +154,15 @@ def test_broker_marks_head_on_wire() -> None:
 def main() -> None:
     test_opus_head_is_config_flag()
     test_unflagged_opus_head_still_marked()
+    test_unflagged_opus_tags_still_marked()
+    test_encode_size_is_macroblock_aligned()
     test_aopushdr_wrapper()
     test_device_meta_and_dummy_are_skipped()
     test_disabled_audio_codec_id()
     test_annexb_start_codes()
     test_emulator_caps()
     test_broker_marks_head_on_wire()
-    print("ok", 8, "framing tests")
+    print("ok", 10, "framing tests")
 
 
 if __name__ == "__main__":

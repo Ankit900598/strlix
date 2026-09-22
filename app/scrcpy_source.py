@@ -85,6 +85,10 @@ SCRCPY_PORT = int(os.environ.get("SCRCPY_PORT", "0"))
 SCRCPY_MAX_FPS = int(os.environ.get("SCRCPY_MAX_FPS", "30"))
 # Cap long edge. 1080 keeps a 1080×2400 phone readable for YouTube.
 SCRCPY_MAX_SIZE = int(os.environ.get("SCRCPY_MAX_SIZE", "1080"))
+# scrcpy 4.1 floors width and height to this power of two. 16 is an AVC
+# macroblock. The emulator encoder accepts 486×1080 (alignment 2) and that
+# size smears under motion.
+SCRCPY_MIN_SIZE_ALIGNMENT = int(os.environ.get("SCRCPY_MIN_SIZE_ALIGNMENT", "16"))
 SCRCPY_CODEC_OPTIONS = codec_options()
 # Device-side jar path (shell-writable).
 _REMOTE_JAR = "/data/local/tmp/scrcpy-server.jar"
@@ -121,6 +125,7 @@ class ScrcpyRawSession:
         server_path: str = SCRCPY_SERVER_PATH,
         version: str = SCRCPY_VERSION,
         codec_options: str = SCRCPY_CODEC_OPTIONS,
+        min_size_alignment: int = SCRCPY_MIN_SIZE_ALIGNMENT,
         scid: Optional[str] = None,
     ) -> None:
         self.adb = adb
@@ -131,6 +136,8 @@ class ScrcpyRawSession:
         self.server_path = server_path
         self.version = version
         self.codec_options = (codec_options or "").strip()
+        align = int(min_size_alignment)
+        self.min_size_alignment = align if align in (1, 2, 4, 8, 16) else 16
         # scid is parsed as hex and must fit in 31 bits; socket is scrcpy_%08x.
         self.scid = scid or f"{secrets.randbits(31):08x}"
         self.reader: Optional[asyncio.StreamReader] = None
@@ -235,7 +242,8 @@ class ScrcpyRawSession:
         opts = (
             f"scid={self.scid} tunnel_forward=true audio=false control=false "
             f"cleanup=false raw_stream=true max_size={self.max_size} "
-            f"video_bit_rate={self.bitrate} max_fps={self.max_fps}"
+            f"video_bit_rate={self.bitrate} max_fps={self.max_fps} "
+            f"min_size_alignment={self.min_size_alignment}"
         )
         if self.codec_options:
             # Commas inside the value are part of the option list; no spaces.

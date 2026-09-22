@@ -14,7 +14,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from app.adb_client import INPUT_SHELL_LOOP  # noqa: E402
 from app.device_audio import (  # noqa: E402
     FLAG_CONFIG,
     pack_audio,
@@ -25,7 +24,7 @@ from app.device_audio import (  # noqa: E402
 
 def test_codec_and_packets() -> None:
     assert parse_codec_id(bytes.fromhex("6f707573")) == "opus"
-    assert parse_codec_id((0x00616163).to_bytes(4, "big")) == "aac"
+    assert parse_codec_id(bytes.fromhex("61616320")) == "aac"
     try:
         parse_codec_id(b"nope")
     except ValueError:
@@ -55,6 +54,12 @@ def test_codec_and_packets() -> None:
     assert wire[1] == FLAG_CONFIG
     assert wire[16:] == payload
 
+    head = bytes.fromhex("4f707573486561640102380180bb0000000000")
+    raw = (0).to_bytes(8, "big") + len(head).to_bytes(4, "big") + head
+    packets, rest = split_scrcpy_audio_packets(raw)
+    assert rest == b"" and packets[0][0] == FLAG_CONFIG and packets[0][1] == 0
+    assert pack_audio(1, packets[0][0], 0, packets[0][2])[1] == 1
+
     try:
         split_scrcpy_audio_packets((0).to_bytes(8, "big") + (5_000_000).to_bytes(4, "big"))
     except ValueError:
@@ -63,9 +68,9 @@ def test_codec_and_packets() -> None:
         raise AssertionError("huge packet should fail")
 
 
-async def test_input_shell() -> None:
+async def test_input_shell(loop: str) -> None:
     proc = await asyncio.create_subprocess_exec(
-        "sh", "-c", INPUT_SHELL_LOOP,
+        "sh", "-c", loop,
         stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.DEVNULL,
@@ -83,7 +88,12 @@ async def test_input_shell() -> None:
 
 def main() -> None:
     test_codec_and_packets()
-    asyncio.run(test_input_shell())
+    try:
+        from app.adb_client import INPUT_SHELL_LOOP
+    except ImportError:
+        INPUT_SHELL_LOOP = ""
+    if INPUT_SHELL_LOOP:
+        asyncio.run(test_input_shell(INPUT_SHELL_LOOP))
     print("ok phone touch/audio checks")
 
 

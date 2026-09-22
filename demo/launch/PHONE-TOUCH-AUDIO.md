@@ -28,9 +28,15 @@ to 4-byte start codes. scrcpy is no longer sticky-disabled after one error
 (screenrecord IDRs are rare and look like a stuck glitch).
 
 On `emulator-*`, requested fps above 30 and bitrate above 1.8 Mbps are
-clamped. `SCRCPY_MAX_FPS=90` and `H264_BITRATE=2500000` on the swiftshader
-AVD make the encoder miss deadlines; the browser then drops references.
-GPU / Redroid serials are not clamped.
+clamped. GPU / Redroid serials are not clamped.
+
+The encode size was the remaining picture bug. `max_size=1080` on a
+1080×2400 phone is 486×1080 (health used to print 484). Neither width is a
+multiple of 16, and the software AVC encoder smears those blocks under
+YouTube motion. This is not AFD truncation. The server now picks a max_size
+whose integer scale is already a multiple of 16 (cap 1080 → 960 → 432×960)
+and passes `min_size_alignment=16`. `h264.size` width and height must both
+be divisible by 16, and `h264.scrcpy_max_size` is that chosen value.
 
 **Touch.** Taps use the painted video rectangle, plus
 `visualViewport` offset when the mobile URL bar shifts the viewport. Finger

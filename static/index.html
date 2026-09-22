@@ -1943,6 +1943,14 @@
         && payload[6] === 0x61 && payload[7] === 0x64;
     }
 
+    function looksLikeOpusConfig(payload) {
+      if (looksLikeOpusHead(payload)) return true;
+      return payload && payload.byteLength >= 8
+        && payload[0] === 0x4f && payload[1] === 0x70 && payload[2] === 0x75
+        && payload[3] === 0x73 && payload[4] === 0x54 && payload[5] === 0x61
+        && payload[6] === 0x67 && payload[7] === 0x73;
+    }
+
     function configureOpus(description) {
       if (typeof window.AudioDecoder !== 'function') {
         deviceAudio.blocked = 'This browser has no AudioDecoder. Chrome or Edge can play phone sound.';
@@ -2023,7 +2031,7 @@
         return;
       }
       // Flag bit 0, or the OpusHead magic even when a server forgot the flag.
-      if ((flags & 1) || looksLikeOpusHead(payload)) {
+      if ((flags & 1) || looksLikeOpusConfig(payload)) {
         configureOpus(payload);
         deviceAudio.errors = 0;
         if (!deviceAudio.muted) setAudioBtn('live', 'Phone sound is on');

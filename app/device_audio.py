@@ -53,6 +53,8 @@ SCRCPY_PTS_MASK = SCRCPY_FLAG_KEY - 1
 AUDIO_HEADER = struct.Struct("<BBHId")
 AUDIO_WIRE_VERSION = 1
 FLAG_CONFIG = 1
+OPUS_HEAD_MAGIC = b"OpusHead"
+OPUS_TAGS_MAGIC = b"OpusTags"
 
 DEVICE_AUDIO = os.environ.get("DEVICE_AUDIO", "1") not in ("0", "false", "no")
 AUDIO_BITRATE = int(os.environ.get("DEVICE_AUDIO_BITRATE", "128000"))
@@ -90,6 +92,10 @@ def split_scrcpy_audio_packets(buf: bytes) -> tuple[list[tuple[int, int, bytes]]
         payload = buf[offset + 12 : offset + 12 + size]
         flags = FLAG_CONFIG if (pts_flags & SCRCPY_FLAG_CONFIG) else 0
         pts = pts_flags & SCRCPY_PTS_MASK
+        # Live OpusHead arrives with bit 63 clear. WebCodecs must not decode it.
+        if payload.startswith(OPUS_HEAD_MAGIC) or payload.startswith(OPUS_TAGS_MAGIC):
+            flags |= FLAG_CONFIG
+            pts = 0
         packets.append((flags, pts, payload))
         offset += 12 + size
     return packets, buf[offset:]
