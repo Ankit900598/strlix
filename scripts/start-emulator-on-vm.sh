@@ -9,10 +9,9 @@ export ANDROID_HOME=/opt/android-sdk
 export PATH=$JAVA_HOME/bin:$PATH:$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools
 sudo chmod 666 /dev/kvm || true
 if ! pgrep -f qemu-system >/dev/null; then
-  # Guest audio must exist. -no-audio removes the HAL, scrcpy playback
-  # capture then emits silence, and the browser shows "Opus decoder: Decoding error"
-  # once the OpusHead config packet is mishandled. A null Pulse sink keeps
-  # the guest audible to scrcpy without needing host speakers.
+  # Do not pass -no-audio. The Opus "Decoding error" was a flags=0 OpusHead
+  # packet, not a missing HAL. A null Pulse sink keeps guest playback audible
+  # to scrcpy without host speakers.
   if command -v pulseaudio >/dev/null 2>&1; then
     pulseaudio --start || true
     pactl load-module module-null-sink sink_name=strlix rate=48000 channels=2 >/dev/null 2>&1 || true

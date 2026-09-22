@@ -66,6 +66,11 @@ def is_opus_head(payload: bytes) -> bool:
     return len(payload) >= 19 and payload.startswith(b"OpusHead")
 
 
+def is_opus_tags(payload: bytes) -> bool:
+    """Opus comment header. Also a description, not a decodable packet."""
+    return len(payload) >= 8 and payload.startswith(b"OpusTags")
+
+
 def opus_head_info(head: bytes) -> tuple[int, int]:
     """(channels, input_sample_rate) from an Opus identification header."""
     if not is_opus_head(head):
@@ -180,7 +185,7 @@ def pop_packets(buf: bytes, *, codec: str = "opus") -> tuple[list[AudioPacket], 
             payload = extract_opus_head(raw)
             config = config or is_opus_head(payload) or raw.startswith(b"AOPUSHDR")
         # A config flag with a non-head payload is still not a decodable frame.
-        if is_opus_head(payload):
+        if is_opus_head(payload) or is_opus_tags(payload):
             config = True
             pts = 0
         packets.append(AudioPacket(payload=payload, pts_us=pts, config=config, codec=codec))

@@ -54,7 +54,7 @@ _input_buckets: dict[str, list[float]] = {}
 
 app = FastAPI(
     title="Strlix desktop-api",
-    version="0.3.0",
+    version="0.3.1",
     description="Viewer stream + input. Session-bound to one device from the pool.",
 )
 app.add_middleware(
@@ -142,7 +142,7 @@ async def health():
     info: dict[str, Any] = {
         "ok": True,
         "service": "desktop-api",
-        "version": "0.3.0",
+        "version": "0.3.1",
         "uptime_s": round(time.time() - STARTED, 1),
         "adb_serial": adb.serial,
         "stream": {**adb.frames.stats(), "max_clients": MAX_STREAM_CLIENTS},
