@@ -1,5 +1,13 @@
 # Phone touch, fullscreen, and speakers
 
+## Stream break (Opus flags + 16-aligned encode)
+
+Live `/ws/audio` sent the first Opus packet as `OpusHead` with flags=0. The viewer called `AudioDecoder.decode` on that header and closed with "Decoding error". The server now sets wire bit0 when the payload starts with `OpusHead` or `OpusTags`. The viewer does the same check if an older server forgets the flag.
+
+`GET /health` → `h264.size` on a 1080×2400 phone was 484×1080 (`int(w*scale) & ~3`). scrcpy itself encoded 486×1080. Neither width is a multiple of 16, which is what the software encoder smears under YouTube motion. The encoder is now started with a `max_size` whose integer scale is already a multiple of 16 (1080×2400, cap 1080 → max_size 960 → 432×960) and `min_size_alignment=16`. `emulator-*` fps is capped at 30. Other serials keep `SCRCPY_MAX_FPS`. This is not an AFD truncation, and it is not a claim that the soft-launch emulator is a 10× or sub-50 ms phone.
+
+Open phone stays in the market iframe (one tap, Close remains). Finger taps use 28 px of slop so a small jitter is not a swipe. Taps still map the painted video rect onto `wm size`.
+
 Measured 2026-09-22 from this workspace against the live hosts (four `/health` samples after a cold first hit). These numbers are the network floor. They are not glass-to-glass, and they are not a physical handset.
 
 ## Health RTT (not the tap)
@@ -19,7 +27,7 @@ The market page now points `streamUrl` at the AFD stream host. The tunnel stays 
 3. desktop-api → `AdbClient.tap`.
    - Warm path: one long-lived `adb shell` (`InputPump`) writes `input tap x y` and waits for an ack. No new process per tap.
    - Cold path: `adb shell input tap` (one process). `get-state` is skipped for 8 s after a successful check.
-4. Android `input` injects the tap. The H.264 encoder emits when the screen changes. The viewer drops late frames (`decodeQueueSize > 1`).
+4. Android `input` injects the tap. The H.264 encoder emits when the screen changes. The viewer only skips a backed-up P-frame (`decodeQueueSize > 8`) by waiting for the next IDR. Dropping one delta and decoding the next one is what paints broken blocks.
 
 The on-phone stamp `tap x,y · Nms` is step 2's HTTP time only (browser → desktop-api → response). It does not include encode or decode. Health RTT on the market chip is step 0, a different request.
 

@@ -382,13 +382,14 @@
         settled = true;
         return;
       }
-      // Health ok — keep boot until iframe paints, then reveal stream.
+      // Health ok — reveal as soon as the iframe loads. The overlay does not
+      // receive taps (pointer-events: none), so a slow hide cannot eat the first touch.
       if (frame) {
-        frame.addEventListener("load", hideBoot, { once: true });
-        setTimeout(() => {
+        frame.addEventListener("load", () => {
           try { frame.focus({ preventScroll: true }); } catch (_) {}
           hideBoot();
-        }, 2200);
+        }, { once: true });
+        setTimeout(hideBoot, 900);
       }
     });
 
@@ -412,16 +413,8 @@
         activeStreamBase = pickStreamBase(liveDevice, lease);
       }
       const src = streamViewerSrc(activeStreamBase);
-      // Cross-origin interim stream (trycloudflare): same-tab nav so the Android
-      // screen appears immediately. Avoids the .stream-boot "Waking" overlay that
-      // stayed visible over a working iframe when display:flex beat [hidden].
-      try {
-        const abs = new URL(src, location.href);
-        if (device.preview === "live" && abs.origin !== location.origin) {
-          location.assign(abs.href);
-          return;
-        }
-      } catch (_) {}
+      // Stay in the market shell. Navigating the tab away dropped Close and
+      // made the first tap feel like a broken page load.
       if (device.preview === "live") {
         mountLiveIframe(src, device);
       } else {

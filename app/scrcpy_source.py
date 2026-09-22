@@ -45,6 +45,40 @@ SCRCPY_MAX_SIZE = int(os.environ.get("SCRCPY_MAX_SIZE", "1080"))
 SCRCPY_CODEC_OPTIONS = os.environ.get(
     "SCRCPY_CODEC_OPTIONS", "i-frame-interval:int=1,latency:int=1"
 ).strip()
+# scrcpy 4.1 floors width and height to this power of two. 16 matches AVC
+# macroblocks. The emulator's software encoder accepts 486×1080 (alignment 2)
+# and that size paints broken blocks under motion.
+SCRCPY_MIN_SIZE_ALIGNMENT = int(os.environ.get("SCRCPY_MIN_SIZE_ALIGNMENT", "16"))
+# SwiftShader on emulator-* cannot sustain the gaming 90 fps cap. Non-emulator
+# serials keep SCRCPY_MAX_FPS unchanged.
+SCRCPY_EMULATOR_MAX_FPS = int(os.environ.get("SCRCPY_EMULATOR_MAX_FPS", "30"))
+
+
+def _valid_alignment(value: int) -> int:
+    n = int(value)
+    if n in (1, 2, 4, 8, 16):
+        return n
+    return 16
+
+
+def encoder_max_fps(serial: str = "", requested: Optional[int] = None) -> int:
+    """Cap fps only for the software emulator. GPU / Redroid serials stay put."""
+    fps = SCRCPY_MAX_FPS if requested is None else int(requested)
+    fps = max(1, fps)
+    if str(serial or "").startswith("emulator-"):
+        return max(1, min(fps, max(1, SCRCPY_EMULATOR_MAX_FPS)))
+    return fps
+
+
+def video_codec_options(base: Optional[str] = None) -> str:
+    """GOP + low-latency hints. Append realtime priority when the operator omitted it."""
+    raw = SCRCPY_CODEC_OPTIONS if base is None else base
+    parts = [p for p in (raw or "").split(",") if p.strip()]
+    if not any(p.strip().startswith("priority:") for p in parts):
+        parts.append("priority:int=0")
+    return ",".join(p.strip() for p in parts)
+
+
 # Device-side jar path (shell-writable).
 _REMOTE_JAR = "/data/local/tmp/scrcpy-server.jar"
 
@@ -80,17 +114,19 @@ class ScrcpyRawSession:
         server_path: str = SCRCPY_SERVER_PATH,
         version: str = SCRCPY_VERSION,
         codec_options: str = SCRCPY_CODEC_OPTIONS,
+        min_size_alignment: int = SCRCPY_MIN_SIZE_ALIGNMENT,
         scid: Optional[str] = None,
         kind: str = "video",
     ) -> None:
         self.adb = adb
         self.max_size = max(64, int(max_size))
         self.bitrate = int(bitrate)
-        self.max_fps = max(1, int(max_fps))
+        self.max_fps = encoder_max_fps(getattr(adb, "serial", ""), max(1, int(max_fps)))
         self.port = int(port)
         self.server_path = server_path
         self.version = version
         self.codec_options = (codec_options or "").strip()
+        self.min_size_alignment = _valid_alignment(min_size_alignment)
         # "video" is the Annex-B mirror. "audio" is a second server (opus)
         # so device sound can reach the browser without touching the video pipe.
         self.kind = "audio" if kind == "audio" else "video"
@@ -209,6 +245,9 @@ class ScrcpyRawSession:
                 f"cleanup=false raw_stream=true max_size={self.max_size} "
                 f"video_bit_rate={self.bitrate} max_fps={self.max_fps}"
             )
+            # Unknown keys are logged and ignored by older jars, so this is safe
+            # on a server that predates min_size_alignment.
+            opts += f" min_size_alignment={self.min_size_alignment}"
             if self.codec_options:
                 # Commas inside the value are part of the option list; no spaces.
                 opts += f" video_codec_options={self.codec_options}"

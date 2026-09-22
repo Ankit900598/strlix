@@ -21,11 +21,13 @@ from app.device_audio import (  # noqa: E402
     parse_codec_id,
     split_scrcpy_audio_packets,
 )
+from app.h264_stream import align_screenrecord_size, choose_aligned_max_size  # noqa: E402
+from app.scrcpy_source import encoder_max_fps, video_codec_options  # noqa: E402
 
 
 def test_codec_and_packets() -> None:
     assert parse_codec_id(bytes.fromhex("6f707573")) == "opus"
-    assert parse_codec_id((0x00616163).to_bytes(4, "big")) == "aac"
+    assert parse_codec_id(bytes.fromhex("61616320")) == "aac"  # scrcpy fourcc "aac "
     try:
         parse_codec_id(b"nope")
     except ValueError:
@@ -62,6 +64,45 @@ def test_codec_and_packets() -> None:
     else:
         raise AssertionError("huge packet should fail")
 
+    # Live capture: OpusHead with scrcpy bit63 clear must still set wire bit0.
+    head = bytes.fromhex("4f707573486561640102380180bb0000000000")
+    assert head.startswith(b"OpusHead") and len(head) == 19
+    raw = (0).to_bytes(8, "big") + len(head).to_bytes(4, "big") + head
+    packets, rest = split_scrcpy_audio_packets(raw)
+    assert rest == b""
+    assert packets[0][0] == FLAG_CONFIG
+    assert packets[0][1] == 0
+    assert packets[0][2] == head
+    wire = pack_audio(1, packets[0][0], packets[0][1], packets[0][2])
+    assert wire[1] == FLAG_CONFIG
+    assert wire[16:24] == b"OpusHead"
+
+    tags = b"OpusTags" + b"\x00" * 8
+    raw = (12345).to_bytes(8, "big") + len(tags).to_bytes(4, "big") + tags
+    packets, _rest = split_scrcpy_audio_packets(raw)
+    assert packets[0][0] == FLAG_CONFIG and packets[0][1] == 0
+
+    frame = bytes.fromhex("fcfffe")
+    raw = (3_000_000).to_bytes(8, "big") + len(frame).to_bytes(4, "big") + frame
+    packets, _rest = split_scrcpy_audio_packets(raw)
+    assert packets[0][0] == 0 and packets[0][1] == 3_000_000 and packets[0][2] == frame
+
+
+def test_encode_alignment() -> None:
+    # 1080×2400, cap 1080 used to report 484 (and scrcpy encoded 486). Neither % 16 == 0.
+    ew, eh, max_size = choose_aligned_max_size(1080, 2400, 1080)
+    assert (ew, eh, max_size) == (432, 960, 960), (ew, eh, max_size)
+    assert ew % 16 == 0 and eh % 16 == 0
+    sw, sh = align_screenrecord_size(1080, 2400, 1080)
+    assert sw % 16 == 0 and sh % 16 == 0, (sw, sh)
+    assert encoder_max_fps("emulator-5554", 90) == 30
+    assert encoder_max_fps("192.168.0.8:5555", 90) == 90
+    assert encoder_max_fps("redroid", 90) == 90
+    opts = video_codec_options("i-frame-interval:int=1,latency:int=1")
+    assert "i-frame-interval:int=1" in opts
+    assert "latency:int=1" in opts
+    assert opts.count("priority:") == 1
+
 
 async def test_input_shell() -> None:
     proc = await asyncio.create_subprocess_exec(
@@ -83,6 +124,7 @@ async def test_input_shell() -> None:
 
 def main() -> None:
     test_codec_and_packets()
+    test_encode_alignment()
     asyncio.run(test_input_shell())
     print("ok phone touch/audio checks")
 

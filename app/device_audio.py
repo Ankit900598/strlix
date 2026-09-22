@@ -53,6 +53,10 @@ SCRCPY_PTS_MASK = SCRCPY_FLAG_KEY - 1
 AUDIO_HEADER = struct.Struct("<BBHId")
 AUDIO_WIRE_VERSION = 1
 FLAG_CONFIG = 1
+# RFC 7845 identification / comment headers. WebCodecs must receive these as
+# AudioDecoder.configure({description}), never as EncodedAudioChunk data.
+OPUS_HEAD_MAGIC = b"OpusHead"
+OPUS_TAGS_MAGIC = b"OpusTags"
 
 DEVICE_AUDIO = os.environ.get("DEVICE_AUDIO", "1") not in ("0", "false", "no")
 AUDIO_BITRATE = int(os.environ.get("DEVICE_AUDIO_BITRATE", "128000"))
@@ -88,11 +92,25 @@ def split_scrcpy_audio_packets(buf: bytes) -> tuple[list[tuple[int, int, bytes]]
         if offset + 12 + size > limit:
             break
         payload = buf[offset + 12 : offset + 12 + size]
-        flags = FLAG_CONFIG if (pts_flags & SCRCPY_FLAG_CONFIG) else 0
-        pts = pts_flags & SCRCPY_PTS_MASK
+        flags, pts = _packet_flags(pts_flags, payload)
         packets.append((flags, pts, payload))
         offset += 12 + size
     return packets, buf[offset:]
+
+
+def _packet_flags(pts_flags: int, payload: bytes) -> tuple[int, int]:
+    """Wire flags + pts for one scrcpy audio packet.
+
+    Bit 63 is the scrcpy config flag. Live OpusHead still arrives with that
+    bit clear (payload starts ``4f70757348656164…``). Treat OpusHead and
+    OpusTags as codec config anyway so the viewer does not decode the header.
+    """
+    flags = FLAG_CONFIG if (pts_flags & SCRCPY_FLAG_CONFIG) else 0
+    pts = pts_flags & SCRCPY_PTS_MASK
+    if payload.startswith(OPUS_HEAD_MAGIC) or payload.startswith(OPUS_TAGS_MAGIC):
+        flags |= FLAG_CONFIG
+        pts = 0
+    return flags, pts
 
 
 def pack_audio(seq: int, flags: int, pts_us: float, payload: bytes) -> bytes:

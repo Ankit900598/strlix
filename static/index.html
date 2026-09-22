@@ -1058,9 +1058,13 @@
       const key = (dv.getUint8(1) & 1) === 1;
       const ts = dv.getFloat64(8, true);
       if (h264.needKey && !key) return;            // decoding deltas first = garbage
-      // Do not let the decoder queue grow — late P-frames only add glass latency.
-      if (!key && typeof dec.decodeQueueSize === 'number' && dec.decodeQueueSize > 1) {
+      // Dropping one P-frame and decoding the next paints broken blocks until
+      // the following IDR. Only skip when the queue is actually backed up,
+      // and then wait for a keyframe instead of continuing the GOP.
+      if (!key && typeof dec.decodeQueueSize === 'number' && dec.decodeQueueSize > 8) {
         h264.droppedLate += 1;
+        h264.needKey = true;
+        h264Send({ type: 'keyframe' });
         return;
       }
       try {
@@ -1551,6 +1555,7 @@
     // ───────────── Pointer control (mouse + touch + pen) ─────────────
     let ptrDown = null;
     const SWIPE_PX = 14;
+    const TOUCH_SLOP_PX = 28;
 
     function onPtrDown(ev) {
       if (ev.pointerType === 'mouse' && ev.button !== 0) return;
@@ -1559,7 +1564,7 @@
       ev.preventDefault();
       try { touchLayer.focus({ preventScroll: true }); } catch (_) {}
       try { touchLayer.setPointerCapture(ev.pointerId); } catch (_) {}
-      ptrDown = { id: ev.pointerId, ...pt, cx: ev.clientX, cy: ev.clientY, t: Date.now() };
+      ptrDown = { id: ev.pointerId, ...pt, cx: ev.clientX, cy: ev.clientY, t: Date.now(), pointerType: ev.pointerType };
       showRipple(ev.clientX, ev.clientY);
       interactiveUntil = Date.now() + 5000;
     }
@@ -1575,9 +1580,11 @@
       interactiveUntil = Date.now() + 5000;
       const clientDist = Math.hypot(ev.clientX - start.cx, ev.clientY - start.cy);
       const dt = Date.now() - start.t;
+      // A finger jitters more than a mouse. 14px turned taps into swipes.
+      const slop = start.pointerType === 'touch' ? TOUCH_SLOP_PX : SWIPE_PX;
 
       // Fire-and-forget: never block the UI on the ADB round-trip.
-      if (clientDist < SWIPE_PX) {
+      if (clientDist < slop) {
         const label = 'Tap at ' + start.x + ',' + start.y;
         shotStamp.textContent = 'tap ' + start.x + ',' + start.y;
         const event = replayRecordInput(label, 'tap', { x: start.x, y: start.y });
@@ -1851,6 +1858,17 @@
       }
     }
 
+    function looksLikeOpusConfig(payload) {
+      // OpusHead (identification) or OpusTags (comment). Either one is a
+      // codec description, not an audio packet. Live servers have sent
+      // OpusHead with flags=0, which closed AudioDecoder ("Decoding error").
+      if (!payload || payload.byteLength < 8) return false;
+      if (payload[0] !== 0x4f || payload[1] !== 0x70 || payload[2] !== 0x75 || payload[3] !== 0x73) return false;
+      const head = payload[4] === 0x48 && payload[5] === 0x65 && payload[6] === 0x61 && payload[7] === 0x64;
+      const tags = payload[4] === 0x54 && payload[5] === 0x61 && payload[6] === 0x67 && payload[7] === 0x73;
+      return head || tags;
+    }
+
     function configureOpus(description) {
       if (typeof window.AudioDecoder !== 'function') {
         deviceAudio.blocked = 'This browser has no AudioDecoder. Chrome or Edge can play phone sound.';
@@ -1916,7 +1934,7 @@
         setAudioBtn('live', 'Phone sound (PCM)');
         return;
       }
-      if (flags & 1) {
+      if ((flags & 1) || looksLikeOpusConfig(payload)) {
         configureOpus(payload);
         return;
       }

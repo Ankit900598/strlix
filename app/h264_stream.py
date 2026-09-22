@@ -48,11 +48,13 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Optional
 
 from .scrcpy_source import (
-    SCRCPY_CODEC_OPTIONS,
     SCRCPY_MAX_SIZE,
+    SCRCPY_MIN_SIZE_ALIGNMENT,
     ScrcpyError,
     ScrcpyRawSession,
+    encoder_max_fps,
     scrcpy_available,
+    video_codec_options,
 )
 
 if TYPE_CHECKING:  # pragma: no cover - typing only
@@ -268,6 +270,64 @@ def _starts_new_au(nal: bytes) -> bool:
     return False
 
 
+def align_down(value: int, alignment: int) -> int:
+    alignment = max(1, int(alignment))
+    return max(alignment, (int(value) // alignment) * alignment)
+
+
+def scrcpy_scaled_size(dw: int, dh: int, max_size: int) -> tuple[int, int]:
+    """Integer scale scrcpy applies before it floors to the codec alignment."""
+    dw, dh, max_size = int(dw), int(dh), int(max_size)
+    if dw <= 0 or dh <= 0:
+        return 16, 16
+    if max_size > 0 and (dw > max_size or dh > max_size):
+        if dw > dh:
+            return max_size, max(1, dh * max_size // dw)
+        return max(1, dw * max_size // dh), max_size
+    return dw, dh
+
+
+def choose_aligned_max_size(
+    dw: int, dh: int, cap: int, alignment: int = 16
+) -> tuple[int, int, int]:
+    """Largest scrcpy ``max_size`` whose integer scale is already aligned.
+
+    A 1080×2400 phone with ``max_size=1080`` encodes at 486×1080. 486 % 16
+    is 6, and the emulator software AVC then repeats broken blocks under
+    motion (YouTube). 960 encodes at 432×960, both multiples of 16, same
+    9:20 aspect. Returns ``(encode_w, encode_h, max_size)``.
+    """
+    alignment = alignment if alignment in (1, 2, 4, 8, 16) else 16
+    dw, dh = max(1, int(dw)), max(1, int(dh))
+    device_long = max(dw, dh)
+    cap_n = int(cap) if cap and int(cap) > 0 else device_long
+    cap_n = max(alignment, min(cap_n, device_long))
+    start = max(alignment, (cap_n // alignment) * alignment)
+    for max_size in range(start, alignment - 1, -alignment):
+        raw_w, raw_h = scrcpy_scaled_size(dw, dh, max_size)
+        if raw_w % alignment == 0 and raw_h % alignment == 0:
+            return raw_w, raw_h, max_size
+    raw_w, raw_h = scrcpy_scaled_size(dw, dh, start)
+    return align_down(raw_w, alignment), align_down(raw_h, alignment), start
+
+
+def align_screenrecord_size(
+    dw: int, dh: int, long_edge: int, alignment: int = 16
+) -> tuple[int, int]:
+    """``screenrecord --size`` must be macroblock-aligned too."""
+    alignment = alignment if alignment in (1, 2, 4, 8, 16) else 16
+    dw, dh = max(1, int(dw)), max(1, int(dh))
+    edge = int(long_edge) if long_edge and int(long_edge) > 0 else max(dw, dh)
+    edge = max(alignment, min(edge, max(dw, dh)))
+    if dw >= dh:
+        ew = min(dw, edge)
+        eh = max(1, int(round(ew * dh / float(dw))))
+    else:
+        eh = min(dh, edge)
+        ew = max(1, int(round(eh * dw / float(dh))))
+    return align_down(ew, alignment), align_down(eh, alignment)
+
+
 def codec_string_from_sps(sps: bytes) -> str:
     """avc1.PPCCLL from the SPS NAL (profile / constraints / level)."""
     p = _nal_payload(sps)
@@ -298,7 +358,9 @@ class H264Broker:
         self.enabled = H264_ENABLED
         self._source_pref = H264_SOURCE if H264_SOURCE in ("screenrecord", "scrcpy", "auto") else "auto"
         self._active_source = "screenrecord"
-        self._scrcpy_disabled = False  # sticky fallback after hard fail
+        self._scrcpy_disabled = False
+        self._scrcpy_fails = 0
+        self._encode_max_size = 0
         self._scrcpy: Optional[ScrcpyRawSession] = None
 
         self._subs: set[Subscriber] = set()
@@ -389,8 +451,11 @@ class H264Broker:
             "device_width": dw or None,
             "device_height": dh or None,
             "bitrate": self.bitrate,
-            "scrcpy_max_size": SCRCPY_MAX_SIZE,
-            "scrcpy_codec_options": SCRCPY_CODEC_OPTIONS or None,
+            "scrcpy_max_size": self._encode_max_size or SCRCPY_MAX_SIZE,
+            "scrcpy_max_size_cap": SCRCPY_MAX_SIZE,
+            "scrcpy_max_fps": encoder_max_fps(getattr(self.adb, "serial", "")),
+            "scrcpy_codec_options": video_codec_options() or None,
+            "size_aligned16": bool(self._enc_width) and self._enc_width % 16 == 0 and self._enc_height % 16 == 0,
             "viewers": self.subscribers,
             "max_clients": H264_MAX_CLIENTS,
             "gop_ready": self._gop_valid,
@@ -414,8 +479,11 @@ class H264Broker:
             "size": [self._enc_width, self._enc_height] if self._enc_width else None,
             "device": list(self._device_size) if self._device_size[0] else None,
             "bitrate": self.bitrate,
-            "scrcpy_max_size": SCRCPY_MAX_SIZE,
-            "scrcpy_codec_options": SCRCPY_CODEC_OPTIONS or None,
+            "scrcpy_max_size": self._encode_max_size or SCRCPY_MAX_SIZE,
+            "scrcpy_max_size_cap": SCRCPY_MAX_SIZE,
+            "scrcpy_max_fps": encoder_max_fps(getattr(self.adb, "serial", "")),
+            "scrcpy_codec_options": video_codec_options() or None,
+            "size_aligned16": bool(self._enc_width) and self._enc_width % 16 == 0 and self._enc_height % 16 == 0,
             "segment_s": self.segment_s,
             "segments": self._segments,
             "restarts": self._restarts,
@@ -552,11 +620,8 @@ class H264Broker:
         if not dw or not dh:
             dw, dh = 1080, 2400
         self._device_size = (dw, dh)
-        ew = min(self.width, dw)
-        ew -= ew % 4                                  # AVC encoders want even dims
-        eh = int(round(ew * dh / float(dw)))
-        eh -= eh % 4
-        return dw, dh, max(4, ew), max(4, eh)
+        ew, eh = align_screenrecord_size(dw, dh, min(self.width, max(dw, dh)))
+        return dw, dh, ew, eh
 
     async def _run(self) -> None:
         self._started_at = time.time()
@@ -611,41 +676,45 @@ class H264Broker:
         return scrcpy_available()
 
     async def _segment_dispatch(self) -> None:
-        """Pick scrcpy-server (preferred) or screenrecord; sticky-fallback on fail."""
+        """Prefer scrcpy. A failed segment retries scrcpy; it does not stick on screenrecord."""
         if self._want_scrcpy():
             try:
                 await self._segment_scrcpy()
+                self._scrcpy_fails = 0
                 return
             except asyncio.CancelledError:
                 raise
             except Exception as e:  # noqa: BLE001
                 self._errors += 1
+                self._scrcpy_fails += 1
                 self._last_error = f"scrcpy: {type(e).__name__}: {e}"
-                # Hard fail → stick to screenrecord for this process so the
-                # viewer is never wedged in a scrcpy crash loop.
-                self._scrcpy_disabled = True
+                if self._scrcpy_fails < 3:
+                    await asyncio.sleep(min(1.5, 0.3 * self._scrcpy_fails))
+                    return
                 self._active_source = "screenrecord"
         await self._segment()
+        if self._source_pref != "screenrecord":
+            self._scrcpy_fails = 0
 
     async def _segment_scrcpy(self) -> None:
         """One scrcpy-server raw Annex-B segment (no SDL)."""
         dw, dh, _ew_legacy, _eh_legacy = await self._device_geometry()
         self._active_source = "scrcpy"
-        # Prefer SCRCPY_MAX_SIZE (long-edge cap). Do NOT inherit H264_WIDTH (screenrecord
-        # JPEG-era 360 default) — that under-reported size and starved gaming sharpness.
-        max_size = SCRCPY_MAX_SIZE if SCRCPY_MAX_SIZE > 0 else max(dw, dh)
-        if max_size > 0 and max(dw, dh) > 0:
-            scale = min(1.0, max_size / float(max(dw, dh)))
-            ew = max(4, int(dw * scale) & ~3)
-            eh = max(4, int(dh * scale) & ~3)
-        else:
-            ew, eh = _ew_legacy, _eh_legacy
+        # SCRCPY_MAX_SIZE is a long-edge cap, not the encoded size. 1080 on a
+        # 1080×2400 phone is 486×1080 (not a multiple of 16). Pass a max_size
+        # whose integer scale already is.
+        cap = SCRCPY_MAX_SIZE if SCRCPY_MAX_SIZE > 0 else max(dw, dh)
+        ew, eh, max_size = choose_aligned_max_size(dw, dh, cap, SCRCPY_MIN_SIZE_ALIGNMENT)
         self._enc_width, self._enc_height = ew, eh
+        self._encode_max_size = max_size
+        serial = getattr(self.adb, "serial", "") or ""
         session = ScrcpyRawSession(
             self.adb,
             max_size=max_size,
             bitrate=self.bitrate,
-            codec_options=SCRCPY_CODEC_OPTIONS,
+            max_fps=encoder_max_fps(serial),
+            codec_options=video_codec_options(),
+            min_size_alignment=SCRCPY_MIN_SIZE_ALIGNMENT,
         )
         self._scrcpy = session
         self._segment_started = time.time()
