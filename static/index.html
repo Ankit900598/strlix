@@ -900,6 +900,8 @@
     let interactiveUntil = 0;
 
     // ---- layout: exact letterbox rect for the device aspect ----
+    // Fullscreen / embed / mobile browser chrome: recompute on visualViewport
+    // too — otherwise letterbox math drifts and taps land off the painted pixels.
     function layoutView() {
       const sr = screenEl.getBoundingClientRect();
       if (!sr.width || !sr.height || !deviceW || !deviceH) return;
@@ -914,6 +916,11 @@
       }
     }
     window.addEventListener('resize', layoutView);
+    window.addEventListener('orientationchange', () => setTimeout(layoutView, 50));
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', layoutView);
+      window.visualViewport.addEventListener('scroll', layoutView);
+    }
     if (window.ResizeObserver) new ResizeObserver(layoutView).observe(screenEl);
     layoutView();
 
@@ -1488,14 +1495,39 @@
     }
 
     // ───────────── Pointer → device coordinates ─────────────
+    // Prefer the painted video element's client rect (canvas or MJPEG img).
+    // Fullscreen/embed letterbox CSS can drift from viewRect math after
+    // orientation / URL-bar / iframe bezel changes; the painted box is truth.
     const EDGE_TOL = 40;  // device px of slack into the letterbox bars
+    function paintedVideoRect() {
+      const el = (!liveCanvas.hidden && liveCanvas.offsetParent !== null) ? liveCanvas
+        : ((!liveShot.hidden && liveShot.offsetParent !== null) ? liveShot : null);
+      if (el) {
+        const r = el.getBoundingClientRect();
+        if (r.width > 1 && r.height > 1) return r;
+      }
+      return null;
+    }
     function clientToDevice(clientX, clientY) {
-      const sr = screenEl.getBoundingClientRect();
-      if (!sr.width || !sr.height) return null;
       if (!viewRect.width) layoutView();
-      if (!viewRect.width || !viewRect.scale) return null;
-      const ix = (clientX - sr.left - viewRect.left) / viewRect.scale;
-      const iy = (clientY - sr.top - viewRect.top) / viewRect.scale;
+      const painted = paintedVideoRect();
+      let left, top, width, height, scaleX, scaleY;
+      if (painted) {
+        left = painted.left; top = painted.top;
+        width = painted.width; height = painted.height;
+        scaleX = width / deviceW; scaleY = height / deviceH;
+      } else {
+        const sr = screenEl.getBoundingClientRect();
+        if (!sr.width || !sr.height) return null;
+        if (!viewRect.width || !viewRect.scale) return null;
+        left = sr.left + viewRect.left;
+        top = sr.top + viewRect.top;
+        width = viewRect.width; height = viewRect.height;
+        scaleX = scaleY = viewRect.scale;
+      }
+      if (!scaleX || !scaleY) return null;
+      const ix = (clientX - left) / scaleX;
+      const iy = (clientY - top) / scaleY;
       if (ix < -EDGE_TOL || iy < -EDGE_TOL || ix > deviceW + EDGE_TOL || iy > deviceH + EDGE_TOL) {
         return null;
       }

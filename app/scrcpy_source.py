@@ -29,15 +29,18 @@ from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:  # pragma: no cover
     from .adb_client import AdbClient
 
+# Portable default for VMs/containers. Override with SCRCPY_SERVER_PATH.
+# Never default to a developer-box path (/home/box/...) — that broke prod audio/H264.
 SCRCPY_SERVER_PATH = os.environ.get(
-    "SCRCPY_SERVER_PATH", "/home/box/.local/scrcpy/scrcpy-server"
+    "SCRCPY_SERVER_PATH", "/opt/strlix/scrcpy-server"
 )
 SCRCPY_VERSION = os.environ.get("SCRCPY_VERSION", "4.1")
 # 0 = ask adb to allocate an ephemeral local TCP port (preferred).
 SCRCPY_PORT = int(os.environ.get("SCRCPY_PORT", "0"))
-SCRCPY_MAX_FPS = int(os.environ.get("SCRCPY_MAX_FPS", "60"))
-# Cap long edge. 800 ≈ 360×800 on a 1080×2400 phone — sweet spot in VM floor sweep.
-SCRCPY_MAX_SIZE = int(os.environ.get("SCRCPY_MAX_SIZE", "800"))
+# Gaming / interactive: 90 fps cap (device/encoder may deliver less).
+SCRCPY_MAX_FPS = int(os.environ.get("SCRCPY_MAX_FPS", "90"))
+# Cap long edge. 1080 keeps native phone sharpness for games; lower via env on weak VMs.
+SCRCPY_MAX_SIZE = int(os.environ.get("SCRCPY_MAX_SIZE", "1080"))
 # MediaCodec extras, e.g. "i-frame-interval:int=1,latency:int=1"
 SCRCPY_CODEC_OPTIONS = os.environ.get(
     "SCRCPY_CODEC_OPTIONS", "i-frame-interval:int=1,latency:int=1"

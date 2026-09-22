@@ -61,7 +61,7 @@ if TYPE_CHECKING:  # pragma: no cover - typing only
 # ---- ops knobs (env) ------------------------------------------------------
 H264_ENABLED = os.environ.get("H264_ENABLED", "1") not in ("0", "false", "no")
 H264_WIDTH = int(os.environ.get("H264_WIDTH", "360"))
-H264_BITRATE = int(os.environ.get("H264_BITRATE", "800000"))
+H264_BITRATE = int(os.environ.get("H264_BITRATE", "2500000"))
 H264_MAX_CLIENTS = int(os.environ.get("H264_MAX_CLIENTS", "12"))
 # Re-segment the recording this often (seconds). Each new segment starts with
 # SPS/PPS + IDR, which is what makes a late joiner cheap. 0 = never re-segment
