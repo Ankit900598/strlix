@@ -6,6 +6,7 @@
 #   AWS_REGION / INSTANCE_ID / REMOTE_PORT / LOCAL_ADB_PORT / ADB_BIN
 # Optional: --watch keeps reconnecting if tunnel or adb drops
 # Optional: --bg only starts the forward (no adb connect / no wait)
+# Optional: --stop kills local SSM forward (pidfile) + adb disconnect; does not stop EC2
 set -euo pipefail
 
 REGION="${AWS_REGION:-us-east-1}"
@@ -66,6 +67,32 @@ ensure_forward() {
   tail -n 40 "$LOG" >&2 || true
   exit 1
 }
+
+
+stop_forward() {
+  if [[ -f "$PID_FILE" ]]; then
+    old="$(cat "$PID_FILE" 2>/dev/null || true)"
+    if [[ -n "$old" ]] && kill -0 "$old" 2>/dev/null; then
+      echo "Stopping SSM forward pid=$old"
+      pkill -P "$old" 2>/dev/null || true
+      kill "$old" 2>/dev/null || true
+      sleep 0.5
+      kill -9 "$old" 2>/dev/null || true
+    fi
+    rm -f "$PID_FILE"
+  fi
+  "$ADB_BIN" disconnect "127.0.0.1:${LOCAL_PORT}" >/dev/null 2>&1 || true
+  if forward_listening; then
+    echo "Warning: something still listens on :${LOCAL_PORT}" >&2
+  else
+    echo "SSM ADB forward stopped (EC2 instance left running)"
+  fi
+}
+
+if [[ "${1:-}" == "--stop" ]]; then
+  stop_forward
+  exit 0
+fi
 
 ensure_forward
 

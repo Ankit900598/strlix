@@ -2,12 +2,14 @@
 
 **Goal:** Ship free-month market path with **real GPU phone capacity** on AWS Redroid while Azure GPU quota stays at 0. Stripe **live OFF**.
 
+**Tip:** `a9619b5` (stream glue). **Smoke:** 2026-09-22 ~10:37 IST — health/market/legal/devices/waitlist/grant(redroid) OK. Catalog FK for `aws-redroid-t4-1` seeded (`007_seed_aws_redroid_catalog.sql`).
+
 ## Public launch surface
 
 - **Public URL now:** https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/market/
 - **Health:** market-api **0.6.4**; `billing_mode=free_month`; `card_required=false`.
-- **Legal:** live at https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/market/legal/
-- **Branded host:** `app.zevilabs.dev` is still **AFD Pending** / domain **SKIPPED** — stay on `*.azurefd.net`.
+- **Legal:** https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/market/legal/terms.html (and privacy/support/capabilities). Bare `/market/legal/` is 404.
+- **Branded host:** `app.zevilabs.dev` **AFD Pending**; Name.com **Cloudflare Turnstile** blocks DNS (token `_48ncbg9vt1u4zxek55jon1osqixlr88` expires ~2026-09-29). Soft launch stays on `*.azurefd.net`.
 
 ## Capacity wired (AWS Redroid in phone path)
 
@@ -107,5 +109,6 @@ curl -sS -X POST \
 
 ## Remaining / out of scope (honest)
 
-1. Idle cost ≈ **$0.526/hr** — `aws ec2 stop-instances … i-0531c567f620877c3` (do **not** terminate).
-2. Custom domain / Stripe live / Azure GPU create / multi-lease Azure+AWS broker — **out of scope**.
+1. Idle AWS ≈ **$0.526/hr** — `aws ec2 stop-instances --region us-east-1 --instance-ids i-0531c567f620877c3` (do **not** terminate).
+2. External blockers: Name.com Turnstile → `app.zevilabs.dev` DNS; physical USB phone; Azure GPU quota 0; lawyer pass; live Stripe deferred; private Redis CAE region mismatch.
+3. Multi-lease Azure+AWS broker — **out of scope** (Phase-1 single-env).

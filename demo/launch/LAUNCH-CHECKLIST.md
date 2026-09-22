@@ -5,7 +5,7 @@ Phone-first cloud Android. First month free. No live Stripe. Resource group `rg-
 **Public soft-launch URL:** https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/market/
 Legal pages are under `https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/market/legal/` (for example, `terms.html`). The old Cloudflare quick-tunnel URL is stale and is not the launch URL; `demo/public-url.txt` points to this AFD market route.
 
-Updated 22 September 2026 (~09:40 IST).
+Updated 22 September 2026 (~10:37 IST).
 
 ## Done in this launch prep
 
@@ -20,17 +20,17 @@ Updated 22 September 2026 (~09:40 IST).
 - [x] **Abuse controls / WAF apply DONE.** `TIGHTEN-WAF.sh --apply` on `wafzevistrlix`: **RateLimitAuthAnon** (110), **RateLimitWaitlist** (120), **RateLimitAuthLogin** (130) — 100/min/IP. `/health` not matched.
 - [x] **Ops alerts DONE.** Action group `ag-strlix-ops` (see `demo/launch/OPS-ALERTS.md`).
 - [x] **Postgres migration 006 DONE** on `psql-zevi-strlix` (waitlist + free_month plan).
-- [x] **AWS GPU worker exists and is STOPPED.** `i-0531c567f620877c3` / `strlix-gpu-worker-1` (`g4dn.xlarge`, us-east-1) — stop when idle; do not terminate.
+- [x] **AWS GPU worker exists** — currently **RUNNING** for soft launch. `i-0531c567f620877c3` / `strlix-gpu-worker-1` (`g4dn.xlarge`, us-east-1) ≈$0.526/hr — **stop when idle**; do not terminate.
 - [x] **cae-infra-subnet reserved.** `10.0.2.0/23` on `vm-zevi-cloudphone-vnet` (eastus), delegated `Microsoft.App/environments`. Redis public access still **Enabled**. Do not disable public Redis yet.
 - [x] **Custom domain script.** Dry-run unless `DOMAIN` is set. `infra/hardening/CUSTOM-DOMAIN.md`.
 - [x] **Private Redis runbook.** Public access stays on. Disable only with `--apply` and `CONFIRM=yes`, and only after a CAE VNet exists. `infra/hardening/PRIVATE-REDIS.md` / `PRIVATE-REDIS-NEXT.sh`.
 - [x] **Ops stubs.** Monitoring, phone-pool capacity, incident, Postgres + Key Vault backup. `infra/ops/`.
 
-Live market-api: **0.6.3** (`ca-market-api--0000007`); keep `billing_mode=free_month`, `pay_mode=test`, `redis:true`, `live_charges_allowed:false`.
+Live market-api: **0.6.4** (`ca-market-api--0000010`); keep `billing_mode=free_month`, `pay_mode=test`, `redis:true`, `live_charges_allowed:false`. Catalog FK for `aws-redroid-t4-1` seeded (migration 007).
 
 ## Needs Ankit (external blockers — do not fake these)
 
-- [x] **Domain DNS — SKIPPED by Ankit.** Stay on `*.azurefd.net`. Do **not** buy domains or run `ATTACH-CUSTOM-DOMAIN.sh --apply`. Soft-launch URL remains `https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/market/`. `support@strlix.app` stays a default until the mailbox is monitored; set `STRLIX_SUPPORT_EMAIL_PLACEHOLDER=false` only after that inbox is live, and edit `static/legal/` and `web-market/legal/` in the same change.
+- [ ] **Domain DNS — Name.com Cloudflare Turnstile.** `app.zevilabs.dev` AFD Pending; token `_48ncbg9vt1u4zxek55jon1osqixlr88` expires ~2026-09-29. Soft-launch URL remains `https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/market/`. Do **not** buy domains or run `ATTACH-CUSTOM-DOMAIN.sh --apply` until Turnstile cleared. `support@strlix.app` stays a default until the mailbox is monitored.
 - [ ] **Physical phone.** Sub-100 ms is not certified. The live pool is one shared emulator (`pilot-emulator-1`); emulator numbers do not count.
 - [ ] **Azure GPU ticket — OPEN.** Support **2609210040005251** — eastus2 NCasT4 / NVadsA10 remains at **limit 0**. Do not create an Azure GPU VM until cleared.
 - [ ] **Counsel / independent legal review** on `static/legal/*` before a wide (not soft) public launch. Soft-launch pages are an operator draft — not legal advice, not a counsel sign-off, not a registered company claim.

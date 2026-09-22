@@ -1,9 +1,17 @@
-# Soft-launch status snapshot — 2026-09-22 ~09:55 IST
+# Soft-launch status snapshot — 2026-09-22 ~10:37 IST
 
 **Operator:** box agent (not CloudAgent) · **RG lock:** `rg-zevi-cloudphone`  
 **Billing posture:** Ankit first calendar month **FREE** (soft-launch); do not enable Stripe **live** charges.  
 **CloudAgent note:** new launch docs live under `demo/launch/`. Prefer editing here over duplicating into `demo/credit-burn/` mid-flight to avoid merge fights; `REMAINING.md` was updated in credit-burn as the single remaining-work ledger.
 
+
+## Update 2026-09-22 ~10:37 IST — soft-launch smoke + Redroid grant FK
+
+- Public AFD smoke: `/health` 200 (market-api **0.6.4**, `billing_mode=free_month`, `pay_mode=test`, `redis:true`, `live_charges_allowed:false`), `/market/` 200, `/market/legal/{terms,privacy,support,capabilities}.html` 200 (banner present), `/v1/devices` includes **`aws-redroid-t4-1`** available.
+- `POST /v1/waitlist` 200 (`example.com` smoke email). `POST /v1/access/grant` for `pixel-7a-a14` 200; **`aws-redroid-t4-1` was 500** (`orders_device_id_fkey` — missing `devices_catalog` row).
+- **Fixed live:** upserted `aws-redroid-t4-1` into `market.devices_catalog` on `psql-zevi-strlix`; grant now **200** `granted_free`. Migration `007_seed_aws_redroid_catalog.sql` + `scripts/sync-devices-catalog.sh` committed for operators.
+- ADB SSM smoke: `127.0.0.1:5556 device product:redroid_x86_64_only`, `boot_completed=1`; session terminated (no orphan). AWS `i-0531c567f620877c3` still **RUNNING** ≈$0.526/hr — **stop when idle**.
+- Stream glue tip: **`a9619b5`**. Domain: Name.com Cloudflare Turnstile still blocks DNS apply for `app.zevilabs.dev` (AFD custom domain Pending; validation token `_48ncbg9vt1u4zxek55jon1osqixlr88` expires ~2026-09-29). Soft launch stays on `*.azurefd.net`.
 
 ## Update 2026-09-22 ~10:30 IST — Phase-1 Redroid stream glue
 
@@ -28,19 +36,23 @@
 - **Domain SKIPPED by Ankit** — stay on `*.azurefd.net`; do not buy domains / do not run ATTACH-CUSTOM-DOMAIN. zevilabs.dev DNS is human Name.com only.
 - `pay_mode=test`, `billing_mode=free_month`, `free_month_active=true`, `live_charges_allowed=false` unchanged.
 
-## Health (verified this pass)
+## Health (verified this pass — 2026-09-22 ~10:37 IST)
 
 | Check | Result |
 |-------|--------|
-| AFD `https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/health` | **200** · `ok:true` · `pay_mode=test` · `redis:true` · market-api **0.6.4** · `billing_mode=free_month` · `free_month_active:true` · `live_charges_allowed:false` |
-| AFD `/v1/devices` | includes **`aws-redroid-t4-1`** `available:true` `preview:live` |
-| AFD `/market/legal/terms.html` | **200** · Soft-launch banner present |
-| Origin `ca-market-api` `/health` | **200** · rev **`ca-market-api--0000010`** · Healthy / RunningAtMaxScale |
-| Managed Redis `redis-strlix-amr` | **publicNetworkAccess=Enabled** (unchanged) — do not disable |
+| AFD `https://strlix-edge-fwf6grbbbggxbs.z03.azurefd.net/health` | **200** · `ok:true` · `pay_mode=test` · `redis:true` · market-api **0.6.4** · `billing_mode=free_month` · `free_month_active:true` · `live_charges_allowed:false` |
+| AFD `/market/` | **200** |
+| AFD `/v1/devices` | includes **`aws-redroid-t4-1`** `available:true` `preview:live` `kind:redroid` |
+| AFD `/market/legal/*.html` | **200** · Soft-launch banner present (directory `/market/legal/` alone is 404 — use `terms.html` etc.) |
+| AFD `POST /v1/waitlist` | **200** joined (card_required=false) |
+| AFD `POST /v1/access/grant` `aws-redroid-t4-1` | **200** `granted_free` (after catalog FK seed) |
+| Origin `ca-market-api` | rev **`ca-market-api--0000010`** · image 0.6.4 |
+| Managed Redis `redis-strlix-amr` | **publicNetworkAccess=Enabled** — do not disable |
 | Azure GPU VMs in RG | **None** — do not create |
-| AWS GPU `i-0531c567f620877c3` / `strlix-gpu-worker-1` (`g4dn.xlarge`, us-east-1) | **RUNNING** · pub `44.204.83.61` · priv `172.31.82.79` · SSM Online · Redroid **UP** ADB via SSM `127.0.0.1:5556` boot=1 Android 12 · ≈ **$0.526/hr** — `infra/gpu-worker/aws/WORKER-LIVE.md` |
-| Stripe live | **OFF** · `STRLIX_PAY_MODE=test` · `billing_mode=free_month` |
-| Custom domain | **SKIPPED** — azurefd.net only |
+| AWS GPU `i-0531c567f620877c3` / `strlix-gpu-worker-1` (`g4dn.xlarge`, us-east-1) | **RUNNING** · pub `44.204.83.61` · SSM Online · Redroid **UP** ADB `127.0.0.1:5556` boot=1 · ≈ **$0.526/hr** — **stop when idle** (do not terminate) |
+| Stream glue | tip **`a9619b5`** |
+| Stripe live | **OFF** · `pay_mode=test` · `billing_mode=free_month` |
+| Custom domain | AFD Pending / Name.com Turnstile — soft launch on `*.azurefd.net` |
 
 ## Applied this pass (2026-09-22 ~09:30–09:55 IST)
 
@@ -60,16 +72,17 @@
 
 - This file; `GLOBAL-LAUNCH-TODAY.md`; `scripts/adb-aws-redroid.sh`; market-api 0.6.4 + devices.json; `CAPACITY-PHONE-POOL.md`; `WORKER-LIVE.md`. Domain SKIPPED in checklist / CUSTOM-DOMAIN / REMAINING.
 
-## Blockers
+## Blockers (true external only)
 
 | Area | State |
 |------|--------|
-| Custom domain / branded URL | **SKIPPED by Ankit** — stay on `*.azurefd.net` (do not buy; zevilabs.dev = human Name.com only) |
-| Azure GPU NCasT4 / NVadsA10 | **Still limit 0** in eastus2 — do not create GPU VM |
-| Private Redis cutover | Region split CAE eastus2 vs VNet/Redis eastus — reserved `cae-infra-subnet` only; **no** public-access disable until eastus CAE Option B |
-| Stripe live | **Deferred** — pay_mode stays `test` |
-| Physical phone / counsel | Still external |
-| Broker multi-device | Phase-1 pool still seeds **one** env device — point at Redroid via env |
+| Custom domain `app.zevilabs.dev` | Name.com **Cloudflare Turnstile** blocks DNS apply; AFD custom domain **Pending**; validation token `_48ncbg9vt1u4zxek55jon1osqixlr88` expires ~**2026-09-29**. Soft launch stays on `*.azurefd.net` (do not buy domains / do not run ATTACH-CUSTOM-DOMAIN). |
+| Physical USB phone | External — latency proof not certified |
+| Azure GPU NCasT4 / NVadsA10 | **limit 0** eastus2 (ticket 2609210040005251) — do not create GPU VM |
+| Lawyer / counsel pass | Soft-launch legal is operator draft only |
+| Live Stripe | **Deferred** — `pay_mode=test` |
+| Private Redis | CAE eastus2 vs VNet/Redis eastus mismatch — subnet reserved only; public Redis stays Enabled |
+| AWS idle cost | `i-0531c567f620877c3` **RUNNING** ≈$0.526/hr — stop when idle (do not terminate) |
 
 ## Curl helpers
 
