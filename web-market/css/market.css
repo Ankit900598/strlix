@@ -1,12 +1,12 @@
 :root {
-  --bg: #0B0D12;
-  --bg-elev: #12151C;
-  --bg-raised: #191D26;
-  --fg: #EEF1F7;
-  --muted: #9BA3B4;
-  --faint: #636B7D;
-  --accent: #5B8CFF;
-  --accent-soft: rgba(91, 140, 255, 0.16);
+  --bg: #0f0f0f;
+  --bg-elev: #181818;
+  --bg-raised: #212121;
+  --fg: #f1f1f1;
+  --muted: #aaaaaa;
+  --faint: #717171;
+  --accent: #3ea6ff;
+  --accent-soft: rgba(62, 166, 255, 0.16);
   --ok: #3ED598;
   --warn: #E8B84A;
   --err: #F07178;
@@ -28,10 +28,8 @@ body {
   min-height: 100%;
   font-family: var(--font);
   color: var(--fg);
-  background:
-    radial-gradient(1000px 520px at 50% -8%, rgba(91, 140, 255, 0.14), transparent 55%),
-    radial-gradient(700px 420px at 100% 70%, rgba(62, 213, 152, 0.05), transparent 50%),
-    linear-gradient(180deg, #0E121A 0%, var(--bg) 42%, #080A0F 100%);
+  background: #0f0f0f;
+  color-scheme: dark;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -98,8 +96,8 @@ a:hover { text-decoration: underline; }
 .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .btn:disabled { opacity: 0.45; cursor: wait; }
 .btn.primary {
-  border-color: rgba(91, 140, 255, 0.55);
-  background: var(--accent); color: #0a1020;
+  border-color: transparent;
+  background: #f1f1f1; color: #0f0f0f;
 }
 .btn.primary:hover { filter: brightness(1.06); }
 .btn.ghost { background: transparent; }
@@ -356,10 +354,14 @@ a:hover { text-decoration: underline; }
 #phoneStage {
   position: fixed; inset: 0; z-index: 100;
   display: none; flex-direction: column;
-  background: rgba(5, 7, 12, 0.94);
-  backdrop-filter: blur(22px);
+  width: 100vw;
+  height: 100dvh;
+  background: #0f0f0f;
+  touch-action: none;
+  overscroll-behavior: none;
 }
 #phoneStage.open { display: flex; }
+body.phone-open { overflow: hidden; background: #000; }
 
 .stage-chrome {
   flex: 0 0 auto;
@@ -392,17 +394,21 @@ a:hover { text-decoration: underline; }
 }
 
 .device-frame {
-  width: min(400px, 94vw);
-  height: min(calc(100dvh - 96px), 820px);
+  height: min(calc(100dvh - 64px), 940px);
+  width: auto;
+  aspect-ratio: 9 / 19.5;
+  max-width: calc(100vw - 32px);
   max-height: 100%;
-  background: linear-gradient(150deg, #252B38, #0C0F16 55%, #171B24);
-  border-radius: 40px;
-  padding: 12px;
-  border: 1px solid var(--bezel-edge);
-  box-shadow: 0 40px 120px rgba(0, 0, 0, 0.72);
+  background: linear-gradient(160deg, #2a2a2a, #0a0a0a 42%, #161616);
+  border-radius: 36px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 30px 80px rgba(0, 0, 0, 0.55);
   display: flex; flex-direction: column;
   position: relative;
-  animation: rise 480ms var(--spring);
+  animation: rise 280ms var(--spring);
 }
 @keyframes rise {
   from { opacity: 0; transform: scale(0.9) translateY(28px); }
@@ -426,8 +432,9 @@ a:hover { text-decoration: underline; }
   position: absolute; inset: 0;
   width: 100%; height: 100%;
   border: 0; background: #000;
-  /* Touch + focus for mobile browsers controlling the cloud phone */
-  touch-action: manipulation;
+  /* none: the viewer handles taps. manipulation reintroduces double-tap delay. */
+  touch-action: none;
+  z-index: 1;
 }
 
 .stream-boot {
@@ -435,8 +442,17 @@ a:hover { text-decoration: underline; }
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   gap: 14px; padding: 24px; text-align: center;
-  background: #05070c; color: var(--muted);
+  background: #000; color: var(--muted);
   z-index: 2;
+  /* Visual only. A flex display overrides the hidden attribute in some
+     browsers and used to eat every tap. Touches fall through to the iframe. */
+  pointer-events: none;
+}
+.stream-boot.err { pointer-events: auto; }
+.stream-boot.gone,
+.stream-boot[hidden] {
+  display: none !important;
+  pointer-events: none !important;
 }
 .stream-boot strong {
   display: block; color: var(--fg);
@@ -525,13 +541,50 @@ a:hover { text-decoration: underline; }
 
 @media (max-width: 560px) {
   .shell-meta .pill.soft:not(.latency) { display: none; }
-  .device-frame {
-    width: min(100vw - 16px, 420px);
-    height: min(calc(100dvh - 88px), 860px);
-    border-radius: 28px; padding: 8px;
+}
+
+/* Phone viewport: the open phone is the screen, not a card inside it. */
+@media (max-width: 920px), (max-height: 520px) and (pointer: coarse) {
+  #phoneStage.open {
+    background: #000;
+    width: 100vw;
+    height: 100dvh;
   }
-  .device-frame .screen { border-radius: 22px; }
-  .device-notch { top: 14px; }
+  #phoneStage.open .stage-chrome {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    z-index: 8;
+    height: calc(40px + var(--safe-top));
+    border: 0;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0));
+    transition: opacity 180ms ease;
+  }
+  #phoneStage.open.chrome-hide .stage-chrome {
+    opacity: 0;
+    pointer-events: none;
+  }
+  #phoneStage.open .stage-body {
+    padding: 0;
+  }
+  #phoneStage.open .device-frame {
+    width: 100vw;
+    height: 100dvh;
+    max-width: none;
+    max-height: none;
+    aspect-ratio: auto;
+    border-radius: 0;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+    background: #000;
+    animation: none;
+  }
+  #phoneStage.open .device-notch { display: none; }
+  #phoneStage.open .device-frame .screen { border-radius: 0; }
+  #phoneStage.open .claim-prompt {
+    top: auto;
+    bottom: calc(12px + var(--safe-bottom));
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

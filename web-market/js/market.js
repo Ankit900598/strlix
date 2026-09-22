@@ -184,7 +184,7 @@
       const band = last < 60 ? "ok" : last < 120 ? "warn" : "err";
       setLatencyChip(
         "RTT " + last + " ms",
-        "HTTP RTT to " + url + " via " + mode,
+        "Health RTT to " + url + " (" + mode + "). Taps are POST /adb/tap on the phone stream, measured on the phone as tap · Nms. See demo/launch/PHONE-TOUCH-AUDIO.md.",
         band
       );
       if (els.stageLive) els.stageLive.classList.toggle("on", band === "ok" || band === "warn");
@@ -308,10 +308,17 @@
     const root = stripSlash(base) + "/";
     const u = new URL(root, location.href);
     u.searchParams.set("embed", "1");
-    // Absolute stream hosts (e.g. trycloudflare.com) must keep origin.
+    // Bust the static viewer when market-api ships a new embed.
+    if (cfg.viewerRev) u.searchParams.set("v", String(cfg.viewerRev));
+    // Absolute stream hosts must keep origin.
     // Path-only return made phones load /?embed=1 on azurefd (404) forever.
     if (u.origin !== location.origin) return u.href;
     return u.pathname + u.search + u.hash;
+  }
+
+  function streamOrigin() {
+    try { return new URL(activeStreamBase || STREAM, location.href).origin; }
+    catch (_) { return ""; }
   }
 
   function showStreamUnavailable(bootEl, reason) {
@@ -363,6 +370,7 @@
       if (settled || !bootEl) return;
       settled = true;
       bootEl.hidden = true;
+      bootEl.classList.add("gone");
     };
 
     probeStreamReady(activeStreamBase).then((ok) => {
@@ -436,8 +444,11 @@
 
     els.stage.classList.add("open");
     els.stage.setAttribute("aria-hidden", "false");
+    document.body.classList.add("phone-open");
     document.body.style.overflow = "hidden";
     if (els.stageStatus) els.stageStatus.textContent = `${device.model} preview opened.`;
+    pokeChrome();
+    requestStageFullscreen();
     document.getElementById("closeStage").focus();
     if (lease) sessionStorage.setItem("strlix_lease", JSON.stringify(lease));
     if (options.wow && isAnonymous) showClaimPrompt();
@@ -445,9 +456,14 @@
   }
 
   function closeFullscreen() {
-    els.stage.classList.remove("open");
+    els.stage.classList.remove("open", "chrome-hide");
     els.stage.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("phone-open");
     document.body.style.overflow = "";
+    if (document.fullscreenElement) {
+      const exit = document.exitFullscreen || document.webkitExitFullscreen;
+      if (exit) exit.call(document).catch(() => {});
+    }
     if (els.stageStatus) els.stageStatus.textContent = "Phone preview closed";
     els.stageScreen.innerHTML = "";
     if (els.claimPrompt) els.claimPrompt.hidden = true;
@@ -686,6 +702,42 @@
     els.claimPrompt.hidden = true;
   });
 
+  let chromeTimer = 0;
+  function immersivePhone() {
+    return window.matchMedia("(max-width: 920px), (max-height: 520px) and (pointer: coarse)").matches;
+  }
+  function pokeChrome() {
+    if (!els.stage.classList.contains("open")) return;
+    els.stage.classList.remove("chrome-hide");
+    clearTimeout(chromeTimer);
+    if (!immersivePhone()) return;
+    chromeTimer = setTimeout(() => {
+      if (els.stage.classList.contains("open")) els.stage.classList.add("chrome-hide");
+    }, 2200);
+  }
+  function requestStageFullscreen() {
+    if (!immersivePhone()) return;
+    const req = els.stage.requestFullscreen || els.stage.webkitRequestFullscreen;
+    if (!req || document.fullscreenElement) return;
+    req.call(els.stage).catch(() => {});
+  }
+
+  window.addEventListener("message", (ev) => {
+    const data = ev.data;
+    if (!data || data.source !== "strlix-viewer") return;
+    const allowed = streamOrigin();
+    if (allowed && ev.origin !== allowed && ev.origin !== location.origin) return;
+    if (data.type === "strlix-first-frame") {
+      const bootEl = document.getElementById("streamBoot");
+      if (bootEl) {
+        bootEl.hidden = true;
+        bootEl.classList.add("gone");
+      }
+      if (els.stageLive) els.stageLive.classList.add("on");
+    }
+  });
+  els.stage.addEventListener("pointerdown", pokeChrome);
+
   function openHeroPhone() {
     const live = devices.find((d) => d.preview === "live") || devices[0];
     if (live) openFullscreen(live);
@@ -724,7 +776,9 @@
     document.getElementById("catalog").scrollIntoView({ behavior: "smooth" });
   };
 
-  loadDevices().catch((err) => {
+  loadDevices().then(() => {
+    if (params.get("open") === "1") openHeroPhone();
+  }).catch((err) => {
     els.grid.innerHTML = `<p class="meta">Failed to load catalog: ${escapeHtml(err.message)}</p>`;
   });
 })();

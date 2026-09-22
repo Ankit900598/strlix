@@ -129,6 +129,7 @@ async def health():
         },
         "stream": {**adb.frames.stats(), "max_clients": MAX_STREAM_CLIENTS},
         "h264": adb.h264.stats(),
+        "audio": adb.audio.stats(),
     }
     try:
         state = await adb.ensure_connected()
@@ -732,8 +733,8 @@ async def voice_turn(req: VoiceTurnRequest):
         "audio": audio,
         "routing": {
             "playback": "host_browser_webaudio",
-            "phone_speaker": "silent",
-            "scrcpy_audio": "no-audio (unchanged)",
+            "phone_speaker": "device audio is /ws/audio (separate from assistant TTS)",
+            "scrcpy_audio": "opus on /ws/audio when the emulator is not -no-audio",
         },
     }
 
@@ -1084,6 +1085,70 @@ async def ws_live(ws: WebSocket):
         pass
     finally:
         await live_hub.unregister(ws)
+
+
+@app.websocket("/ws/audio")
+async def ws_audio(ws: WebSocket):
+    """Cloud-phone audio for the laptop/phone speakers. Video stays on /ws/h264."""
+    await ws.accept()
+    broker = adb.audio
+    if not broker.enabled:
+        await ws.send_json({"type": "audio", "available": False, "reason": "DEVICE_AUDIO=0"})
+        await ws.close(code=1013, reason="audio disabled")
+        return
+    stop = asyncio.Event()
+
+    async def reader() -> None:
+        try:
+            while not stop.is_set():
+                msg = await ws.receive()
+                if msg.get("type") == "websocket.disconnect":
+                    stop.set()
+        except Exception:  # noqa: BLE001
+            stop.set()
+
+    tasks = [asyncio.create_task(reader())]
+    try:
+        async with broker.subscribe() as queue:
+            await ws.send_json({"type": "hello", "service": "audio", **broker.stats()})
+            while not stop.is_set():
+                getter = asyncio.create_task(queue.get())
+                stop_wait = asyncio.create_task(stop.wait())
+                done, _ = await asyncio.wait(
+                    {getter, stop_wait}, timeout=20.0, return_when=asyncio.FIRST_COMPLETED
+                )
+                if getter not in done:
+                    getter.cancel()
+                    stop_wait.cancel()
+                    if stop.is_set():
+                        break
+                    await ws.send_json({"type": "ping", "t": time.time(), **broker.stats()})
+                    continue
+                stop_wait.cancel()
+                item = getter.result()
+                if isinstance(item, dict):
+                    await ws.send_json(item)
+                else:
+                    await ws.send_bytes(item)
+    except RuntimeError as exc:
+        with contextlib.suppress(Exception):
+            await ws.send_json({"type": "audio", "available": False, "reason": str(exc)})
+            await ws.close(code=1013, reason=str(exc)[:100])
+    except WebSocketDisconnect:
+        pass
+    except Exception:  # noqa: BLE001
+        pass
+    finally:
+        stop.set()
+        for task in tasks:
+            task.cancel()
+        with contextlib.suppress(Exception):
+            await ws.close()
+
+
+@app.on_event("startup")
+async def _warm_input() -> None:
+    asyncio.create_task(adb.warm_input())
 
 
 @app.on_event("shutdown")

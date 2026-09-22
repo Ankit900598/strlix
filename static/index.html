@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Strlix — Cloud Phone</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -661,14 +661,57 @@
       border-radius: 0;
       touch-action: none;
     }
+    html.embed .device-wrap {
+      width: 100vw;
+      height: 100dvh;
+      padding: 0 !important;
+    }
     html.embed .nav-rail-zone {
-      opacity: 0.92;
+      display: none !important;
     }
     html.embed #touchLayer {
       touch-action: none;
       -webkit-user-select: none;
       user-select: none;
+      cursor: default;
     }
+    html.embed .audio-btn {
+      top: calc(10px + env(safe-area-inset-top, 0px));
+      right: calc(10px + env(safe-area-inset-right, 0px));
+    }
+    .audio-btn {
+      position: absolute;
+      top: 36px;
+      right: 10px;
+      z-index: 12;
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      border: 0;
+      background: rgba(15, 15, 15, 0.72);
+      color: #fff;
+      font: inherit;
+      font-size: 14px;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+    }
+    .audio-btn[data-state="live"] { background: rgba(62, 166, 255, 0.9); color: #0f0f0f; }
+    .audio-btn[data-state="blocked"] { background: rgba(240, 113, 120, 0.85); }
+    .audio-note {
+      position: absolute;
+      top: 44px;
+      left: 10px;
+      right: 52px;
+      z-index: 12;
+      pointer-events: none;
+      font-size: 11px;
+      line-height: 1.35;
+      color: rgba(255,255,255,0.86);
+      background: rgba(0,0,0,0.55);
+      border-radius: 8px;
+      padding: 6px 8px;
+    }
+    html.embed .audio-note { top: calc(52px + env(safe-area-inset-top, 0px)); }
   </style>
 </head>
 <body>
@@ -705,6 +748,8 @@
           </div>
         </div>
         <div id="touchLayer" role="application" tabindex="0" aria-label="Phone screen — tap, swipe, paste, or drop to control"></div>
+        <button type="button" id="audioBtn" class="audio-btn" data-state="off" aria-pressed="false" title="Play cloud-phone sound on this device">🔊</button>
+        <div id="audioNote" class="audio-note" hidden></div>
         <div id="continuityDrop" aria-hidden="true">
           <div class="continuity-card">
             <span class="continuity-mark" aria-hidden="true">↓</span>
@@ -889,7 +934,10 @@
         _lbl.textContent = transport === 'h264' ? ' Live · H.264' : ' Live';
       }
       if (tapHint && firstFrameAt) tapHint.style.display = 'none';
-      if (!firstFrameAt) firstFrameAt = Date.now();
+      if (!firstFrameAt) {
+        firstFrameAt = Date.now();
+        notifyHost('strlix-first-frame');
+      }
       document.getElementById('adbDot').className = 'dot ok';
       document.getElementById('adbLabel').textContent = 'Phone on';
       if (label) shotStamp.textContent = label;
@@ -1515,20 +1563,21 @@
     function sendInput(url, body, label, replayEvent = null) {
       const t0 = performance.now();
       lastInputAt = t0;
-      if (replayEvent) {
-        // The first thumbnail is what the user saw before the input; these
-        // delayed refreshes become the per-tap confirmation frame.
-        setTimeout(() => replayRefreshEvent(replayEvent), 300);
-        setTimeout(() => replayRefreshEvent(replayEvent), 850);
-      }
-      // Optimistic: wake the producer immediately so the opened app appears ASAP.
-      nudgeStream();
-      fetch(url, {
+      // The POST leaves before replay bookkeeping. Tap latency is this RTT
+      // plus adb, not the health-check RTT on the market page.
+      const pending = fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
         keepalive: true,
-      }).then((r) => {
+        priority: 'high',
+      });
+      nudgeStream();
+      if (replayEvent) {
+        setTimeout(() => replayRefreshEvent(replayEvent), 300);
+        setTimeout(() => replayRefreshEvent(replayEvent), 850);
+      }
+      pending.then((r) => {
         const ms = Math.round(performance.now() - t0);
         if (!r.ok) { shotStamp.textContent = label + ' ✗ ' + r.status; return; }
         shotStamp.textContent = label + ' · ' + ms + 'ms';
@@ -1548,9 +1597,13 @@
     function onPtrCancel(ev) {
       if (ptrDown && ptrDown.id === ev.pointerId) ptrDown = null;
     }
-    touchLayer.addEventListener('pointerdown', onPtrDown);
-    touchLayer.addEventListener('pointerup', onPtrUp);
+    touchLayer.addEventListener('pointerdown', (ev) => { ensureDeviceAudio(); onPtrDown(ev); }, { passive: false });
+    touchLayer.addEventListener('pointerup', onPtrUp, { passive: false });
     touchLayer.addEventListener('pointercancel', onPtrCancel);
+    // Kill the legacy 300ms tap delay and scroll chaining. Pointer events
+    // still deliver the gesture; this only stops the browser from waiting.
+    touchLayer.addEventListener('touchstart', (ev) => { ev.preventDefault(); }, { passive: false });
+    touchLayer.addEventListener('touchmove', (ev) => { ev.preventDefault(); }, { passive: false });
     touchLayer.addEventListener('dragstart', (e) => e.preventDefault());
     touchLayer.addEventListener('contextmenu', (e) => e.preventDefault());
 
@@ -1674,6 +1727,247 @@
       const event = replayRecordInput('Pressed ' + keycode.toLowerCase(), 'key', { keycode });
       sendInput('/adb/key', { keycode }, keycode.toLowerCase(), event);
     });
+
+    function notifyHost(type, extra) {
+      if (window.parent === window) return;
+      try {
+        window.parent.postMessage(Object.assign({ type: type, source: 'strlix-viewer' }, extra || {}), '*');
+      } catch (_) {}
+    }
+
+    // ───────────── Device audio → this device's speakers ─────────────
+    // Autoplay policy: the AudioContext resumes on the first tap or on the
+    // speaker button. The stream itself is video-only; sound is /ws/audio.
+    const audioBtn = document.getElementById('audioBtn');
+    const audioNote = document.getElementById('audioNote');
+    const deviceAudio = {
+      ws: null, ctx: null, dec: null, gain: null, playAt: 0,
+      codec: null, muted: false, configured: false, blocked: '',
+    };
+
+    function setAudioNote(text) {
+      if (!audioNote) return;
+      if (!text) { audioNote.hidden = true; audioNote.textContent = ''; return; }
+      audioNote.hidden = false;
+      audioNote.textContent = text;
+    }
+    function setAudioBtn(state, title) {
+      if (!audioBtn) return;
+      audioBtn.dataset.state = state;
+      audioBtn.title = title || audioBtn.title;
+      audioBtn.setAttribute('aria-pressed', state === 'live' && !deviceAudio.muted ? 'true' : 'false');
+      audioBtn.textContent = deviceAudio.muted ? '🔇' : '🔊';
+    }
+
+    function ensureAudioContext() {
+      if (deviceAudio.ctx) return deviceAudio.ctx;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      const ctx = new AC({ latencyHint: 'interactive' });
+      const gain = ctx.createGain();
+      gain.gain.value = deviceAudio.muted ? 0 : 1;
+      gain.connect(ctx.destination);
+      deviceAudio.ctx = ctx;
+      deviceAudio.gain = gain;
+      return ctx;
+    }
+
+    function scheduleBuffer(buffer) {
+      const ctx = deviceAudio.ctx;
+      if (!ctx || !deviceAudio.gain || deviceAudio.muted) return;
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      src.connect(deviceAudio.gain);
+      const now = ctx.currentTime;
+      if (deviceAudio.playAt < now + 0.02) deviceAudio.playAt = now + 0.05;
+      if (deviceAudio.playAt > now + 0.35) deviceAudio.playAt = now + 0.05;
+      src.start(deviceAudio.playAt);
+      deviceAudio.playAt += buffer.duration;
+    }
+
+    function playPcm16(bytes) {
+      const ctx = ensureAudioContext();
+      if (!ctx) return;
+      const view = new Int16Array(bytes.buffer, bytes.byteOffset, Math.floor(bytes.byteLength / 2));
+      const channels = 2;
+      const frames = Math.floor(view.length / channels);
+      if (!frames) return;
+      const buffer = ctx.createBuffer(channels, frames, 48000);
+      for (let c = 0; c < channels; c++) {
+        const out = buffer.getChannelData(c);
+        for (let i = 0; i < frames; i++) out[i] = view[i * channels + c] / 32768;
+      }
+      scheduleBuffer(buffer);
+    }
+
+    function playAudioData(audioData) {
+      const ctx = deviceAudio.ctx;
+      if (!ctx) { audioData.close(); return; }
+      try {
+        const channels = audioData.numberOfChannels;
+        const frames = audioData.numberOfFrames;
+        const buffer = ctx.createBuffer(channels, frames, audioData.sampleRate);
+        for (let c = 0; c < channels; c++) {
+          audioData.copyTo(buffer.getChannelData(c), { planeIndex: c, format: 'f32' });
+        }
+        scheduleBuffer(buffer);
+      } catch (err) {
+        setAudioNote('Speaker decode failed: ' + (err && err.message ? err.message : err));
+        setAudioBtn('blocked', 'Audio decode failed');
+      } finally {
+        audioData.close();
+      }
+    }
+
+    function configureOpus(description) {
+      if (typeof window.AudioDecoder !== 'function') {
+        deviceAudio.blocked = 'This browser has no AudioDecoder. Chrome or Edge can play phone sound.';
+        setAudioNote(deviceAudio.blocked);
+        setAudioBtn('blocked', deviceAudio.blocked);
+        return;
+      }
+      const ctx = ensureAudioContext();
+      if (!ctx) return;
+      try { if (deviceAudio.dec) deviceAudio.dec.close(); } catch (_) {}
+      const dec = new window.AudioDecoder({
+        output: (data) => playAudioData(data),
+        error: (err) => {
+          deviceAudio.blocked = 'Opus decoder: ' + (err && err.message ? err.message : err);
+          setAudioNote(deviceAudio.blocked);
+          setAudioBtn('blocked', deviceAudio.blocked);
+        },
+      });
+      const config = { codec: 'opus', sampleRate: 48000, numberOfChannels: 2 };
+      if (description && description.byteLength) config.description = description;
+      try {
+        dec.configure(config);
+      } catch (err) {
+        if (!config.description) throw err;
+        delete config.description;
+        dec.configure(config);
+      }
+      deviceAudio.dec = dec;
+      deviceAudio.configured = true;
+      deviceAudio.codec = 'opus';
+    }
+
+    function onAudioStatus(msg) {
+      if (msg.type === 'hello' || msg.type === 'audio') {
+        if (msg.codec === 'opus' && !deviceAudio.configured) configureOpus(null);
+        if (msg.codec === 'pcm') {
+          deviceAudio.codec = 'pcm';
+          ensureAudioContext();
+        }
+        const live = msg.codec && (msg.source === 'scrcpy' || msg.source === 'pulse');
+        if (msg.source === 'error') {
+          deviceAudio.blocked = msg.reason || 'Device audio is not available yet';
+          setAudioNote(deviceAudio.blocked);
+          setAudioBtn('blocked', deviceAudio.blocked);
+        } else if (live) {
+          deviceAudio.blocked = '';
+          setAudioNote('');
+          setAudioBtn('live', 'Phone sound is on');
+        } else if (msg.reason && msg.source !== 'idle') {
+          setAudioNote(msg.reason);
+        }
+      }
+    }
+
+    function onAudioBinary(buf) {
+      if (buf.byteLength <= 16) return;
+      const dv = new DataView(buf);
+      if (dv.getUint8(0) !== 1) return;
+      const flags = dv.getUint8(1);
+      const payload = new Uint8Array(buf, 16);
+      if (deviceAudio.codec === 'pcm') {
+        playPcm16(payload);
+        setAudioBtn('live', 'Phone sound (PCM)');
+        return;
+      }
+      if (flags & 1) {
+        configureOpus(payload);
+        return;
+      }
+      if (!deviceAudio.configured) configureOpus(null);
+      const dec = deviceAudio.dec;
+      if (!dec || dec.state !== 'configured') return;
+      try {
+        dec.decode(new window.EncodedAudioChunk({
+          type: 'key',
+          timestamp: dv.getFloat64(8, true),
+          data: payload,
+        }));
+        setAudioBtn('live', 'Phone sound is on');
+        if (!deviceAudio.blocked) setAudioNote('');
+      } catch (err) {
+        setAudioNote('Could not play a sound frame.');
+      }
+    }
+
+    function connectDeviceAudio() {
+      if (deviceAudio.ws && (deviceAudio.ws.readyState === 0 || deviceAudio.ws.readyState === 1)) return;
+      const ctx = ensureAudioContext();
+      if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+      let ws;
+      try {
+        const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+        ws = new WebSocket(proto + '://' + location.host + '/ws/audio');
+      } catch (err) {
+        setAudioNote('Sound socket failed to open.');
+        setAudioBtn('blocked', 'Sound socket failed');
+        return;
+      }
+      ws.binaryType = 'arraybuffer';
+      deviceAudio.ws = ws;
+      ws.onmessage = (ev) => {
+        if (typeof ev.data === 'string') {
+          try { onAudioStatus(JSON.parse(ev.data)); } catch (_) {}
+        } else {
+          onAudioBinary(ev.data);
+        }
+      };
+      ws.onerror = () => {};
+      ws.onclose = () => {
+        deviceAudio.ws = null;
+        if (!deviceAudio.muted && !deviceAudio.blocked) {
+          setAudioBtn('off', 'Sound disconnected — tap to retry');
+        }
+      };
+    }
+
+    function ensureDeviceAudio() {
+      const ctx = ensureAudioContext();
+      if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+      if (!deviceAudio.muted) connectDeviceAudio();
+    }
+
+    if (audioBtn) {
+      audioBtn.addEventListener('pointerdown', (ev) => ev.stopPropagation());
+      audioBtn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        ev.preventDefault();
+        if (deviceAudio.blocked) {
+          deviceAudio.blocked = '';
+          deviceAudio.muted = false;
+          if (deviceAudio.gain) deviceAudio.gain.gain.value = 1;
+          if (deviceAudio.ws) { try { deviceAudio.ws.close(); } catch (_) {} deviceAudio.ws = null; }
+          setAudioNote('Retrying phone sound…');
+          ensureDeviceAudio();
+          return;
+        }
+        if (deviceAudio.muted || !deviceAudio.ws) {
+          deviceAudio.muted = false;
+          if (deviceAudio.gain) deviceAudio.gain.gain.value = 1;
+          setAudioBtn('off', 'Connecting phone sound…');
+          setAudioNote('Connecting phone sound…');
+          ensureDeviceAudio();
+        } else {
+          deviceAudio.muted = true;
+          if (deviceAudio.gain) deviceAudio.gain.gain.value = 0;
+          setAudioBtn('off', 'Sound muted');
+        }
+      });
+    }
 
     // ───────────── Boot ─────────────
     refreshHealth();

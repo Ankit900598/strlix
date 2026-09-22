@@ -353,7 +353,11 @@ class H264Broker:
         self._misflushes = 0
         self._misflush_bytes = 0
         self._clean_flushes = 0
-        self.max_flush_idle = max(0.25, self.flush_idle * 8)
+        # Two quiet ticks publish one frame, so this ceiling is ~2× added
+        # latency. 96ms (was 250ms) keeps a safety margin over a ~70ms ADB
+        # stall without letting the window grow into a noticeable tap delay.
+        cap_ms = float(os.environ.get("H264_FLUSH_CAP_MS", "96"))
+        self.max_flush_idle = min(max(0.25, self.flush_idle * 8), max(self.flush_idle, cap_ms / 1000.0))
         self._unavailable = False   # screenrecord not usable on this device
 
     # ---- introspection ---------------------------------------------------
@@ -689,7 +693,9 @@ class H264Broker:
                 if gap > self._intra_gap_max:
                     self._intra_gap_max = min(MAX_INTRA_GAP_S, gap)
                 else:
-                    self._intra_gap_max *= 0.997
+                    # Decay stalls quickly so one slow read does not pin
+                    # every later frame ~2 ticks behind (touch feels late).
+                    self._intra_gap_max *= 0.96
             last_read = now
             quiet_len = -1
             buf += chunk
@@ -770,7 +776,7 @@ class H264Broker:
                     if gap > self._intra_gap_max:
                         self._intra_gap_max = min(MAX_INTRA_GAP_S, gap)
                     else:
-                        self._intra_gap_max *= 0.997
+                        self._intra_gap_max *= 0.96
                 last_read = now
                 quiet_len = -1
                 buf += chunk

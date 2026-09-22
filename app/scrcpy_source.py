@@ -78,6 +78,7 @@ class ScrcpyRawSession:
         version: str = SCRCPY_VERSION,
         codec_options: str = SCRCPY_CODEC_OPTIONS,
         scid: Optional[str] = None,
+        kind: str = "video",
     ) -> None:
         self.adb = adb
         self.max_size = max(64, int(max_size))
@@ -87,6 +88,9 @@ class ScrcpyRawSession:
         self.server_path = server_path
         self.version = version
         self.codec_options = (codec_options or "").strip()
+        # "video" is the Annex-B mirror. "audio" is a second server (opus)
+        # so device sound can reach the browser without touching the video pipe.
+        self.kind = "audio" if kind == "audio" else "video"
         # scid is parsed as hex and must fit in 31 bits; socket is scrcpy_%08x.
         self.scid = scid or f"{secrets.randbits(31):08x}"
         self.reader: Optional[asyncio.StreamReader] = None
@@ -187,15 +191,24 @@ class ScrcpyRawSession:
         await self._adb("shell", f"pkill -f 'scid={self.scid}' || true")
 
     async def _spawn_server(self) -> None:
-        # raw_stream disables dummy byte + device/frame meta → pure Annex-B.
-        opts = (
-            f"scid={self.scid} tunnel_forward=true audio=false control=false "
-            f"cleanup=false raw_stream=true max_size={self.max_size} "
-            f"video_bit_rate={self.bitrate} max_fps={self.max_fps}"
-        )
-        if self.codec_options:
-            # Commas inside the value are part of the option list; no spaces.
-            opts += f" video_codec_options={self.codec_options}"
+        if self.kind == "audio":
+            # Not raw_stream: we need the 4-byte codec id, then 12-byte packets.
+            # video=false so this socket is the audio socket (scrcpy ≥ 2.0).
+            opts = (
+                f"scid={self.scid} tunnel_forward=true video=false audio=true "
+                f"control=false cleanup=false "
+                f"audio_codec=opus audio_bit_rate={self.bitrate}"
+            )
+        else:
+            # raw_stream disables dummy byte + device/frame meta → pure Annex-B.
+            opts = (
+                f"scid={self.scid} tunnel_forward=true audio=false control=false "
+                f"cleanup=false raw_stream=true max_size={self.max_size} "
+                f"video_bit_rate={self.bitrate} max_fps={self.max_fps}"
+            )
+            if self.codec_options:
+                # Commas inside the value are part of the option list; no spaces.
+                opts += f" video_codec_options={self.codec_options}"
         args = (
             f"CLASSPATH={_REMOTE_JAR} app_process / "
             f"com.genymobile.scrcpy.Server {self.version} {opts}"
@@ -220,7 +233,12 @@ class ScrcpyRawSession:
             if chunk:
                 buf += chunk
                 low = buf.lower()
-                if b"device:" in low or b"using video encoder" in low:
+                if (
+                    b"device:" in low
+                    or b"using video encoder" in low
+                    or b"using audio encoder" in low
+                    or b"audio capture" in low
+                ):
                     return
                 if b"error" in low or b"exception" in low:
                     raise ScrcpyError(buf.decode(errors="replace")[:400])
