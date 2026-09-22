@@ -5,6 +5,14 @@
 **CloudAgent note:** new launch docs live under `demo/launch/`. Prefer editing here over duplicating into `demo/credit-burn/` mid-flight to avoid merge fights; `REMAINING.md` was updated in credit-burn as the single remaining-work ledger.
 
 
+## Update 2026-09-22 ~10:30 IST — Phase-1 Redroid stream glue
+
+- `DevicePool` labels/kind/region env-driven (`STRLIX_PILOT_DEVICE_ID` + `ADB_SERIAL`; optional `STRLIX_PILOT_KIND` / `STRLIX_STREAM_ADB`).
+- `scripts/run-pilot.sh` selects Azure tunnel vs `adb-aws-redroid.sh` from those env vars (Azure remains default).
+- Stream-host runbook: `demo/launch/GLOBAL-LAUNCH-TODAY.md` + `infra/ops/CAPACITY-PHONE-POOL.md`.
+- Catalog smoke: `scripts/smoke-catalog-redroid.sh`.
+- Multi-lease Azure+AWS still **single-env Phase-1** (no dual broker seats).
+
 ## Update 2026-09-22 ~09:55 IST — AWS Redroid in phone path
 
 - SSM ADB port-forward from box → `127.0.0.1:5556` **proven** (`boot_completed=1`, product `redroid_x86_64_only`).

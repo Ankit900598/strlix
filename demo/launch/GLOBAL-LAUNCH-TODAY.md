@@ -1,7 +1,6 @@
-# Strlix global soft launch — today
+# GLOBAL soft launch — TODAY (2026-09-22 IST)
 
-**Date:** 2026-09-22 (IST)
-**Status:** Global soft launch is open today, with the limitations below.
+**Goal:** Ship free-month market path with **real GPU phone capacity** on AWS Redroid while Azure GPU quota stays at 0. Stripe **live OFF**.
 
 ## Public launch surface
 
@@ -9,12 +8,6 @@
 - **Health:** market-api **0.6.4**; `billing_mode=free_month`; `card_required=false`.
 - **Legal:** live at https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/market/legal/
 - **Branded host:** `app.zevilabs.dev` is still **AFD Pending** / domain **SKIPPED** — stay on `*.azurefd.net`.
-
-## What “global soft launch” means today
-
-- The waitlist and free grant are open worldwide on the AFD URL above.
-- Access uses shared cloud Android capacity; this is not a dedicated private phone.
-- The first month is free. Live Stripe charging is not enabled.
 
 ## Capacity wired (AWS Redroid in phone path)
 
@@ -28,38 +21,63 @@
 | SG inbound ADB | **Closed** (SSM preferred). Never open `0.0.0.0/0` for ADB. |
 | Azure pilot fallback | `pilot-emulator-1` via `scripts/adb-tunnel.sh` → `127.0.0.1:5555` |
 
-### Operator commands
+## Stream-host runbook (AWS Redroid)
+
+Phase-1 `DevicePool` / pilot seeds **one** env device. Defaults stay Azure (`pilot-emulator-1` @ `127.0.0.1:5555`). To stream Redroid:
 
 ```bash
-# 1) Tunnel + prove
-./scripts/adb-aws-redroid.sh
-# Expect: 127.0.0.1:5556  device product:redroid_x86_64_only …  boot_completed=1
+# Terminal A — keep tunnel alive (required)
+./scripts/adb-aws-redroid.sh --watch
+# Expect once:
+#   127.0.0.1:5556  device product:redroid_x86_64_only …
+#   boot_completed=1
+#   ADB_SERIAL=127.0.0.1:5556  STRLIX_PILOT_DEVICE_ID=aws-redroid-t4-1
 
-# 2) Point pilot / android-api / session-broker at Redroid (stream host)
+# Verify anytime:
+adb devices -l
+# must show 127.0.0.1:5556 state=device
+
+# Terminal B — stream host (pilot) or session-broker
 export ADB_SERIAL=127.0.0.1:5556
 export STRLIX_PILOT_DEVICE_ID=aws-redroid-t4-1
+# optional explicit labels:
+# export STRLIX_PILOT_KIND=redroid
+# export STRLIX_STREAM_ADB=aws-redroid
 
-# 3) Azure pilot remains fallback
-./scripts/adb-tunnel.sh   # 127.0.0.1:5555 → vm-zevi-cloudphone
+./scripts/run-pilot.sh
+# or: services/session-broker/run.sh  (same env)
 ```
+
+**Azure fallback (default, unchanged):**
+
+```bash
+unset STRLIX_STREAM_ADB STRLIX_PILOT_KIND
+export STRLIX_PILOT_DEVICE_ID=pilot-emulator-1
+export ADB_SERIAL=127.0.0.1:5555
+./scripts/adb-tunnel.sh --watch   # other terminal
+./scripts/run-pilot.sh
+```
+
+Only **one** H.264 producer per serial — see `demo/scale/STREAM-OWNER.md`.
 
 ### Honest boundaries
 
 - Capacity is **Azure emulator + AWS Redroid on g4dn** (T4 guest GPU).
 - Not certified today: physical sub-100 ms latency, counsel review, iOS, live Stripe, or Azure GPU.
 - Phase-1 `DevicePool` seeds **one** env device — set `STRLIX_PILOT_DEVICE_ID` + `ADB_SERIAL` to stream Redroid; keep tunnel with `./scripts/adb-aws-redroid.sh --watch`.
+- Multi-lease Azure+AWS simultaneously is **not** built (single-env Phase-1).
 - Idle AWS cost ≈ **$0.526/hr** — stop (do not terminate) when unused.
 
-## Docs
+## Catalog smoke
 
-- Live worker: `infra/gpu-worker/aws/WORKER-LIVE.md`
-- Pool honesty: `infra/ops/CAPACITY-PHONE-POOL.md`
-- Status snapshot: `demo/launch/SOFT-LAUNCH-STATUS.md`
+```bash
+./scripts/smoke-catalog-redroid.sh
+# expects aws-redroid-t4-1 available=true on AFD /v1/devices
+```
 
 ## Smoke curls
 
 ```bash
-# Public market entry point: expect HTTP 200.
 curl -sS -o /dev/null -w '%{http_code}\n' \
   https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/market/
 
@@ -68,15 +86,26 @@ curl -sS -o /dev/null -w '%{http_code}\n' \
 curl -sS https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/health
 
 # Catalog: expect aws-redroid-t4-1 available.
-curl -sS https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/v1/devices | jq '.devices[]|select(.id=="aws-redroid-t4-1")'
+curl -sS https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/v1/devices \
+  | jq '.devices[]|select(.id=="aws-redroid-t4-1")'
 
 # Legal: expect HTTP 200.
 curl -sS -o /dev/null -w '%{http_code}\n' \
   https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/market/legal/terms.html
 
-# Waitlist: expect status=joined and card_required=false.
 curl -sS -X POST \
   https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/v1/waitlist \
   -H 'Content-Type: application/json' \
   -d '{"email":"you@example.com"}'
 ```
+
+## Docs
+
+- Live worker: `infra/gpu-worker/aws/WORKER-LIVE.md`
+- Pool honesty: `infra/ops/CAPACITY-PHONE-POOL.md`
+- Status snapshot: `demo/launch/SOFT-LAUNCH-STATUS.md`
+
+## Remaining / out of scope (honest)
+
+1. Idle cost ≈ **$0.526/hr** — `aws ec2 stop-instances … i-0531c567f620877c3` (do **not** terminate).
+2. Custom domain / Stripe live / Azure GPU create / multi-lease Azure+AWS broker — **out of scope**.

@@ -1,9 +1,13 @@
-"""In-memory device pool (phase-1). Honest: 1 Azure emulator today.
+"""In-memory device pool (phase-1). Env selects which single device is seeded.
 
 Capacity model:
   devices_available ≈ N physical/cloud Android instances
   concurrent_viewers_per_device ≈ 12 (shared H.264 fan-out)
   interactive_controller_per_device = 1 (tap owner)
+
+Phase-1 honesty: DevicePool seeds **one** device from env (Azure emulator
+default, or AWS Redroid when STRLIX_PILOT_DEVICE_ID / ADB_SERIAL point there).
+It does **not** multi-lease Azure+AWS at once. Catalog SKUs ≠ broker seats.
 
 100k concurrent *chat* users ≠ 100k phones. Chat scales on android-api.
 Viewer sessions consume scarce devices via this broker.
@@ -38,6 +42,34 @@ class Session:
     controller: bool = True  # phase-1: lease holder is the tap owner
 
 
+def _infer_pilot_kind(device_id: str, serial: str) -> str:
+    explicit = os.environ.get("STRLIX_PILOT_KIND", "").strip().lower()
+    if explicit:
+        return explicit
+    did = device_id.lower()
+    if "redroid" in did or serial.endswith(":5556"):
+        return "redroid"
+    return "emulator"
+
+
+def _infer_pilot_host(kind: str) -> str:
+    explicit = os.environ.get("STRLIX_PILOT_HOST", "").strip()
+    if explicit:
+        return explicit
+    if kind == "redroid":
+        return "strlix-gpu-worker-1"
+    return "vm-zevi-cloudphone"
+
+
+def _infer_pilot_region(kind: str) -> str:
+    explicit = os.environ.get("STRLIX_REGION", "").strip()
+    if explicit:
+        return explicit
+    if kind == "redroid":
+        return "us-east-1"
+    return "eastus2"
+
+
 class DevicePool:
     def __init__(self) -> None:
         self.devices: dict[str, Device] = {}
@@ -47,13 +79,16 @@ class DevicePool:
     def _seed_pilot(self) -> None:
         serial = os.environ.get("ADB_SERIAL", "127.0.0.1:5555")
         did = os.environ.get("STRLIX_PILOT_DEVICE_ID", "pilot-emulator-1")
+        kind = _infer_pilot_kind(did, serial)
+        host = _infer_pilot_host(kind)
+        region = _infer_pilot_region(kind)
         self.devices[did] = Device(
             device_id=did,
             adb_serial=serial,
-            region=os.environ.get("STRLIX_REGION", "eastus2"),
+            region=region,
             capacity_viewers=int(os.environ.get("MAX_STREAM_CLIENTS", "12")),
             status="ready",
-            labels={"tier": "pilot", "kind": "emulator"},
+            labels={"tier": "pilot", "kind": kind, "host": host},
         )
 
     def list_devices(self) -> list[dict]:
@@ -141,14 +176,21 @@ class DevicePool:
         leased = sum(1 for d in self.devices.values() if d.status == "leased")
         sessions = len(self.sessions)
         viewer_slots = sum(d.capacity_viewers for d in self.devices.values())
+        seeded = next(iter(self.devices.values()), None)
+        kind = (seeded.labels or {}).get("kind", "emulator") if seeded else "unknown"
         return {
             "devices_total": total,
             "devices_ready": ready,
             "devices_leased": leased,
             "active_sessions": sessions,
             "viewer_slots_total": viewer_slots,
+            "seeded_device_id": seeded.device_id if seeded else None,
+            "seeded_kind": kind,
             "honest_note": (
-                "Phase-1 pool has 1 Azure emulator. "
+                f"Phase-1 pool seeds 1 device from env (kind={kind}). "
+                "Azure emulator default; set STRLIX_PILOT_DEVICE_ID=aws-redroid-t4-1 "
+                "and ADB_SERIAL=127.0.0.1:5556 for AWS Redroid. "
+                "Not multi-lease Azure+AWS simultaneously. "
                 "Billion-user chat scales on android-api; "
                 "viewer concurrency scales only with device count × viewers/device."
             ),

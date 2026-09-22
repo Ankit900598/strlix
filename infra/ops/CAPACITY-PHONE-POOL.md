@@ -56,6 +56,37 @@ Do **not** open SG `0.0.0.0/0` for ADB. Redroid publishes `127.0.0.1:5556` on th
 4. `ca-redis` scaled to min replicas 0 is the old sidecar. It is not the phone pool. Do not delete it from this runbook.
 5. Idle AWS cost: `aws ec2 stop-instances --region us-east-1 --instance-ids i-0531c567f620877c3` (keeps EBS; public IP changes on start).
 
+## Multi-lease Azure+AWS (honest Phase-1)
+
+**Not built.** Reachable capacity is two Androids, but `DevicePool` still seeds **one** device from env. Switching Azure ↔ Redroid is an **operator env flip** on the stream host (`STRLIX_PILOT_DEVICE_ID` + `ADB_SERIAL` + matching tunnel), not simultaneous multi-lease.
+
+Do not treat catalog `available: true` on both SKUs as two concurrent broker seats. A full multi-device pool (Postgres catalog → broker) is future work.
+
+## Stream-host runbook (exact)
+
+```bash
+# --- AWS Redroid (preferred soft-launch GPU) ---
+# Keep tunnel up in a dedicated terminal:
+./scripts/adb-aws-redroid.sh --watch
+
+# Verify:
+adb devices -l
+# expect: 127.0.0.1:5556  device …
+
+export ADB_SERIAL=127.0.0.1:5556
+export STRLIX_PILOT_DEVICE_ID=aws-redroid-t4-1
+./scripts/run-pilot.sh
+# session-broker uses the same env vars if you run services/session-broker/run.sh
+
+# --- Azure emulator (default) ---
+./scripts/adb-tunnel.sh --watch
+export ADB_SERIAL=127.0.0.1:5555
+export STRLIX_PILOT_DEVICE_ID=pilot-emulator-1
+./scripts/run-pilot.sh
+```
+
+Catalog check (AFD): `./scripts/smoke-catalog-redroid.sh`
+
 ## Free-month abuse
 
 market-api will not stack a second active free lease for the same user and device. Rate limits in `infra/hardening/ABUSE-CONTROLS.md` still apply. The free month does not add phones.

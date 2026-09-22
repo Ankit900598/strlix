@@ -41,3 +41,11 @@ If both pilot and desktop-api report `h264.running=true` on the same `ADB_SERIAL
 - APK chat owner: **android-api :8788** (verified).
 - Prefer keeping **pilot :8787** as the sole stream producer until desktop-api viewer cutover.
 - desktop-api :8789 may be up for health/bind tests — **do not open `/ws/h264`** against the same serial while pilot is streaming.
+
+## Soft-launch Redroid serial (2026-09-22 IST)
+
+- AWS Redroid ADB (after SSM): `127.0.0.1:5556` — `scripts/adb-aws-redroid.sh --watch`
+- Env on stream host: `ADB_SERIAL=127.0.0.1:5556` · `STRLIX_PILOT_DEVICE_ID=aws-redroid-t4-1`
+- Azure emulator remains `127.0.0.1:5555` / `pilot-emulator-1` (default)
+- Still one producer per serial — do not open pilot + desktop-api `/ws/h264` on the same serial
+
