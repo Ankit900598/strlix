@@ -39,4 +39,4 @@ Live Stripe is deferred. A half-configured live mode returns 503 from checkout a
 
 Say what is true: one emulator, free month, no card, assistant role not granted. Don't promise a physical device or a restored latency number you have not measured.
 
-Contact placeholder: `support@strlix.app` until `SUPPORT_EMAIL` is a domain Ankit owns.
+Contact: the address from `GET /v1/launch`. Default `support@strlix.app` — the mailbox is being set up while `support_email_placeholder` is true.

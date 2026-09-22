@@ -129,16 +129,16 @@ def public_status() -> dict[str, Any]:
         "support_email": email,
         "support_email_placeholder": placeholder,
         "support_note": (
-            "Placeholder address until a custom domain is attached."
+            "The support mailbox is being set up."
             if placeholder
             else "Configured support address."
         ),
         "invite_required": invite_required(),
         "legal": {
-            "terms": "/legal/terms.html",
-            "privacy": "/legal/privacy.html",
-            "support": "/legal/support.html",
-            "capabilities": "/legal/capabilities.html",
+            "terms": "/market/legal/terms.html",
+            "privacy": "/market/legal/privacy.html",
+            "support": "/market/legal/support.html",
+            "capabilities": "/market/legal/capabilities.html",
         },
     }
 

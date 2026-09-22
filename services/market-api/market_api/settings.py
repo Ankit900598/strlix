@@ -52,7 +52,9 @@ class Settings(BaseSettings):
     free_month_days: int = 30
     invite_codes: str = ""  # comma-separated; empty = open signup
     support_email: str = "support@strlix.app"
-    # True until Ankit attaches a domain he owns. Legal pages say so.
+    # True until the mailbox is monitored. Static legal pages say so;
+    # they do not read this flag. Set false only after the inbox is live,
+    # and edit static/legal plus web-market/legal in the same change.
     support_email_placeholder: bool = True
 
     # Auth. Default anon keeps /v1/auth/anon and phone-first demos working.

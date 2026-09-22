@@ -12,7 +12,7 @@ Updated 21 September 2026.
 - [x] **Stripe stays test-gated.** `pay_mode=test`. Live calls still need `STRLIX_PAY_MODE=live` AND `PAYMENTS_LIVE=true` AND `STRLIX_ALLOW_LIVE_CHARGES=true`. Those stay off. Checkout is not required to open a phone.
 - [x] **Copy.** Phone chrome and the catalog say "Free for your first month — no card required."
 - [x] **Entra is implemented and off.** `STRLIX_AUTH_MODE=anon|entra`, default `anon`. Portal steps and env vars: `infra/hardening/ENTRA-EXTERNAL-ID.md`.
-- [x] **Legal pages.** Terms, Privacy, Support, and what Strlix can/can't do in `static/legal/`. Served at `/static/legal/*` (phone host) and `/legal/*` (market-api). Placeholder company name and `support@strlix.app` are marked on the pages.
+- [x] **Legal pages.** Terms, Privacy, Support, and what Strlix can/can't do. Canonical HTML is `static/legal/`; the same bytes are in `web-market/legal/`. Public Front Door URLs are `/market/legal/*.html` (already inside `/market/*`). The phone host still serves `/static/legal/*`. Direct `/legal/*` remains a market-api mount when `static/legal` is on disk; the container image does not copy `static/`, so the live path is `/market/legal/`. The pages name Strlix and the configurable support address. They do not name a registered company. The banner is a soft-launch notice, not a counsel sign-off. Default `support@strlix.app`: the mailbox is being set up.
 - [x] **Abuse controls documented and tightened.** Anon / login / waitlist limits, Redis fail-closed. WAF script does not match `/health`. See `infra/hardening/ABUSE-CONTROLS.md`.
 - [x] **Custom domain script.** Dry-run unless `DOMAIN` is set. `infra/hardening/CUSTOM-DOMAIN.md`.
 - [x] **Private Redis runbook.** Public access stays on. Disable only with `--apply` and `CONFIRM=yes`, and only after a CAE VNet exists. `infra/hardening/PRIVATE-REDIS.md`.
@@ -22,14 +22,14 @@ Postgres waitlist needs `services/market-api/migrations/006_free_month.sql` appl
 
 ## Needs Ankit (external blockers — do not fake these)
 
-- [ ] **Domain DNS.** Own a zone, then `DOMAIN=app.strlix.app ./infra/hardening/ATTACH-CUSTOM-DOMAIN.sh --apply` and create the CNAME + `_dnsauth` TXT. `app.strlix.app` / `support@strlix.app` are placeholders until then. Set `STRLIX_SUPPORT_EMAIL_PLACEHOLDER=false` only after the mailbox exists, and edit the static legal banner in the same change.
-- [ ] **AFD route for legal pages.** `./infra/hardening/EXTEND-AFD-ROUTES.sh --apply` so `/legal/*` is on `route-market`. Re-check `/health` is still 200. The phone viewer is desktop-api and is not on this Front Door.
+- [ ] **Domain DNS.** Own a zone, then `DOMAIN=app.strlix.app ./infra/hardening/ATTACH-CUSTOM-DOMAIN.sh --apply` and create the CNAME + `_dnsauth` TXT. `app.strlix.app` is not a hostname this repo controls. `support@strlix.app` stays a default until the mailbox is monitored. Set `STRLIX_SUPPORT_EMAIL_PLACEHOLDER=false` only after that inbox is live, and edit `static/legal/` and `web-market/legal/` in the same change.
+- [x] **Public legal URLs need no new Front Door pattern.** `/market/legal/*.html` is already matched by `/market/*` on `route-market`. Do not run `EXTEND-AFD-ROUTES.sh --apply` for this soft launch. That script only adds a direct `/legal/*` alias and was not applied. The phone viewer is desktop-api and is not an origin on this Front Door. A new market-api image is required before the live host shows the rewritten pages; this change does not deploy one.
 - [ ] **Entra portal.** Create the app registration (workforce or External ID), optional claims for email, Key Vault secret if you mint a client secret. Keep `STRLIX_AUTH_MODE=anon` for demos. Steps: `infra/hardening/ENTRA-EXTERNAL-ID.md`.
 - [ ] **Apply migration 006** on `psql-zevi-strlix` (centralus) before relying on the production waitlist.
 - [ ] **GPU quota.** Azure ticket **2609210040005251**. AWS Case **179000526000600** / request `ab584e62c7f748b8908dd6e1e61c01bamRtt8Z1K`. Do not create a GPU VM while the limit is 0.
 - [ ] **Physical phone.** Sub-100 ms is not certified. The live pool is one emulator (`pilot-emulator-1`). Emulator numbers do not count.
 - [ ] **iOS signing.** No App Store credentials in this repo. There is no iOS ship in this launch.
-- [ ] **Counsel pass** on `static/legal/*` before a wide (not soft) public launch. The pages say they are placeholders.
+- [ ] **Independent legal review** before a wide commercial launch. The soft-launch pages are an operator draft. They are not a substitute for legal advice and they do not claim a counsel sign-off or a registered company.
 - [ ] **WAF apply (optional).** `./infra/hardening/TIGHTEN-WAF.sh --apply`, then curl `/health`. Skip if you have not reviewed the rules.
 - [ ] **Alerts apply (optional).** `CONFIRM=yes SUPPORT_EMAIL=<real mailbox> ./infra/ops/CREATE-ALERTS.sh --apply`. Confirm metric names in the portal first.
 - [ ] **Private Redis.** Only after `cae-zevi-strlix` has a VNet. It does not today, and this checklist does not recreate that environment. Public Redis stays Enabled. `CONFIRM=yes` is required to disable public access and should not be used yet.

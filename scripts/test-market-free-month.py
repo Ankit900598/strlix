@@ -42,7 +42,45 @@ with tempfile.NamedTemporaryFile(prefix="strlix-free-", suffix=".db") as db_file
     assert "no card required" in launch["copy"].lower()
     assert launch["pay_required_for_session"] is False
     assert launch["support_email_placeholder"] is True
+    assert "mailbox is being set up" in launch["support_note"].lower()
     assert launch["invite_required"] is False
+    assert launch["legal"] == {
+        "terms": "/market/legal/terms.html",
+        "privacy": "/market/legal/privacy.html",
+        "support": "/market/legal/support.html",
+        "capabilities": "/market/legal/capabilities.html",
+    }
+
+    static_legal = REPO / "static" / "legal"
+    market_legal = REPO / "web-market" / "legal"
+    for name in ("terms.html", "privacy.html", "support.html", "capabilities.html", "legal.css"):
+        assert (static_legal / name).read_bytes() == (market_legal / name).read_bytes(), name
+
+    banner = "Soft-launch terms — not a substitute for independent legal advice."
+    for name in ("terms.html", "privacy.html", "support.html", "capabilities.html"):
+        for prefix in ("/market/legal/", "/legal/"):
+            page = client.get(prefix + name)
+            assert page.status_code == 200, (prefix + name, page.status_code)
+            assert banner in page.text
+        text = (static_legal / name).read_text()
+        assert "counsel passed" not in text.lower()
+        assert "registered office" not in text.lower() or "do not name a registered" in text.lower()
+    terms = (static_legal / "terms.html").read_text()
+    privacy = (static_legal / "privacy.html").read_text()
+    support = (static_legal / "support.html").read_text()
+    caps = (static_legal / "capabilities.html").read_text()
+    assert "not a device reserved for you alone" in terms
+    assert "about one hour" in terms
+    assert "not a warranty that any particular use is legal" in terms
+    assert "can be wrong" in terms.lower() or "can be mistaken" in terms
+    assert "POST /v1/privacy/soft-delete" in privacy
+    assert "POST /v1/privacy/hard-delete" in privacy
+    assert "Redis" in privacy and "Postgres" in privacy and "Azure" in privacy
+    assert "mailbox is being set up" in support
+    assert "SUPPORT_EMAIL" in support
+    assert "ROLE_ASSISTANT" in caps and "not claimed" in caps
+    assert "Sub-100" in caps
+    assert "No illegal-use warranty" in caps
 
     joined = client.post("/v1/waitlist", json={"email": "launch@example.com"})
     assert joined.status_code == 200, joined.text

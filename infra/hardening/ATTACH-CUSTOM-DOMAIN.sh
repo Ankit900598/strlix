@@ -71,7 +71,7 @@ run az afd route update -g "$RG" --profile-name "$PROFILE" --endpoint-name "$END
   --link-to-default-domain Enabled
 
 echo
-echo "Legal pages are served by market-api at /legal/*. Extend the route patterns"
-echo "with infra/hardening/EXTEND-AFD-ROUTES.sh so the custom host can reach them."
+echo "Legal pages on this Front Door are /market/legal/*.html (already inside /market/*)."
+echo "Do not run EXTEND-AFD-ROUTES.sh --apply unless you want a separate /legal/* alias."
 echo "The phone viewer itself is desktop-api and is not an origin on this Front Door."
 [[ "$APPLY" -eq 0 ]] && echo "Dry-run only."

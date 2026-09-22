@@ -16,7 +16,7 @@
 | `TIGHTEN-WAF.sh` | Custom rate-limit rules; never matches `/health` | dry-run |
 | `ATTACH-CUSTOM-DOMAIN.sh` | Managed cert on `strlix-edge` when `DOMAIN` is set | dry-run; `--apply` needs `DOMAIN` |
 | `CUSTOM-DOMAIN.md` | DNS CNAME + TXT runbook | doc; domain not owned here |
-| `EXTEND-AFD-ROUTES.sh` | Add `/legal/*` to `route-market` | dry-run |
+| `EXTEND-AFD-ROUTES.sh` | Optional `/legal/*` alias. Public pages are already `/market/legal/*` | dry-run; do not apply for this soft launch |
 | `PRIVATE-REDIS-PATH.sh` | CAE↔eastus path; public access off only with `CONFIRM=yes` | dry-run; no-ops without CAE VNet |
 | `PRIVATE-REDIS.md` | Why public Redis stays Enabled | doc |
 

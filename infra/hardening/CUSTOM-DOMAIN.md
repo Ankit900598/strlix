@@ -29,15 +29,12 @@ The managed certificate stays pending until both records validate. Leave the `*.
 
 ## Routes
 
-Today `route-market` matches `/v1/*`, `/market/*`, `/health`, `/ready`. Legal pages need `/legal/*`:
+Today `route-market` matches `/v1/*`, `/market/*`, `/health`, `/ready` (the bicep skeleton also lists `/docs` and `/openapi.json`). Public legal pages are `/market/legal/*.html`, which `/market/*` already matches. Do not apply a new pattern for the soft launch.
 
-```bash
-./infra/hardening/EXTEND-AFD-ROUTES.sh
-./infra/hardening/EXTEND-AFD-ROUTES.sh --apply
-```
+`infra/hardening/EXTEND-AFD-ROUTES.sh` only adds a direct `/legal/*` alias. It is optional and was not applied. market-api still mounts `static/legal` at `/legal` when that directory is on disk. The market-api image copies `web-market/`, not `static/`, so the path that works on Front Door is `/market/legal/`.
 
-The phone-first viewer is served by desktop-api (`/` and `/static/legal/*`). It is not an origin on this Front Door. Linking a custom domain to AFD does not by itself put the phone UI on that host.
+The phone-first viewer is served by desktop-api (`/` and `/static/legal/*`). It is not an origin on this Front Door. Linking a custom domain to AFD does not by itself put the phone UI on that host. `static/legal/` and `web-market/legal/` are the same bytes.
 
 ## Support email
 
-Static legal pages say `support@strlix.app` and mark it as a placeholder. When the domain is real, set `SUPPORT_EMAIL` / `STRLIX_SUPPORT_EMAIL` on `ca-market-api` and `STRLIX_SUPPORT_EMAIL_PLACEHOLDER=false`. The static HTML does not read that env; update the banner in `static/legal/` in the same change.
+The default address on the static pages is `support@strlix.app`. While `STRLIX_SUPPORT_EMAIL_PLACEHOLDER` is true, the pages say that mailbox is being set up. `GET /v1/launch` returns the configured address (`SUPPORT_EMAIL` or `STRLIX_SUPPORT_EMAIL`). The HTML does not read that env. When the inbox is monitored, set `STRLIX_SUPPORT_EMAIL_PLACEHOLDER=false` and edit `static/legal/` and `web-market/legal/` in the same change.
