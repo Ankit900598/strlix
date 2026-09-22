@@ -15,42 +15,52 @@ A phone browser on Azure Front Door cannot reach `127.0.0.1` on the operator lap
 
 ## Same-origin config (this PR)
 
-`window.STRLIX_MARKET` now uses:
+`window.STRLIX_MARKET` ships:
 
 | Key | Value | Meaning |
 |-----|--------|---------|
 | `marketApi` | `""` | `fetch("/v1/…")` on the AFD host |
-| `streamUrl` | `"/stream"` | iframe ` /stream/?embed=1 ` |
-| `streamFallback` | `"/stream"` | same until a second origin exists |
+| `streamUrl` | Cloudflare HTTPS **or** `"/stream"` | iframe the interim tunnel, or same-origin once AFD `/stream` exists |
+| `streamFallback` | `""` | reuse `streamUrl` |
 
-Safety net in `js/market.js`: if the page is not on loopback but config still points at `127.0.0.1`, it forces same-origin defaults. Local overrides: `?api=` / `?stream=`.
+**Current default** (AFD `/stream` is still 404):
 
-`market-api` grant payloads default `stream_url` / `stream_fallback` to `/stream` (version **0.6.5**).
-
-## Deploy static market + API
-
-Market UI is served from the **market-api** image (`StaticFiles` at `/market`).
-
-```bash
-# from repo root
-docker build -f services/market-api/Dockerfile -t market-api:0.6.5 .
-az acr login -n acrzevistrlix
-docker tag market-api:0.6.5 acrzevistrlix.azurecr.io/market-api:0.6.5
-docker push acrzevistrlix.azurecr.io/market-api:0.6.5
-az containerapp update -g rg-zevi-cloudphone -n ca-market-api \
-  --image acrzevistrlix.azurecr.io/market-api:0.6.5
+```js
+streamUrl: "https://graduation-cope-elementary-defence.trycloudflare.com"
 ```
 
-Optional env on the Container App (relative paths are fine):
+Switch the string to `"/stream"` only after `ATTACH-AFD-STREAM.sh --apply` and `GET /stream/health` returns 200. JS drops `127.0.0.1` on any public host. An absolute `https://` URL is kept as-is (the iframe must not be rewritten to path-only `/stream/`).
+
+`market-api` **0.6.8** grant `stream_url` defaults to `/stream` when env is unset. The page's https `streamUrl` wins over that relative path so a grant cannot knock phones back onto a 404 or onto localhost.
+
+## Deploy static market + API — required after merge
+
+Merging this PR does **not** change production. Live `/market/` stays the old catalog UI until operators **rebuild and redeploy** the market-api image (static files are baked into the image).
+
+```bash
+# from repo root, after this PR is on main
+docker build -f services/market-api/Dockerfile -t market-api:0.6.8 .
+az acr login -n acrzevistrlix
+docker tag market-api:0.6.8 acrzevistrlix.azurecr.io/market-api:0.6.8
+docker push acrzevistrlix.azurecr.io/market-api:0.6.8
+az containerapp update -g rg-zevi-cloudphone -n ca-market-api \
+  --image acrzevistrlix.azurecr.io/market-api:0.6.8
+```
+
+Production today is **0.6.7** (same-origin API + Cloudflare `streamUrl`, old HTML). 0.6.8 is the phone-first UI. Do not roll the stream URL back to `127.0.0.1`.
+
+Optional env on the Container App:
 
 ```text
-STRLIX_STREAM_URL=/stream
-STRLIX_STREAM_FALLBACK=/stream
+STRLIX_STREAM_URL=https://graduation-cope-elementary-defence.trycloudflare.com
+STRLIX_STREAM_FALLBACK=
 STRLIX_BILLING_MODE=free_month
 STRLIX_PAY_MODE=test
 PAYMENTS_LIVE=false
 STRLIX_ALLOW_LIVE_CHARGES=false
 ```
+
+When AFD `/stream` is healthy, set `STRLIX_STREAM_URL=/stream` and the same in `index.html`, then redeploy again.
 
 Stripe **live stays OFF**.
 
@@ -107,10 +117,10 @@ export ADB_SERIAL=127.0.0.1:5556
 On a **physical** phone browser (not desktop DevTools device mode):
 
 1. Open `https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/market/`
-2. View source / DevTools: `STRLIX_MARKET.marketApi` is `""`, `streamUrl` is `"/stream"` — **no** `127.0.0.1`
+2. View source: `marketApi` is `""`. `streamUrl` is the https tunnel **or** `/stream`. **No** `127.0.0.1`
 3. Catalog loads (same-origin `GET /v1/devices`)
 4. Tap the hero phone → immersive bezel opens
-5. Stream iframe URL is same-host `/stream/?embed=1` (after AFD attach)
+5. Stream iframe is `https://….trycloudflare.com/?embed=1` today, or `/stream/?embed=1` after AFD attach
 6. Touch taps move the cloud phone; no mixed-content warnings
 7. Ask stays **inside** the phone chrome (embed viewer), not a giant external chat panel
 8. Free-month grant still works; Stripe live still off (`GET /v1/launch`)

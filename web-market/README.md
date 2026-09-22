@@ -9,15 +9,16 @@ Config is **same-origin** — never `127.0.0.1` on the public AFD host:
 ```js
 window.STRLIX_MARKET = {
   marketApi: "",          // → /v1/*
-  streamUrl: "/stream",   // → attach desktop-api (DEPLOY.md)
-  streamFallback: "/stream",
+  // Interim HTTPS tunnel (AFD /stream still 404). Or "/stream" after AFD attach.
+  streamUrl: "https://graduation-cope-elementary-defence.trycloudflare.com",
+  streamFallback: "",
   payMode: "test",
   billingMode: "free_month",
   freeLaunch: true
 };
 ```
 
-Operator runbook: **[DEPLOY.md](./DEPLOY.md)** (push market-api image, AFD `/stream` attach, mobile checklist).
+**Merge does not update production.** Redeploy market-api **0.6.8** (see [DEPLOY.md](./DEPLOY.md)) or `/market/` keeps the old catalog UI.
 
 ## Open locally
 

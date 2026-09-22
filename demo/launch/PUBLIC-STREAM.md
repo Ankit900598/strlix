@@ -12,7 +12,7 @@ Make Strlix cloud-phone **stream** reachable from a real phone browser via HTTPS
 | pilot monolith (legacy) | agent box historically `:8787` | not used for phone path | cloudflared-to-8787 on box is dead (`Tunnel not found`) |
 | box desktop-api | agent box `:8789` | local/dev only | ADB via SSH tunnel to VM `:5555` |
 | AWS Redroid GPU worker | `i-0531c567f620877c3` (g4dn) | ADB via SSM → `127.0.0.1:5556` | **kept running** for demos; not wired into this public viewer path yet |
-| market-api + `/market/` static | Container App `ca-market-api` behind AFD | `/market/*`, `/v1/*`, `/health` | image **0.6.7** |
+| market-api + `/market/` static | Container App `ca-market-api` behind AFD | `/market/*`, `/v1/*`, `/health` | image **0.6.7** (old catalog UI). Phone-first UI is market-api **0.6.8** — **redeploy the image after merge** or `/market/` stays 0.6.7. |
 
 ADB is **not** opened to `0.0.0.0/0` for the phone path (emulator stays on VM loopback / SSH tunnel). Port **8789** is the HTTP viewer API only.
 
