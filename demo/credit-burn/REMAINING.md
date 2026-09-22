@@ -1,35 +1,28 @@
 # Remaining work — soft-launch ledger
 
-**Updated:** 2026-09-22 ~09:12 IST  
+**Updated:** 2026-09-22 ~09:20 IST
 **Billing:** first month **FREE**. Keep `pay_mode=test` and live-charge gates OFF until after the free period.
 
-Free-month path (flag, waitlist, no-card grant, legal pages, Entra-ready auth defaulting to anon) is live. Split of done vs blocked vs deferred: `demo/launch/LAUNCH-CHECKLIST.md`.  
-Ops notes: `../launch/OPS-ALERTS.md`, `../launch/PRIVATE-REDIS-PATH.md`, `../launch/SOFT-LAUNCH-STATUS.md`.
+The AFD soft-launch route is `https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/market/`; legal is under `/market/legal/`. The free-month path and Entra app are ready; `STRLIX_AUTH_MODE=anon` remains the demo default. See `demo/launch/LAUNCH-CHECKLIST.md` and `demo/launch/SOFT-LAUNCH-READY.md`.
 
-## Remaining list (Needs Ankit / external)
+## Needs Ankit / external
 
-1. **Domain DNS + TLS on AFD** — still on `strlix-edge-….azurefd.net`. Runbook: `infra/hardening/ATTACH-CUSTOM-DOMAIN.sh` (Ankit DNS).
-2. **Entra portal** — if CLI cannot finish app registration / secrets; code defaults stay `anon`.
-3. **Physical phone** — real-device latency proof; emulator does not qualify.
-4. **Azure GPU wait** — Support **2609210040005251**: eastus2 NCasT4 / NVadsA10 still **limit 0**. Do not create an Azure GPU VM until cleared.
-5. **Counsel** on `static/legal/*` before wide public launch.
-6. **iOS** — no App Store credentials; out of this launch.
-7. **AFD legal:** edge `/legal/*` still Azure-404s; use `/market/legal/*` (0.6.2 / `ca-market-api--0000006`). See CUSTOM-DOMAIN.md.
-
-## Done enough for soft-launch (do not redo)
-
-- Migration **006** applied on `psql-zevi-strlix`.
-- WAF apply DONE: RateLimitAuthAnon / RateLimitWaitlist / RateLimitAuthLogin on `wafzevistrlix`.
-- Alerts DONE: `ag-strlix-ops`.
-- Free-month market-api **0.6.1** live (`ca-market-api--0000005`); `/health` via AFD **200** · `pay_mode=test` · `redis:true` · `free_month_active:true`.
-- Waitlist + grant smoked via AFD (2026-09-22).
-- AFD `route-market` patterns include `/legal/*` (with `/health` retained).
-- AWS GPU `i-0531c567f620877c3` / `strlix-gpu-worker-1` created then **STOPPED** (idle). Start when needed; do not terminate.
-- `cae-infra-subnet` `10.0.2.0/23` reserved (eastus). Redis public access still Enabled — do not disable.
-- Live Stripe **OFF**.
+1. **Domain DNS + TLS on AFD** — still on the `*.azurefd.net` endpoint. Runbook: `infra/hardening/ATTACH-CUSTOM-DOMAIN.sh`.
+2. **Physical phone** — real-device latency proof; the current pool is a shared emulator and does not qualify.
+3. **Azure GPU ticket — OPEN** — Support **2609210040005251**: eastus2 NCasT4 / NVadsA10 still **limit 0**. Do not create an Azure GPU VM until cleared.
+4. **Counsel** on `static/legal/*` before a wide public launch.
+5. **iOS signing** — no App Store credentials; out of this launch.
 
 ## Deferred / gated
 
-- Private Redis cutover (CAE/VNet region split) — subnet only; `CONFIRM=yes` not used.
-- Key Vault / Postgres private endpoints — region mismatch; skipped.
-- Live Stripe — after free month only.
+- **Live Stripe** — after the free month only; live-charge gates stay OFF.
+- **Dedicated/private phone** — free entitlement ≠ dedicated device; no private-phone-for-30-days promise on the shared emulator.
+- Private Redis and Key Vault/Postgres private endpoints — region/network work remains intentionally skipped.
+- Front Door Premium managed WAF rules and other cost-increasing hardening.
+
+## Done enough for soft-launch (do not redo)
+
+- Entra app `strlix-market-api` provisioned via CLI (client `58e20155-d677-4985-86bf-ee48521dc6f8`, tenant `d0a3e72e-ad10-41f9-a96b-152c5d2d2cb2`); Key Vault secret set; auth mode remains `anon`.
+- Market-api **0.6.2** (`ca-market-api--0000006`) live; waitlist, free grant, `/health`, and `/market/legal/*` were smoked via AFD.
+- Migration 006, WAF rules, and `ag-strlix-ops` alerts are applied. AWS GPU `i-0531c567f620877c3` remains **stopped**.
+- Live Stripe remains **OFF**.
