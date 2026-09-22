@@ -59,6 +59,7 @@ from .scrcpy_source import (
     encoder_fps,
     scrcpy_available,
 )
+from .smoothness import choose_scrcpy_max_size
 
 if TYPE_CHECKING:  # pragma: no cover - typing only
     from .adb_client import AdbClient
@@ -385,6 +386,7 @@ class H264Broker:
         self._pps: Optional[bytes] = None
         self._codec: str = "avc1.42E01E"
         self._enc_width = 0
+        self._scrcpy_max_size = 0
         self._enc_height = 0
         self._device_size: tuple[int, int] = (0, 0)
         self._seq = 0
@@ -464,6 +466,8 @@ class H264Broker:
             "scrcpy_max_size_cap": SCRCPY_MAX_SIZE,
             "scrcpy_codec_options": SCRCPY_CODEC_OPTIONS or None,
             "size_aligned16": bool(self._enc_width) and self._enc_width % 16 == 0 and self._enc_height % 16 == 0,
+            "scrcpy_min_size_alignment": SCRCPY_MIN_SIZE_ALIGNMENT,
+            "motion_input": bool(getattr(self.adb, "motion_supported", False)),
             "annexb_start_code": 4,
             "viewers": self.subscribers,
             "max_clients": H264_MAX_CLIENTS,
@@ -496,6 +500,8 @@ class H264Broker:
             "scrcpy_max_size_cap": SCRCPY_MAX_SIZE,
             "scrcpy_codec_options": SCRCPY_CODEC_OPTIONS or None,
             "size_aligned16": bool(self._enc_width) and self._enc_width % 16 == 0 and self._enc_height % 16 == 0,
+            "scrcpy_min_size_alignment": SCRCPY_MIN_SIZE_ALIGNMENT,
+            "motion_input": bool(getattr(self.adb, "motion_supported", False)),
             "annexb_start_code": 4,
             "segment_s": self.segment_s,
             "segments": self._segments,
@@ -633,6 +639,8 @@ class H264Broker:
         if not dw or not dh:
             dw, dh = 1080, 2400
         self._device_size = (dw, dh)
+        # screenrecord takes an exact size. Multiples of 4 (the old mask)
+        # still leave a macroblock edge — 1080 is not divisible by 16.
         ew, eh = align_screenrecord_size(dw, dh, self.width)
         return dw, dh, ew, eh
 
@@ -727,12 +735,15 @@ class H264Broker:
         bitrate, self._bitrate_note = encoder_bitrate(self.adb.serial, self.bitrate)
         self._fps_effective = fps
         self._bitrate_effective = bitrate
-        # SCRCPY_MAX_SIZE is a long-edge cap. 1080 on a 1080×2400 phone encodes
-        # at 486×1080, which is not a multiple of 16. Pass a max_size that is.
+        # Prefer SCRCPY_MAX_SIZE (long-edge cap). Walk down until 4/8/16
+        # roundings are all macroblock-aligned (smoothness + PR #6).
         cap = SCRCPY_MAX_SIZE if SCRCPY_MAX_SIZE > 0 else max(dw, dh)
-        ew, eh, max_size = choose_aligned_max_size(dw, dh, cap, SCRCPY_MIN_SIZE_ALIGNMENT)
+        max_size, ew, eh = choose_scrcpy_max_size(dw, dh, cap)
+        if not max_size:
+            ew, eh, max_size = choose_aligned_max_size(dw, dh, cap, SCRCPY_MIN_SIZE_ALIGNMENT)
         self._enc_width, self._enc_height = ew, eh
         self._encode_max_size = max_size
+        self._scrcpy_max_size = max_size
         session = ScrcpyRawSession(
             self.adb,
             max_size=max_size,

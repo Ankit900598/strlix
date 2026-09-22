@@ -899,6 +899,9 @@
     let pollBusy = false;
     let pollTimer = null;
     let interactiveUntil = 0;
+    // True only after /health or the H.264 hello says this image has
+    // `input motionevent`. Until then taps stay on the single-shot path.
+    let motionCaps = false;
 
     // ---- layout: exact letterbox rect for the device aspect ----
     function layoutView() {
@@ -1014,6 +1017,7 @@
     function h264Control(m) {
       if (m.type === 'hello') {
         if (m.device_width && m.device_height) setDeviceSize(m.device_width, m.device_height);
+        if (m.motion_input) motionCaps = true;
         h264Configure(m.codec || 'avc1.42E01E');
       } else if (m.type === 'ping') {
         h264Send({ type: 'pong' });               // keeps our viewer slot alive
@@ -1057,14 +1061,13 @@
       const dv = new DataView(buf);
       const key = (dv.getUint8(1) & 1) === 1;
       const ts = dv.getFloat64(8, true);
-      // Dropping a P-frame and then decoding the next one paints macroblocks
-      // until the following IDR. Wait for a key instead of showing garbage.
-      if (h264.needKey && !key) {
-        if (!h264.keyWaitSince) h264.keyWaitSince = performance.now();
-        else if (performance.now() - h264.keyWaitSince > 1500) {
-          h264Send({ type: 'keyframe' });
-          h264.keyWaitSince = performance.now();
-        }
+      if (h264.needKey && !key) return;            // decoding deltas first = garbage
+      // While a finger is down, drop late P-frames so glass latency stays
+      // one frame. While the user is watching (movie, download UI idle),
+      // keep a few frames so a drop does not smear YouTube until the next IDR.
+      const queueCap = Date.now() < interactiveUntil ? 1 : 3;
+      if (!key && typeof dec.decodeQueueSize === 'number' && dec.decodeQueueSize > queueCap) {
+        h264.droppedLate += 1;
         return;
       }
       if (!key && typeof dec.decodeQueueSize === 'number' && dec.decodeQueueSize > 8) {
@@ -1497,6 +1500,7 @@
         adbLabel.textContent = connected ? 'Phone on' : ('Phone ' + (state || 'offline'));
         if (!connected) streamBadge.classList.add('off');
         if (j.stream && j.stream.device) setDeviceSize(j.stream.device[0], j.stream.device[1]);
+        if (j.input && j.input.motion) motionCaps = true;
       } catch (e) {
         connected = false;
         adbDot.className = 'dot err';
@@ -1574,19 +1578,85 @@
     }
 
     // ───────────── Pointer control (mouse + touch + pen) ─────────────
+    // One finger. A second pointer is ignored: `input motionevent` has no
+    // slot, so two thumbs would lie. See SMOOTHNESS-OVERNIGHT.md.
     let ptrDown = null;
     const SWIPE_PX = 14;
+    const MOVE_MIN_PX = 3;
+    let motionQueue = [];
+    let motionBusy = false;
+
+    function enqueueMotion(action, x, y) {
+      const last = motionQueue[motionQueue.length - 1];
+      if (action === 'MOVE' && last && last.action === 'MOVE') {
+        last.x = x;
+        last.y = y;
+      } else {
+        motionQueue.push({ action: action, x: x, y: y });
+      }
+      pumpMotion();
+    }
+
+    function pumpMotion() {
+      if (motionBusy || !motionQueue.length) return;
+      motionBusy = true;
+      const item = motionQueue.shift();
+      // One request at a time, latest MOVE only. Parallel fetches would
+      // reorder a drag, and a queue of every pointermove would be N×RTT late.
+      fetch('/adb/motion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item),
+        keepalive: true,
+        priority: 'high',
+      }).then((r) => {
+        if (r.status === 404 || r.status === 501 || r.status === 503) motionCaps = false;
+      }).catch(() => {}).finally(() => {
+        motionBusy = false;
+        pumpMotion();
+      });
+    }
 
     function onPtrDown(ev) {
       if (ev.pointerType === 'mouse' && ev.button !== 0) return;
+      if (ptrDown) return; // second finger: not representable on this path
       const pt = clientToDevice(ev.clientX, ev.clientY);
       if (!pt) return;
       ev.preventDefault();
       try { touchLayer.focus({ preventScroll: true }); } catch (_) {}
       try { touchLayer.setPointerCapture(ev.pointerId); } catch (_) {}
-      ptrDown = { id: ev.pointerId, ...pt, cx: ev.clientX, cy: ev.clientY, t: Date.now(), pointerType: ev.pointerType };
+      ptrDown = {
+        id: ev.pointerId, ...pt, cx: ev.clientX, cy: ev.clientY, t: Date.now(),
+        usedMotion: motionCaps, lastX: pt.x, lastY: pt.y,
+      };
       showRipple(ev.clientX, ev.clientY);
       interactiveUntil = Date.now() + 5000;
+      // The game sees the press on pointerdown, not after the finger lifts.
+      if (ptrDown.usedMotion) enqueueMotion('DOWN', pt.x, pt.y);
+    }
+
+    function flushMove(gesture, pt) {
+      if (!gesture || !gesture.usedMotion || !pt) return;
+      if (Math.hypot(pt.x - gesture.lastX, pt.y - gesture.lastY) < MOVE_MIN_PX) return;
+      gesture.lastX = pt.x;
+      gesture.lastY = pt.y;
+      enqueueMotion('MOVE', pt.x, pt.y);
+    }
+
+    function onPtrMove(ev) {
+      if (!ptrDown || ptrDown.id !== ev.pointerId || !ptrDown.usedMotion) return;
+      const pt = clientToDevice(ev.clientX, ev.clientY);
+      if (!pt) return;
+      ev.preventDefault();
+      ptrDown.pending = pt;
+      if (ptrDown.moveTimer) return;
+      ptrDown.moveTimer = setTimeout(() => {
+        if (!ptrDown) return;
+        ptrDown.moveTimer = null;
+        const pending = ptrDown.pending;
+        ptrDown.pending = null;
+        flushMove(ptrDown, pending);
+      }, 50);
     }
 
     function onPtrUp(ev) {
@@ -1594,6 +1664,7 @@
       ev.preventDefault();
       const start = ptrDown;
       ptrDown = null;
+      if (start.moveTimer) clearTimeout(start.moveTimer);
       try { touchLayer.releasePointerCapture(ev.pointerId); } catch (_) {}
       const end = clientToDevice(ev.clientX, ev.clientY) || { x: start.x, y: start.y };
       showRipple(ev.clientX, ev.clientY);
@@ -1602,6 +1673,19 @@
       const dt = Date.now() - start.t;
       // Fingers jitter more than a mouse. 14px turned real taps into swipes.
       const slop = start.pointerType === 'touch' ? 28 : SWIPE_PX;
+
+      if (start.usedMotion) {
+        flushMove(start, start.pending || (clientDist >= SWIPE_PX ? end : null));
+        const up = clientDist < SWIPE_PX ? { x: start.x, y: start.y } : end;
+        enqueueMotion('UP', up.x, up.y);
+        const label = clientDist < SWIPE_PX
+          ? ('tap ' + start.x + ',' + start.y)
+          : ('drag ' + start.x + ',' + start.y + ' → ' + end.x + ',' + end.y);
+        shotStamp.textContent = label;
+        lastInputAt = performance.now();
+        nudgeStream();
+        return;
+      }
 
       // Fire-and-forget: never block the UI on the ADB round-trip.
       if (clientDist < slop) {
@@ -1653,9 +1737,14 @@
     }
 
     function onPtrCancel(ev) {
-      if (ptrDown && ptrDown.id === ev.pointerId) ptrDown = null;
+      if (!ptrDown || ptrDown.id !== ev.pointerId) return;
+      const start = ptrDown;
+      ptrDown = null;
+      if (start.moveTimer) clearTimeout(start.moveTimer);
+      if (start.usedMotion) enqueueMotion('CANCEL', start.lastX, start.lastY);
     }
     touchLayer.addEventListener('pointerdown', (ev) => { ensureDeviceAudio(); onPtrDown(ev); }, { passive: false });
+    touchLayer.addEventListener('pointermove', onPtrMove, { passive: false });
     touchLayer.addEventListener('pointerup', onPtrUp, { passive: false });
     touchLayer.addEventListener('pointercancel', onPtrCancel);
     touchLayer.addEventListener('touchstart', (ev) => { ev.preventDefault(); }, { passive: false });
@@ -1825,9 +1914,32 @@
     const deviceAudio = {
       ws: null, ctx: null, dec: null, gain: null, playAt: 0,
       codec: null, muted: false, configured: false, blocked: '',
-      description: null, channels: 2, sampleRate: 48000,
-      packets: 0, played: 0, errors: 0, healthy: 0, gen: 0,
+      jitterMs: 40, lastSeq: null, lastBuffer: null, forceResync: false,
+      opusHead: null, errors: 0, errorWindow: 0, tuned: false,
     };
+
+    function nextJitterMs(current, underrun, slackMs) {
+      let cur = current;
+      if (cur < 40) cur = 40;
+      if (cur > 120) cur = 120;
+      if (underrun) return Math.min(120, cur + 16);
+      if (slackMs > cur + 30) return Math.max(40, cur - 8);
+      return cur;
+    }
+
+    function isOpusHead(payload) {
+      if (!payload || payload.byteLength < 8) return false;
+      return payload[0] === 79 && payload[1] === 112 && payload[2] === 117
+        && payload[3] === 115 && payload[4] === 72 && payload[5] === 101
+        && payload[6] === 97 && payload[7] === 100;
+    }
+
+    function isOpusTags(payload) {
+      if (!payload || payload.byteLength < 8) return false;
+      return payload[0] === 79 && payload[1] === 112 && payload[2] === 117
+        && payload[3] === 115 && payload[4] === 84 && payload[5] === 97
+        && payload[6] === 103 && payload[7] === 115;
+    }
 
     function setAudioNote(text) {
       if (!audioNote) return;
@@ -1858,17 +1970,38 @@
       return ctx;
     }
 
-    function scheduleBuffer(buffer) {
+    function scheduleBuffer(buffer, opts) {
       const ctx = deviceAudio.ctx;
-      if (!ctx || !deviceAudio.gain || deviceAudio.muted) return;
+      if (!ctx || !deviceAudio.gain || deviceAudio.muted || !buffer) return;
+      const conceal = !!(opts && opts.conceal);
       const src = ctx.createBufferSource();
       src.buffer = buffer;
-      src.connect(deviceAudio.gain);
+      if (conceal) {
+        const dip = ctx.createGain();
+        dip.gain.value = 0.6;
+        src.connect(dip);
+        dip.connect(deviceAudio.gain);
+      } else {
+        src.connect(deviceAudio.gain);
+      }
       const now = ctx.currentTime;
-      if (deviceAudio.playAt < now + 0.02) deviceAudio.playAt = now + 0.03;
-      if (deviceAudio.playAt > now + 0.12) deviceAudio.playAt = now + 0.03;
-      src.start(deviceAudio.playAt);
+      const target = deviceAudio.jitterMs / 1000;
+      let underrun = false;
+      if (deviceAudio.forceResync || deviceAudio.playAt < now + 0.005) {
+        underrun = deviceAudio.playAt > 0 && !deviceAudio.forceResync;
+        deviceAudio.playAt = now + target;
+        deviceAudio.forceResync = false;
+      } else if (deviceAudio.playAt > now + 0.25) {
+        deviceAudio.playAt = now + target;
+      }
+      const slackMs = (deviceAudio.playAt - now) * 1000;
+      try { src.start(deviceAudio.playAt); } catch (_) { return; }
       deviceAudio.playAt += buffer.duration;
+      if (!conceal) {
+        deviceAudio.jitterMs = nextJitterMs(deviceAudio.jitterMs, underrun, slackMs);
+        if (underrun || slackMs > deviceAudio.jitterMs + 30) deviceAudio.tuned = true;
+        deviceAudio.lastBuffer = buffer;
+      }
     }
 
     function markAudioHealthy() {
@@ -1996,21 +2129,43 @@
       deviceAudio.codec = 'opus';
     }
 
-    function onAudioStatus(msg) {
-      if (msg.type !== 'hello' && msg.type !== 'audio' && msg.type !== 'stats') return;
-      if (msg.codec === 'opus' && !deviceAudio.configured) configureOpus(deviceAudio.description);
-      if (msg.codec === 'pcm') {
-        deviceAudio.codec = 'pcm';
-        ensureAudioContext();
+    function noteAudioError(err) {
+      const now = Date.now();
+      if (now - deviceAudio.errorWindow > 3000) {
+        deviceAudio.errors = 0;
+        deviceAudio.errorWindow = now;
       }
-      if (msg.channels) deviceAudio.channels = msg.channels;
-      if (msg.sample_rate) deviceAudio.sampleRate = msg.sample_rate;
-      if (msg.source === 'error') {
-        deviceAudio.blocked = msg.reason || 'Device audio is not available yet';
+      deviceAudio.errors += 1;
+      deviceAudio.forceResync = true;
+      if (deviceAudio.errors >= 6) {
+        deviceAudio.blocked = 'Opus decoder: ' + (err && err.message ? err.message : err);
         setAudioNote(deviceAudio.blocked);
         setAudioBtn('blocked', deviceAudio.blocked);
-      } else if (msg.source === 'scrcpy' && deviceAudio.errors < 4) {
-        if (!deviceAudio.blocked) {
+        return;
+      }
+      deviceAudio.configured = false;
+      if (deviceAudio.opusHead) {
+        try { configureOpus(deviceAudio.opusHead); } catch (_) {}
+      }
+    }
+
+    function onAudioStatus(msg) {
+      if (msg.type === 'hello' || msg.type === 'audio') {
+        if (msg.codec === 'opus' && !deviceAudio.configured) configureOpus(null);
+        if (msg.codec === 'pcm') {
+          deviceAudio.codec = 'pcm';
+          ensureAudioContext();
+        }
+        if (!deviceAudio.tuned && typeof msg.jitter_ms === 'number' && msg.jitter_ms >= 40 && msg.jitter_ms <= 120) {
+          deviceAudio.jitterMs = msg.jitter_ms;
+        }
+        const live = msg.codec && (msg.source === 'scrcpy' || msg.source === 'pulse');
+        if (msg.source === 'error') {
+          deviceAudio.blocked = msg.reason || 'Device audio is not available yet';
+          setAudioNote(deviceAudio.blocked);
+          setAudioBtn('blocked', deviceAudio.blocked);
+        } else if (live) {
+          deviceAudio.blocked = '';
           setAudioNote('');
           if (!deviceAudio.muted) setAudioBtn('live', 'Phone sound is on');
         }
@@ -2024,6 +2179,7 @@
       const dv = new DataView(buf);
       if (dv.getUint8(0) !== 1) return;
       const flags = dv.getUint8(1);
+      const seq = dv.getUint32(4, true);
       const payload = new Uint8Array(buf, 16);
       deviceAudio.packets += 1;
       if (deviceAudio.codec === 'pcm') {
@@ -2127,6 +2283,12 @@
       });
     }
     setInterval(reportClientDebug, 8000);
+
+    // WebRTC is not the media path. ?webrtc=1 only explains why, so a
+    // spike query cannot replace /ws/h264 by accident.
+    if (new URLSearchParams(location.search).get('webrtc') === '1') {
+      console.info('[strlix] WebRTC media is not enabled. Azure Front Door carries this page over HTTP and WebSocket, not UDP. Video stays on /ws/h264.');
+    }
 
     // ───────────── Boot ─────────────
     refreshHealth();

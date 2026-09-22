@@ -20,7 +20,7 @@ What this is not
 Wire format (binary), little-endian, 16 bytes + payload — same layout as
 ``/ws/h264`` so the viewer can share the header parse:
 
-    u8 version (1) | u8 flags (bit0 = codec config) | u16 reserved
+    u8 version (1) | u8 flags (bit0 = codec config, bit1 = resync) | u16 reserved
     u32 seq | f64 pts_us | payload
 
 Text JSON: ``hello``, ``audio`` (status), ``ping``.
@@ -35,16 +35,27 @@ import struct
 import time
 from typing import TYPE_CHECKING, Optional
 
-from .scrcpy_source import SCRCPY_SERVER_PATH, ScrcpyError, ScrcpyRawSession
+from .scrcpy_source import AUDIO_CODEC_OPTIONS, SCRCPY_SERVER_PATH, ScrcpyError, ScrcpyRawSession
+from .smoothness import FLAG_CONFIG, FLAG_RESYNC, JITTER_MIN_MS, prepare_audio_packet
 
 if TYPE_CHECKING:  # pragma: no cover
     from .adb_client import AdbClient
 
-# scrcpy codec ids are big-endian fourcc on the audio socket.
+# scrcpy 4.1 AudioCodec ids (big-endian fourcc). AAC and raw are
+# 0x00 + three letters, not a trailing space. The spaced variants are
+# accepted so an older jar still maps.
 CODEC_OPUS = 0x6F707573  # "opus"
-CODEC_AAC = 0x61616320  # "aac "
-CODEC_PCM = 0x72617720  # "raw "
-CODEC_NAMES = {CODEC_OPUS: "opus", CODEC_AAC: "aac", CODEC_PCM: "pcm"}
+CODEC_AAC = 0x00616163  # "\0aac"
+CODEC_FLAC = 0x666C6163  # "flac"
+CODEC_PCM = 0x00726177  # "\0raw"
+CODEC_NAMES = {
+    CODEC_OPUS: "opus",
+    CODEC_AAC: "aac",
+    0x61616320: "aac",
+    CODEC_FLAC: "flac",
+    CODEC_PCM: "pcm",
+    0x72617720: "pcm",
+}
 
 SCRCPY_FLAG_CONFIG = 1 << 63
 SCRCPY_FLAG_KEY = 1 << 62
@@ -52,12 +63,11 @@ SCRCPY_PTS_MASK = SCRCPY_FLAG_KEY - 1
 
 AUDIO_HEADER = struct.Struct("<BBHId")
 AUDIO_WIRE_VERSION = 1
-FLAG_CONFIG = 1
 OPUS_HEAD_MAGIC = b"OpusHead"
 OPUS_TAGS_MAGIC = b"OpusTags"
 
 DEVICE_AUDIO = os.environ.get("DEVICE_AUDIO", "1") not in ("0", "false", "no")
-AUDIO_BITRATE = int(os.environ.get("DEVICE_AUDIO_BITRATE", "128000"))
+AUDIO_BITRATE = int(os.environ.get("DEVICE_AUDIO_BITRATE", "160000"))
 AUDIO_MAX_CLIENTS = int(os.environ.get("DEVICE_AUDIO_MAX_CLIENTS", "8"))
 PULSE_SOURCE = os.environ.get("STRLIX_AUDIO_PULSE", "").strip()
 
@@ -124,6 +134,9 @@ class DeviceAudioBroker:
         self._seq = 0
         self.started_at: Optional[float] = None
         self.last_packet_at: Optional[float] = None
+        # Last OpusHead wire packet, replayed to subscribers who missed it.
+        self._config_wire: Optional[bytes] = None
+        self._prev_pts: Optional[int] = None
 
     def stats(self) -> dict:
         age = None
@@ -143,6 +156,8 @@ class DeviceAudioBroker:
             "packet_age_ms": age,
             "emulator_audio": "requires a process started without -no-audio",
             "playback": "browser AudioContext via /ws/audio",
+            "jitter_ms": JITTER_MIN_MS,
+            "fec": "jitter + one-packet concealment; MediaCodec Opus has no portable in-band FEC key",
         }
 
     def _ensure(self) -> None:
@@ -161,6 +176,9 @@ class DeviceAudioBroker:
         self._queues.add(q)
         self.subscribers += 1
         self._peak = max(self._peak, self.subscribers)
+        if self._config_wire is not None:
+            with contextlib.suppress(asyncio.QueueFull):
+                q.put_nowait(self._config_wire)
         self._ensure()
         try:
             yield q
@@ -241,7 +259,9 @@ class DeviceAudioBroker:
             max_size=64,
             bitrate=AUDIO_BITRATE,
             kind="audio",
+            audio_codec_options=AUDIO_CODEC_OPTIONS,
         )
+        self._prev_pts = None
         try:
             reader = await session.start()
         except ScrcpyError as exc:
@@ -279,8 +299,24 @@ class DeviceAudioBroker:
                 buf += chunk
                 packets, buf = split_scrcpy_audio_packets(buf)
                 for flags, pts, payload in packets:
+                    prepared = prepare_audio_packet(flags, pts, payload)
+                    if prepared is None:
+                        continue
+                    flags, pts, payload = prepared
+                    if not (flags & FLAG_CONFIG) and self._prev_pts is not None:
+                        delta = pts - self._prev_pts
+                        # A backwards clock or a hole longer than half a second
+                        # is a new timeline. Tell the viewer to drop its buffer
+                        # instead of playing the hole as silence-then-catchup.
+                        if delta < -100_000 or delta > 500_000:
+                            flags |= FLAG_RESYNC
+                    if not (flags & FLAG_CONFIG):
+                        self._prev_pts = pts
                     self._seq = (self._seq + 1) & 0xFFFFFFFF
-                    self._publish(pack_audio(self._seq, flags, float(pts), payload))
+                    wire = pack_audio(self._seq, flags, float(pts), payload)
+                    if flags & FLAG_CONFIG:
+                        self._config_wire = wire
+                    self._publish(wire)
             return True
         finally:
             await session.stop()

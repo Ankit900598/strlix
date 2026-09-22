@@ -27,6 +27,7 @@ from typing import Optional
 
 from .audio_stream import AudioBroker
 from .h264_stream import H264Broker
+from .scrcpy_source import prefetch_scrcpy_server
 
 ADB_BIN = os.environ.get("ADB_BIN", "/workspace/zevi-cloudphone/platform-tools/adb")
 DEFAULT_SERIAL = os.environ.get("ADB_SERIAL", "127.0.0.1:5555")
@@ -43,6 +44,106 @@ SCREENSHOT_RETENTION = int(os.environ.get("SCREENSHOT_RETENTION", "40"))
 
 class AdbError(RuntimeError):
     pass
+
+# One long-lived `adb shell` so taps are a write, not a process spawn.
+# `while read` runs each line as it arrives. Waiting for an ack would add
+# a full Android round-trip and, on a pipe, stdout is block-buffered so the
+# ack often never shows up. User-typed text must NOT go through this loop
+# (quoting). Coords and keycodes we generate ourselves are safe.
+INPUT_SHELL_LOOP = (
+    "while IFS= read -r line; do "
+    "sh -c \"$line\"; "
+    "done"
+)
+FAST_INPUT = os.environ.get("ADB_FAST_INPUT", "1") not in ("0", "false", "no")
+
+
+class InputPump:
+    """Warm `adb shell` for tap / swipe / key.
+
+    ``adb shell input tap`` pays a process start on every touch (often
+    50–200 ms before Android even sees the event). This keeps one shell
+    open and acks each command so a dead pipe cannot look like success.
+    """
+
+    def __init__(self, adb: "AdbClient") -> None:
+        self.adb = adb
+        self._proc: Optional[asyncio.subprocess.Process] = None
+        self._reader: Optional[asyncio.Task] = None
+        self._lines: asyncio.Queue[str] = asyncio.Queue()
+        self._lock = asyncio.Lock()
+        self.disabled_until = 0.0
+
+    @property
+    def alive(self) -> bool:
+        return self._proc is not None and self._proc.returncode is None
+
+    async def exec(self, command: str, timeout: float = 1.6) -> str:
+        """Queue one shell command. Returns ``ok`` once stdin accepts it.
+
+        ``sent`` means the bytes were written and the shell then died — the
+        caller must not send the same tap again. This does not wait for
+        ``input`` to finish; that wait is the lag we are removing.
+        """
+        async with self._lock:
+            await self._ensure()
+            proc = self._proc
+            if proc is None or proc.stdin is None or proc.returncode is not None:
+                return "skip"
+            proc.stdin.write(f"{command}\n".encode())
+            try:
+                await asyncio.wait_for(proc.stdin.drain(), timeout)
+            except asyncio.TimeoutError:
+                await self._kill()
+                return "sent"
+            if proc.returncode is not None:
+                return "sent"
+            return "ok"
+
+    async def _ensure(self) -> None:
+        if self.alive:
+            return
+        await self._kill()
+        self._lines = asyncio.Queue()
+        self._proc = await asyncio.create_subprocess_exec(
+            self.adb.adb_bin,
+            "-s",
+            self.adb.serial,
+            "shell",
+            INPUT_SHELL_LOOP,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        self._reader = asyncio.create_task(self._read_stdout(), name="adb-input-pump")
+
+    async def _read_stdout(self) -> None:
+        proc = self._proc
+        if proc is None or proc.stdout is None:
+            return
+        while True:
+            line = await proc.stdout.readline()
+            if not line:
+                return
+            text = line.decode(errors="replace").strip()
+            if text:
+                with contextlib.suppress(asyncio.QueueFull):
+                    self._lines.put_nowait(text)
+
+    async def _kill(self) -> None:
+        proc = self._proc
+        self._proc = None
+        reader = self._reader
+        self._reader = None
+        if proc is not None and proc.returncode is None:
+            with contextlib.suppress(ProcessLookupError):
+                proc.kill()
+            with contextlib.suppress(Exception):
+                await asyncio.wait_for(proc.wait(), 1.0)
+        if reader is not None:
+            reader.cancel()
+            with contextlib.suppress(asyncio.CancelledError, Exception):
+                await reader
 
 
 @dataclass(frozen=True)
@@ -378,6 +479,10 @@ class AdbClient:
         self.frames = FrameBroker(self)
         self.h264 = H264Broker(self)
         self.audio = AudioBroker(self)
+        self.input_pump = InputPump(self)
+        # None = not probed yet. False = this image has no `input motionevent`.
+        self.motion_supported: Optional[bool] = None
+        self._jar_prefetched = False
 
     # ---- plumbing --------------------------------------------------------
     def _remember_size(self, w: int, h: int) -> None:
@@ -433,6 +538,74 @@ class AdbClient:
             if state != "device":
                 raise AdbError(f"device not ready: state={state!r} stderr={err.decode().strip()}")
         return state
+
+    def input_status(self) -> dict:
+        return {
+            "fast": FAST_INPUT,
+            "motion": self.motion_supported is True,
+            "warm": self.input_pump.alive,
+            "jar_prefetched": self._jar_prefetched,
+        }
+
+    async def _probe_motion(self) -> None:
+        """``input`` with no args prints usage. ``motionevent`` means we can stream a finger."""
+        code, out, err = await self._run("shell", "input", timeout=8)
+        text = (out + err).decode(errors="replace").lower()
+        if "motionevent" in text:
+            self.motion_supported = True
+        elif text.strip():
+            self.motion_supported = False
+        # Empty output is not a verdict (device blip). Leave None and retry.
+
+    async def warm_input(self) -> None:
+        """Open the fast-input shell, probe motion, and push scrcpy before the first frame.
+
+        Called at process start and again when a viewer connects, so a dead
+        shell is rebuilt off the tap path. Failures stay local: a missing
+        emulator must not crash the API.
+        """
+        try:
+            await self.ensure_connected()
+        except Exception:  # noqa: BLE001
+            self.input_pump.disabled_until = time.time() + 30.0
+            return
+        if self.motion_supported is None:
+            with contextlib.suppress(Exception):
+                await self._probe_motion()
+        if not self._size_cache:
+            with contextlib.suppress(Exception):
+                await self.wm_size()
+        if not self._jar_prefetched:
+            try:
+                await prefetch_scrcpy_server(self)
+            except Exception:  # noqa: BLE001
+                pass
+            else:
+                self._jar_prefetched = True
+        if not FAST_INPUT:
+            return
+        try:
+            status = await self.input_pump.exec(":", timeout=2.0)
+            if status != "ok":
+                self.input_pump.disabled_until = time.time() + 30.0
+        except Exception:  # noqa: BLE001 — cold ADB must not take down the API
+            self.input_pump.disabled_until = time.time() + 30.0
+
+    async def _try_fast(self, command: str, timeout: float = 1.6) -> str:
+        """``ok`` / ``sent`` / ``skip``. ``skip`` means use a one-shot adb call."""
+        if not FAST_INPUT or time.time() < self.input_pump.disabled_until:
+            return "skip"
+        try:
+            status = await self.input_pump.exec(command, timeout=timeout)
+        except Exception:  # noqa: BLE001
+            self.input_pump.disabled_until = time.time() + 15.0
+            return "skip"
+        if status == "ok":
+            self._state_ok_until = time.time() + 8.0
+            return "ok"
+        # Command was written; retrying would double-tap. Cool the pump down.
+        self.input_pump.disabled_until = time.time() + 10.0
+        return "sent"
 
     def _normalize_png(self, out: bytes) -> bytes:
         if out.startswith(b"\x89PNG\r\n\x1a\n"):
@@ -527,6 +700,30 @@ class AdbClient:
         }
 
     # ---- input -----------------------------------------------------------
+    _MOTION_ACTIONS = frozenset({"DOWN", "UP", "MOVE", "CANCEL"})
+
+    async def motion(self, action: str, x: int, y: int) -> dict:
+        """One finger event. ``DOWN`` on press, coalesced ``MOVE``, ``UP`` on release.
+
+        This is still one pointer. Android's ``input motionevent`` has no
+        slot id, so a second finger is not representable here. Games that
+        need two thumbs wait on the scrcpy control socket (see the smoothness doc).
+        """
+        name = str(action or "").strip().upper()
+        if name not in self._MOTION_ACTIONS:
+            raise AdbError("motion action must be DOWN, MOVE, UP, or CANCEL")
+        if self.motion_supported is not True:
+            raise AdbError("device input has no motionevent; use tap or swipe")
+        x, y = int(x), int(y)
+        via = await self._try_fast(f"input motionevent {name} {x} {y}", timeout=1.4)
+        if via in ("ok", "sent"):
+            return {"ok": True, "action": name, "x": x, "y": y, "via": "pump", "acked": via == "ok"}
+        await self.ensure_connected()
+        code, _out, err = await self._run("shell", "input", "motionevent", name, str(x), str(y))
+        if code != 0:
+            raise AdbError(err.decode().strip() or "motionevent failed")
+        return {"ok": True, "action": name, "x": x, "y": y, "via": "adb"}
+
     async def tap(self, x: int, y: int) -> dict:
         await self.ensure_connected()
         code, out, err = await self._run("shell", "input", "tap", str(int(x)), str(int(y)))

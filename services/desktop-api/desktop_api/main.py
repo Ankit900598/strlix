@@ -105,6 +105,12 @@ class TapRequest(BaseModel):
     y: int
 
 
+class MotionRequest(BaseModel):
+    action: str = Field(..., min_length=2, max_length=8)
+    x: int
+    y: int
+
+
 class SwipeRequest(BaseModel):
     x1: int
     y1: int
@@ -149,6 +155,7 @@ async def health():
         "h264": adb.h264.stats(),
         "audio": adb.audio.stats(),
         "client_debug": client_debug_snapshot(),
+        "input": adb.input_status(),
         "broker_url": BROKER_URL,
         "auth_required": os.environ.get("STRLIX_REQUIRE_AUTH", "0") == "1",
         "note": "Viewer only — chat/voice LLM lives on android-api :8788",
@@ -213,6 +220,24 @@ async def adb_size(authorization: Optional[str] = Header(default=None)):
     try:
         size = await adb.wm_size()
         return {"ok": True, **size}
+    except AdbError as e:
+        raise HTTPException(503, str(e)) from e
+
+
+@app.post("/adb/motion")
+async def adb_motion(
+    req: MotionRequest,
+    request: Request,
+    authorization: Optional[str] = Header(default=None),
+):
+    claims = optional_desktop_auth(authorization)
+    if claims and "input" not in claims["scopes"] and "*" not in claims["scopes"]:
+        raise HTTPException(403, "session is view-only (no input scope)")
+    ip = request.client.host if request.client else "unknown"
+    if not _allow_input(ip):
+        raise HTTPException(429, "input rate limit")
+    try:
+        return await adb.motion(req.action, req.x, req.y)
     except AdbError as e:
         raise HTTPException(503, str(e)) from e
 
@@ -384,6 +409,7 @@ async def ws_h264(ws: WebSocket):
 
     broker = adb.h264
     await ws.accept()
+    asyncio.create_task(adb.warm_input())
     if not broker.enabled:
         await ws.send_json({"type": "bye", "reason": "h264 disabled", "fallback": "/ws/stream"})
         await ws.close(code=1013)

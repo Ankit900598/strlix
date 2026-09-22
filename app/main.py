@@ -130,6 +130,7 @@ async def health():
         "stream": {**adb.frames.stats(), "max_clients": MAX_STREAM_CLIENTS},
         "h264": adb.h264.stats(),
         "audio": adb.audio.stats(),
+        "input": adb.input_status(),
     }
     try:
         state = await adb.ensure_connected()
@@ -151,6 +152,12 @@ async def chat(req: ChatRequest):
 
 
 class TapRequest(BaseModel):
+    x: int
+    y: int
+
+
+class MotionRequest(BaseModel):
+    action: str = Field(..., min_length=2, max_length=8)
     x: int
     y: int
 
@@ -308,6 +315,9 @@ async def ws_h264(ws: WebSocket):
     ``{"type":"ping"}``, ``{"type":"stats"}``.
     """
     broker = adb.h264
+    # A viewer means someone is about to touch. Rebuild a dead input shell
+    # and finish the jar push off this socket, not on the first tap.
+    asyncio.create_task(adb.warm_input())
     # Refuse *after* accepting: closing during the handshake surfaces in the
     # browser as an opaque HTTP 403 / code 1006, which is indistinguishable
     # from "server is down" and sends the client into pointless retries.
@@ -531,6 +541,17 @@ async def adb_stream_nudge(request: Request):
         raise HTTPException(429, "input rate limited")
     adb.frames.nudge_soon()
     return {"ok": True}
+
+
+@app.post("/adb/motion")
+async def adb_motion(req: MotionRequest, request: Request):
+    """Streaming finger. The viewer coalesces MOVE so this stays under the input budget."""
+    if not _allow_input(request.client.host if request.client else ""):
+        raise HTTPException(429, "input rate limited")
+    try:
+        return await adb.motion(req.action, req.x, req.y)
+    except AdbError as e:
+        raise HTTPException(503, str(e)) from e
 
 
 @app.post("/adb/tap")

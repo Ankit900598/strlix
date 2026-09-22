@@ -47,7 +47,7 @@ def default_scrcpy_server_path() -> str:
 def codec_options() -> str:
     """Low-latency MediaCodec extras. ``priority:int=0`` is realtime."""
     raw = os.environ.get(
-        "SCRCPY_CODEC_OPTIONS", "i-frame-interval:int=1,latency:int=1"
+        "SCRCPY_CODEC_OPTIONS", "i-frame-interval:int=1,latency:int=1,bitrate-mode:int=2,priority:int=0"
     ).strip().strip(",")
     if "priority:" not in raw:
         raw = (raw + ",priority:int=0") if raw else "priority:int=0"
@@ -89,7 +89,10 @@ SCRCPY_MAX_SIZE = int(os.environ.get("SCRCPY_MAX_SIZE", "1080"))
 # macroblock. The emulator encoder accepts 486×1080 (alignment 2) and that
 # size smears under motion.
 SCRCPY_MIN_SIZE_ALIGNMENT = int(os.environ.get("SCRCPY_MIN_SIZE_ALIGNMENT", "16"))
+# CBR + realtime via codec_options(); env override wins.
 SCRCPY_CODEC_OPTIONS = codec_options()
+# Empty by default. Android Opus MediaCodec has no portable in-band FEC key.
+AUDIO_CODEC_OPTIONS = os.environ.get("DEVICE_AUDIO_CODEC_OPTIONS", "").strip()
 # Device-side jar path (shell-writable).
 _REMOTE_JAR = "/data/local/tmp/scrcpy-server.jar"
 
@@ -126,7 +129,9 @@ class ScrcpyRawSession:
         version: str = SCRCPY_VERSION,
         codec_options: str = SCRCPY_CODEC_OPTIONS,
         min_size_alignment: int = SCRCPY_MIN_SIZE_ALIGNMENT,
+        audio_codec_options: str = AUDIO_CODEC_OPTIONS,
         scid: Optional[str] = None,
+        kind: str = "video",
     ) -> None:
         self.adb = adb
         self.max_size = max(64, int(max_size))
@@ -138,6 +143,10 @@ class ScrcpyRawSession:
         self.codec_options = (codec_options or "").strip()
         align = int(min_size_alignment)
         self.min_size_alignment = align if align in (1, 2, 4, 8, 16) else 16
+        self.audio_codec_options = (audio_codec_options or "").strip()
+        # "video" is the Annex-B mirror. "audio" is a second server (opus)
+        # so device sound can reach the browser without touching the video pipe.
+        self.kind = "audio" if kind == "audio" else "video"
         # scid is parsed as hex and must fit in 31 bits; socket is scrcpy_%08x.
         self.scid = scid or f"{secrets.randbits(31):08x}"
         self.reader: Optional[asyncio.StreamReader] = None
@@ -238,16 +247,29 @@ class ScrcpyRawSession:
         await self._adb("shell", f"pkill -f 'scid={self.scid}' || true")
 
     async def _spawn_server(self) -> None:
-        # raw_stream disables dummy byte + device/frame meta → pure Annex-B.
-        opts = (
-            f"scid={self.scid} tunnel_forward=true audio=false control=false "
-            f"cleanup=false raw_stream=true max_size={self.max_size} "
-            f"video_bit_rate={self.bitrate} max_fps={self.max_fps} "
-            f"min_size_alignment={self.min_size_alignment}"
-        )
-        if self.codec_options:
-            # Commas inside the value are part of the option list; no spaces.
-            opts += f" video_codec_options={self.codec_options}"
+        if self.kind == "audio":
+            # Not raw_stream: we need the 4-byte codec id, then 12-byte packets.
+            # video=false so this socket is the audio socket (scrcpy ≥ 2.0).
+            opts = (
+                f"scid={self.scid} tunnel_forward=true video=false audio=true "
+                f"control=false cleanup=false send_device_meta=false "
+                f"audio_codec=opus audio_bit_rate={self.bitrate}"
+            )
+            if self.audio_codec_options:
+                opts += f" audio_codec_options={self.audio_codec_options}"
+        else:
+            # raw_stream disables dummy byte + device/frame meta → pure Annex-B.
+            # min_size_alignment=16 forces both edges onto H.264 macroblocks
+            # (scrcpy 4.1). Unknown on older jars: they log and continue.
+            opts = (
+                f"scid={self.scid} tunnel_forward=true audio=false control=false "
+                f"cleanup=false raw_stream=true max_size={self.max_size} "
+                f"min_size_alignment={self.min_size_alignment} "
+                f"video_bit_rate={self.bitrate} max_fps={self.max_fps}"
+            )
+            if self.codec_options:
+                # Commas inside the value are part of the option list; no spaces.
+                opts += f" video_codec_options={self.codec_options}"
         args = (
             f"CLASSPATH={_REMOTE_JAR} app_process / "
             f"com.genymobile.scrcpy.Server {self.version} {opts}"
@@ -272,7 +294,12 @@ class ScrcpyRawSession:
             if chunk:
                 buf += chunk
                 low = buf.lower()
-                if b"device:" in low or b"using video encoder" in low:
+                if (
+                    b"device:" in low
+                    or b"using video encoder" in low
+                    or b"using audio encoder" in low
+                    or b"audio capture" in low
+                ):
                     return
                 if b"error" in low or b"exception" in low:
                     raise ScrcpyError(buf.decode(errors="replace")[:400])
@@ -352,3 +379,16 @@ class _PrefixedReader:
 
 def scrcpy_available(server_path: str = SCRCPY_SERVER_PATH) -> bool:
     return os.path.isfile(server_path)
+
+
+async def prefetch_scrcpy_server(adb: "AdbClient", server_path: str = SCRCPY_SERVER_PATH) -> bool:
+    """Push the jar before the first viewer, so cold start is a connect not an upload.
+
+    Returns False when the jar is not on this host. Failures propagate so
+    the caller can ignore them — a missing device must not take down boot.
+    """
+    if not os.path.isfile(server_path):
+        return False
+    session = ScrcpyRawSession(adb, max_size=64, bitrate=1, server_path=server_path)
+    await session._push_server()
+    return True
