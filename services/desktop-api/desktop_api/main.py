@@ -51,8 +51,8 @@ _input_buckets: dict[str, list[float]] = {}
 
 app = FastAPI(
     title="Strlix desktop-api",
-    version="0.1.0",
-    description="Viewer stream + input. Session-bound to one device from the pool.",
+    version="0.2.0",
+    description="Viewer stream + input + device audio. Session-bound to one device from the pool.",
 )
 app.add_middleware(
     CORSMiddleware,
@@ -123,6 +123,12 @@ class BindRequest(BaseModel):
     ttl_s: int = Field(default=3600, ge=60, le=86400)
 
 
+@app.on_event("startup")
+async def _warm_input() -> None:
+    # First tap should not pay for opening the shell.
+    asyncio.create_task(adb.warm_input())
+
+
 @app.get("/")
 async def index():
     """Serve the existing phone-first viewer (same static UI as pilot)."""
@@ -139,11 +145,12 @@ async def health():
     info: dict[str, Any] = {
         "ok": True,
         "service": "desktop-api",
-        "version": "0.1.0",
+        "version": "0.2.0",
         "uptime_s": round(time.time() - STARTED, 1),
         "adb_serial": adb.serial,
         "stream": {**adb.frames.stats(), "max_clients": MAX_STREAM_CLIENTS},
         "h264": adb.h264.stats(),
+        "audio": adb.audio.stats(),
         "broker_url": BROKER_URL,
         "auth_required": os.environ.get("STRLIX_REQUIRE_AUTH", "0") == "1",
         "note": "Viewer only — chat/voice LLM lives on android-api :8788",
@@ -383,6 +390,69 @@ async def ws_h264(ws: WebSocket):
             await ws.close()
 
 
+@app.websocket("/ws/audio")
+async def ws_audio(ws: WebSocket):
+    """Device audio for the viewer's speakers. Video stays on /ws/h264."""
+    await ws.accept()
+    broker = adb.audio
+    if not broker.enabled:
+        await ws.send_json({
+            "type": "audio",
+            "available": False,
+            "reason": "DEVICE_AUDIO=0",
+        })
+        await ws.close(code=1013, reason="audio disabled")
+        return
+    stop = asyncio.Event()
+
+    async def reader() -> None:
+        try:
+            while not stop.is_set():
+                msg = await ws.receive()
+                if msg.get("type") == "websocket.disconnect":
+                    stop.set()
+        except Exception:  # noqa: BLE001
+            stop.set()
+
+    tasks = [asyncio.create_task(reader())]
+    try:
+        async with broker.subscribe() as queue:
+            await ws.send_json({"type": "hello", "service": "audio", **broker.stats()})
+            while not stop.is_set():
+                getter = asyncio.create_task(queue.get())
+                stop_wait = asyncio.create_task(stop.wait())
+                done, _ = await asyncio.wait(
+                    {getter, stop_wait}, timeout=20.0, return_when=asyncio.FIRST_COMPLETED
+                )
+                if getter not in done:
+                    getter.cancel()
+                    stop_wait.cancel()
+                    if stop.is_set():
+                        break
+                    await ws.send_json({"type": "ping", "t": time.time(), **broker.stats()})
+                    continue
+                stop_wait.cancel()
+                item = getter.result()
+                if isinstance(item, dict):
+                    await ws.send_json(item)
+                else:
+                    await ws.send_bytes(item)
+    except RuntimeError as exc:
+        with contextlib.suppress(Exception):
+            await ws.send_json({"type": "audio", "available": False, "reason": str(exc)})
+            await ws.close(code=1013, reason=str(exc)[:100])
+    except WebSocketDisconnect:
+        pass
+    except Exception:  # noqa: BLE001
+        pass
+    finally:
+        stop.set()
+        for task in tasks:
+            task.cancel()
+        with contextlib.suppress(Exception):
+            await ws.close()
+
+
 @app.websocket("/ws/stream")
 async def ws_stream(ws: WebSocket):
     """Binary JPEG frames (fallback)."""
@@ -439,7 +509,8 @@ async def openapi_sketch():
             "GET /": "phone-first viewer HTML",
             "GET /health": "ADB + stream + broker",
             "POST /v1/sessions/bind": "lease device via session-broker",
-            "WS /ws/h264": "H.264 Annex-B AUs",
+            "WS /ws/h264": "H.264 Annex-B AUs (video only)",
+            "WS /ws/audio": "device audio (scrcpy opus, else Pulse PCM) → browser speakers",
             "WS /ws/stream": "JPEG fallback",
             "GET /adb/preview": "latest JPEG",
             "POST /adb/tap|swipe|key|type": "input (controller scope)",

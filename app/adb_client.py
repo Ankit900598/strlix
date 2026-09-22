@@ -25,6 +25,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
+from .device_audio import DeviceAudioBroker
 from .h264_stream import H264Broker
 
 ADB_BIN = os.environ.get("ADB_BIN", "/workspace/zevi-cloudphone/platform-tools/adb")
@@ -42,6 +43,107 @@ SCREENSHOT_RETENTION = int(os.environ.get("SCREENSHOT_RETENTION", "40"))
 
 class AdbError(RuntimeError):
     pass
+
+
+# One long-lived `adb shell` so taps are a write, not a process spawn.
+# `while read` runs each line as it arrives. Waiting for an ack would add
+# a full Android round-trip and, on a pipe, stdout is block-buffered so the
+# ack often never shows up. User-typed text must NOT go through this loop
+# (quoting). Coords and keycodes we generate ourselves are safe.
+INPUT_SHELL_LOOP = (
+    "while IFS= read -r line; do "
+    "sh -c \"$line\"; "
+    "done"
+)
+FAST_INPUT = os.environ.get("ADB_FAST_INPUT", "1") not in ("0", "false", "no")
+
+
+class InputPump:
+    """Warm `adb shell` for tap / swipe / key.
+
+    ``adb shell input tap`` pays a process start on every touch (often
+    50–200 ms before Android even sees the event). This keeps one shell
+    open and acks each command so a dead pipe cannot look like success.
+    """
+
+    def __init__(self, adb: "AdbClient") -> None:
+        self.adb = adb
+        self._proc: Optional[asyncio.subprocess.Process] = None
+        self._reader: Optional[asyncio.Task] = None
+        self._lines: asyncio.Queue[str] = asyncio.Queue()
+        self._lock = asyncio.Lock()
+        self.disabled_until = 0.0
+
+    @property
+    def alive(self) -> bool:
+        return self._proc is not None and self._proc.returncode is None
+
+    async def exec(self, command: str, timeout: float = 1.6) -> str:
+        """Queue one shell command. Returns ``ok`` once stdin accepts it.
+
+        ``sent`` means the bytes were written and the shell then died — the
+        caller must not send the same tap again. This does not wait for
+        ``input`` to finish; that wait is the lag we are removing.
+        """
+        async with self._lock:
+            await self._ensure()
+            proc = self._proc
+            if proc is None or proc.stdin is None or proc.returncode is not None:
+                return "skip"
+            proc.stdin.write(f"{command}\n".encode())
+            try:
+                await asyncio.wait_for(proc.stdin.drain(), timeout)
+            except asyncio.TimeoutError:
+                await self._kill()
+                return "sent"
+            if proc.returncode is not None:
+                return "sent"
+            return "ok"
+
+    async def _ensure(self) -> None:
+        if self.alive:
+            return
+        await self._kill()
+        self._lines = asyncio.Queue()
+        self._proc = await asyncio.create_subprocess_exec(
+            self.adb.adb_bin,
+            "-s",
+            self.adb.serial,
+            "shell",
+            INPUT_SHELL_LOOP,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        self._reader = asyncio.create_task(self._read_stdout(), name="adb-input-pump")
+
+    async def _read_stdout(self) -> None:
+        proc = self._proc
+        if proc is None or proc.stdout is None:
+            return
+        while True:
+            line = await proc.stdout.readline()
+            if not line:
+                return
+            text = line.decode(errors="replace").strip()
+            if text:
+                with contextlib.suppress(asyncio.QueueFull):
+                    self._lines.put_nowait(text)
+
+    async def _kill(self) -> None:
+        proc = self._proc
+        self._proc = None
+        reader = self._reader
+        self._reader = None
+        if proc is not None and proc.returncode is None:
+            with contextlib.suppress(ProcessLookupError):
+                proc.kill()
+            with contextlib.suppress(Exception):
+                await asyncio.wait_for(proc.wait(), 1.0)
+        if reader is not None:
+            reader.cancel()
+            with contextlib.suppress(asyncio.CancelledError, Exception):
+                await reader
 
 
 @dataclass(frozen=True)
@@ -371,11 +473,16 @@ class AdbClient:
         # heavy 300ms+ screencap). Taps/keys/swipes stay fully concurrent.
         self._capture_lock = asyncio.Lock()
         self._last_connect_at: float = 0.0
+        # Skip `adb get-state` on the touch hot path once we have seen "device".
+        self._state_ok_until: float = 0.0
         # Two live paths share this client:
         #   frames — JPEG screencap broker (universal fallback, /adb/preview)
         #   h264   — screenrecord H.264 broker (preferred, WebCodecs viewers)
+        #   audio  — scrcpy opus (or Pulse PCM) for /ws/audio
         self.frames = FrameBroker(self)
         self.h264 = H264Broker(self)
+        self.audio = DeviceAudioBroker(self)
+        self.input_pump = InputPump(self)
 
     # ---- plumbing --------------------------------------------------------
     def _remember_size(self, w: int, h: int) -> None:
@@ -403,6 +510,8 @@ class AdbClient:
 
     async def ensure_connected(self, force: bool = False) -> str:
         now = time.time()
+        if not force and now < self._state_ok_until:
+            return "device"
         # Reconnect at most every 8s unless forced (avoids hammering on every frame)
         if force or (now - self._last_connect_at) > 8.0:
             if ":" in self.serial and not self.serial.startswith("emulator-"):
@@ -430,7 +539,36 @@ class AdbClient:
                 state = out.decode().strip()
             if state != "device":
                 raise AdbError(f"device not ready: state={state!r} stderr={err.decode().strip()}")
+        self._state_ok_until = time.time() + 8.0
         return state
+
+    async def warm_input(self) -> None:
+        """Open the fast-input shell before the first tap, off the request path."""
+        if not FAST_INPUT:
+            return
+        try:
+            await self.ensure_connected()
+            status = await self.input_pump.exec(":", timeout=2.0)
+            if status != "ok":
+                self.input_pump.disabled_until = time.time() + 30.0
+        except Exception:  # noqa: BLE001 — cold ADB must not take down the API
+            self.input_pump.disabled_until = time.time() + 30.0
+
+    async def _try_fast(self, command: str, timeout: float = 1.6) -> str:
+        """``ok`` / ``sent`` / ``skip``. ``skip`` means use a one-shot adb call."""
+        if not FAST_INPUT or time.time() < self.input_pump.disabled_until:
+            return "skip"
+        try:
+            status = await self.input_pump.exec(command, timeout=timeout)
+        except Exception:  # noqa: BLE001
+            self.input_pump.disabled_until = time.time() + 15.0
+            return "skip"
+        if status == "ok":
+            self._state_ok_until = time.time() + 8.0
+            return "ok"
+        # Command was written; retrying would double-tap. Cool the pump down.
+        self.input_pump.disabled_until = time.time() + 10.0
+        return "sent"
 
     def _normalize_png(self, out: bytes) -> bytes:
         if out.startswith(b"\x89PNG\r\n\x1a\n"):
@@ -526,12 +664,17 @@ class AdbClient:
 
     # ---- input -----------------------------------------------------------
     async def tap(self, x: int, y: int) -> dict:
+        x, y = int(x), int(y)
+        via = await self._try_fast(f"input tap {x} {y}", timeout=1.4)
+        if via in ("ok", "sent"):
+            self.frames.nudge_soon()
+            return {"ok": True, "action": "tap", "x": x, "y": y, "via": "pump", "acked": via == "ok"}
         await self.ensure_connected()
-        code, out, err = await self._run("shell", "input", "tap", str(int(x)), str(int(y)))
+        code, out, err = await self._run("shell", "input", "tap", str(x), str(y))
         if code != 0:
             raise AdbError(err.decode().strip() or "tap failed")
         self.frames.nudge_soon()
-        return {"ok": True, "action": "tap", "x": int(x), "y": int(y)}
+        return {"ok": True, "action": "tap", "x": x, "y": y, "via": "adb"}
 
     @staticmethod
     def _safe_download_name(filename: str) -> str:
@@ -647,10 +790,22 @@ class AdbClient:
         return {"ok": True, "action": "type", "text": text}
 
     async def swipe(self, x1: int, y1: int, x2: int, y2: int, duration_ms: int = 300) -> dict:
+        x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+        duration_ms = max(40, min(800, int(duration_ms)))
+        via = await self._try_fast(
+            f"input swipe {x1} {y1} {x2} {y2} {duration_ms}",
+            timeout=(duration_ms / 1000.0) + 1.2,
+        )
+        if via in ("ok", "sent"):
+            self.frames.nudge_soon()
+            return {
+                "ok": True, "action": "swipe", "x1": x1, "y1": y1, "x2": x2, "y2": y2,
+                "duration_ms": duration_ms, "via": "pump", "acked": via == "ok",
+            }
         await self.ensure_connected()
         code, out, err = await self._run(
             "shell", "input", "swipe",
-            str(int(x1)), str(int(y1)), str(int(x2)), str(int(y2)), str(int(duration_ms)),
+            str(x1), str(y1), str(x2), str(y2), str(duration_ms),
         )
         if code != 0:
             raise AdbError(err.decode().strip() or "swipe failed")
@@ -658,15 +813,15 @@ class AdbClient:
         return {
             "ok": True,
             "action": "swipe",
-            "x1": int(x1),
-            "y1": int(y1),
-            "x2": int(x2),
-            "y2": int(y2),
-            "duration_ms": int(duration_ms),
+            "x1": x1,
+            "y1": y1,
+            "x2": x2,
+            "y2": y2,
+            "duration_ms": duration_ms,
+            "via": "adb",
         }
 
     async def key(self, keycode: str | int) -> dict:
-        await self.ensure_connected()
         mapping = {
             "HOME": "3", "BACK": "4", "ENTER": "66", "DEL": "67",
             "APP_SWITCH": "187", "RECENTS": "187", "POWER": "26", "TAB": "61", "PASTE": "279",
@@ -675,6 +830,12 @@ class AdbClient:
         }
         kc = str(keycode)
         kc = mapping.get(kc.upper(), kc)
+        if kc.isdigit():
+            via = await self._try_fast(f"input keyevent {kc}", timeout=1.4)
+            if via in ("ok", "sent"):
+                self.frames.nudge_soon()
+                return {"ok": True, "action": "key", "keycode": kc, "via": "pump", "acked": via == "ok"}
+        await self.ensure_connected()
         code, out, err = await self._run("shell", "input", "keyevent", kc)
         if code != 0:
             raise AdbError(err.decode().strip() or "key failed")

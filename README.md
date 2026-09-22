@@ -111,7 +111,9 @@ Prefer the KVM Android emulator on the VM, publishing ADB on port 5555.
 ssh -i /home/box/Downloads/vm-zevi-cloudphone-key.pem azureuser@20.115.117.71
 export ANDROID_HOME=/opt/android-sdk JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 export PATH=$JAVA_HOME/bin:$PATH:$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools
-emulator -avd zevi -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -port 5554 &
+# Do not pass -no-audio: /ws/audio needs a guest audio HAL.
+# STRLIX_EMULATOR_AUDIO=off restores -no-audio if QEMU cannot open a backend.
+emulator -avd zevi -no-window -no-boot-anim -gpu swiftshader_indirect -port 5554 &
 adb wait-for-device
 adb shell getprop sys.boot_completed   # expect 1
 ```
