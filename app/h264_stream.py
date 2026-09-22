@@ -60,7 +60,7 @@ if TYPE_CHECKING:  # pragma: no cover - typing only
 
 # ---- ops knobs (env) ------------------------------------------------------
 H264_ENABLED = os.environ.get("H264_ENABLED", "1") not in ("0", "false", "no")
-H264_WIDTH = int(os.environ.get("H264_WIDTH", "360"))
+H264_WIDTH = int(os.environ.get("H264_WIDTH", "1080"))
 H264_BITRATE = int(os.environ.get("H264_BITRATE", "2500000"))
 H264_MAX_CLIENTS = int(os.environ.get("H264_MAX_CLIENTS", "12"))
 # Re-segment the recording this often (seconds). Each new segment starts with
@@ -629,17 +629,18 @@ class H264Broker:
 
     async def _segment_scrcpy(self) -> None:
         """One scrcpy-server raw Annex-B segment (no SDL)."""
-        dw, dh, ew, eh = await self._device_geometry()
-        self._enc_width, self._enc_height = ew, eh
+        dw, dh, _ew_legacy, _eh_legacy = await self._device_geometry()
         self._active_source = "scrcpy"
-        # Prefer SCRCPY_MAX_SIZE (long-edge cap). Fall back to geometry estimate.
-        max_size = SCRCPY_MAX_SIZE if SCRCPY_MAX_SIZE > 0 else max(ew, eh)
-        # Keep reported enc size coherent with the cap (client letterboxes via device_*).
-        if max_size < max(ew, eh) and max(ew, eh) > 0:
-            scale = max_size / float(max(ew, eh))
-            ew = max(4, int(ew * scale) & ~3)
-            eh = max(4, int(eh * scale) & ~3)
-            self._enc_width, self._enc_height = ew, eh
+        # Prefer SCRCPY_MAX_SIZE (long-edge cap). Do NOT inherit H264_WIDTH (screenrecord
+        # JPEG-era 360 default) — that under-reported size and starved gaming sharpness.
+        max_size = SCRCPY_MAX_SIZE if SCRCPY_MAX_SIZE > 0 else max(dw, dh)
+        if max_size > 0 and max(dw, dh) > 0:
+            scale = min(1.0, max_size / float(max(dw, dh)))
+            ew = max(4, int(dw * scale) & ~3)
+            eh = max(4, int(dh * scale) & ~3)
+        else:
+            ew, eh = _ew_legacy, _eh_legacy
+        self._enc_width, self._enc_height = ew, eh
         session = ScrcpyRawSession(
             self.adb,
             max_size=max_size,
