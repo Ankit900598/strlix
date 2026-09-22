@@ -212,14 +212,22 @@
 
   async function loadDevices() {
     if (hasMarketApi) {
-      const r = await fetch(apiUrl("/v1/devices"));
-      const j = await r.json();
-      devices = j.devices || [];
-    } else {
-      const r = await fetch("devices.json");
-      const j = await r.json();
-      devices = j.devices || [];
+      try {
+        const r = await fetch(apiUrl("/v1/devices"));
+        if (r.ok) {
+          const j = await r.json();
+          devices = j.devices || [];
+          populateFilters();
+          render();
+          return;
+        }
+      } catch (_) {
+        /* fall through to static catalog */
+      }
     }
+    const r = await fetch("devices.json");
+    const j = await r.json();
+    devices = j.devices || [];
     populateFilters();
     render();
   }
