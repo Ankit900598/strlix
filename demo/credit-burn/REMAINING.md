@@ -7,7 +7,7 @@ The AFD soft-launch route is `https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.n
 
 ## Needs Ankit / external
 
-1. **Domain DNS + TLS on AFD** — still on the `*.azurefd.net` endpoint. Runbook: `infra/hardening/ATTACH-CUSTOM-DOMAIN.sh`.
+1. **Domain DNS + TLS on AFD — SKIPPED by Ankit** — stay on `*.azurefd.net`. Do not buy domains or run `ATTACH-CUSTOM-DOMAIN.sh --apply`. Soft-launch URL remains the azurefd.net market route.
 2. **Physical phone** — real-device latency proof; the current pool is a shared emulator and does not qualify.
 3. **Azure GPU ticket — OPEN** — Support **2609210040005251**: eastus2 NCasT4 / NVadsA10 still **limit 0**. Do not create an Azure GPU VM until cleared.
 4. **Counsel** on `static/legal/*` before a wide public launch.

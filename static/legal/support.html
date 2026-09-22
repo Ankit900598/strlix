@@ -8,19 +8,31 @@
 </head>
 <body>
   <main>
-    <p class="placeholder">Placeholder contact. <a href="mailto:support@strlix.app">support@strlix.app</a> is the default until Ankit attaches a domain he owns. Set <code>SUPPORT_EMAIL</code> or <code>STRLIX_SUPPORT_EMAIL</code> on market-api and the <code>/v1/launch</code> payload follows. This page is static and keeps the placeholder visible on purpose.</p>
-    <a class="back" href="/">← Phone</a>
+    <!-- Canonical source: static/legal. Public URL: /market/legal/support.html. Keep web-market/legal in sync. -->
+    <p class="banner">Soft-launch terms — not a substitute for independent legal advice.</p>
+    <p class="back"><a href="../">← Back</a></p>
     <h1>Support</h1>
-    <p class="updated">Strlix preview · rg-zevi-cloudphone only</p>
-    <p>Email <a href="mailto:support@strlix.app">support@strlix.app</a> for access problems, waitlist removal, or a lease that did not start. Include the time and the email you used. Do not send passwords, card numbers, or session tokens.</p>
+    <p class="updated">Last updated 22 September 2026 · Strlix soft launch</p>
+
+    <h2>How to reach the operator</h2>
+    <p>The support address is configurable. Set <code>SUPPORT_EMAIL</code> or <code>STRLIX_SUPPORT_EMAIL</code> on market-api. <code>GET /v1/launch</code> returns the address in use and <code>support_email_placeholder</code>.</p>
+    <p>This static page shows the default: <a href="mailto:support@strlix.app">support@strlix.app</a>. The mailbox is being set up. Do not assume that address is monitored until <code>/v1/launch</code> reports the placeholder flag as false. This HTML does not read that setting; when the mailbox is real, update this page in the same change.</p>
+    <p>Write about access problems, waitlist removal, or a lease that did not start. Include the time and the email you used. Do not send passwords, card numbers, or session tokens.</p>
+
     <h2>Before you write</h2>
     <ul>
-      <li>The first month is free. You should not be asked for a card. If a screen asks for one, stop and email support — live Stripe is off.</li>
-      <li>The phone on screen is a cloud device (today, an emulator unless a physical phone is attached). It is not your personal phone.</li>
-      <li>Read <a href="capabilities.html">what Strlix can and can't do</a> before reporting a missing assistant or a latency number.</li>
+      <li>The first month is free. You should not be asked for a card. If a screen asks for one, stop and wait for a monitored mailbox. Live Stripe is off.</li>
+      <li>The phone on screen is a shared cloud Android (an emulator unless a physical phone is attached). The free month does not hold a private device for 30 days.</li>
+      <li>A live session lasts about an hour. After that, the same Android can be reused.</li>
+      <li>The in-phone AI can be wrong. It is not professional advice.</li>
+      <li>Read <a href="capabilities.html">what Strlix can and can’t do</a> before reporting a missing assistant or a latency number.</li>
     </ul>
+
+    <h2>Where these pages live</h2>
+    <p>On the public Front Door host the pages are <code>/market/legal/terms.html</code>, <code>privacy.html</code>, <code>support.html</code>, and <code>capabilities.html</code>. The phone host serves the same text at <code>/static/legal/</code>.</p>
+
     <h2>Status</h2>
-    <p>API health is <code>GET /health</code> on market-api. It reports <code>pay_mode</code>, whether the free month is active, and whether a card is required. It does not include secrets.</p>
+    <p><code>GET /health</code> on market-api reports <code>pay_mode</code>, whether the free month is active, and whether a card is required. It does not include secrets.</p>
     <nav class="legal-nav" aria-label="Legal">
       <a href="terms.html">Terms</a>
       <a href="privacy.html">Privacy</a>

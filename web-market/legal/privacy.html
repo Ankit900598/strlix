@@ -8,29 +8,40 @@
 </head>
 <body>
   <main>
-    <p class="placeholder">Placeholder. Company name is Strlix until a legal entity is confirmed. Contact <a href="mailto:support@strlix.app">support@strlix.app</a> (placeholder; set SUPPORT_EMAIL). Have counsel review before a wide launch. This is not legal advice.</p>
-    <a class="back" href="/market/">← Market</a>
+    <!-- Canonical source: static/legal. Public URL: /market/legal/privacy.html. Keep web-market/legal in sync. -->
+    <p class="banner">Soft-launch terms — not a substitute for independent legal advice.</p>
+    <p class="back"><a href="../">← Back</a></p>
     <h1>Privacy</h1>
-    <p class="updated">Last updated 21 September 2026 · Strlix preview</p>
-    <p>Strlix is a cloud phone. The preview is built to keep personal data small: an email if you choose to save one, a session, and the phone lease.</p>
+    <p class="updated">Last updated 22 September 2026 · Strlix soft launch</p>
+    <p>Strlix is the product name for this notice. It is not a statement of a registered company or of a lawyer’s approval. The soft launch is built to keep personal data small: an email if you choose to save one, a session, and a lease record.</p>
+
     <h2>What we store</h2>
     <ul>
-      <li><strong>Waitlist.</strong> Email and the time you joined (<code>created_at</code>). An invite code, if you used one, is stored only as a hash.</li>
-      <li><strong>Account.</strong> Email and display name after you claim a session. Anonymous preview sessions have no email until you save one.</li>
-      <li><strong>Lease.</strong> Which cloud device you were granted, for how long, and that the amount was zero during the free month.</li>
-      <li><strong>Payments.</strong> Not used for the free month. If a test checkout runs, we store a provider intent id and status. We do not store card numbers.</li>
-      <li><strong>Rate limits.</strong> A short hash of the client address in Redis, not the raw address in audit logs.</li>
+      <li><strong>Waitlist.</strong> Email and the time you joined. An invite code, if you used one, is stored only as a hash.</li>
+      <li><strong>Account.</strong> Email and an optional display name if you claim a session. An anonymous preview has no email until you save one. Microsoft Entra sign-in is optional and off by default.</li>
+      <li><strong>Free-month lease.</strong> Which catalog device the entitlement names, the window (default about 30 days), and that the amount was zero. This row does not mean a private phone was held for you.</li>
+      <li><strong>Live session.</strong> The phone broker keeps a short session in memory, about one hour, on a shared cloud Android. Redis keeps a session key per sign-in token (access about 15 minutes, refresh about 7 days). The token string itself is not written there, and neither is the cloud-phone screen.</li>
+      <li><strong>Rate limits.</strong> A short hash of the client address in Redis, not the raw address in the audit log.</li>
+      <li><strong>Payments.</strong> Not used for the free month. We do not store card numbers. If a test checkout runs, we store a provider intent id and status. Live Stripe is off. Razorpay is a stub and is not taking Indian-rupee payments.</li>
     </ul>
-    <h2>What we don't do</h2>
+
+    <h2>Where it runs</h2>
+    <p>The service runs on Microsoft Azure. Waitlist, account, and lease rows are in Postgres. Session keys and rate-limit counters are in Redis. This soft launch does not promise that those stores are located only in India. You can still use it from India; the free month does not require a card.</p>
+
+    <h2>What you put on the cloud phone</h2>
+    <p>The cloud Android is shared. What you type or sign into there can remain on that device until the image is reset, and the next session may be someone else’s. Resetting the emulator is not the same as deleting your account rows. Do not leave personal accounts signed in, and do not put a real payment instrument on the emulator.</p>
+
+    <h2>What we don’t do</h2>
     <ul>
       <li>No live card charge during the free month.</li>
       <li>No sale of waitlist emails.</li>
-      <li>No requirement to sign in with Entra for the phone preview. Entra is optional and off by default.</li>
+      <li>No claim that a lawyer has approved this notice.</li>
     </ul>
+
     <h2>How to delete</h2>
-    <p>Signed-in sessions can request a soft-delete from the API (<code>/v1/privacy/soft-delete</code>). Waitlist emails are separate: email <a href="mailto:support@strlix.app">support@strlix.app</a> and ask us to remove that address. Hard-delete of backups is a later job, not an instant wipe of every replica.</p>
-    <h2>Where it runs</h2>
-    <p>The service runs in Azure resource group <code>rg-zevi-cloudphone</code>. The database is Postgres. Sessions and rate limits use Redis. See <a href="support.html">Support</a> for contact.</p>
+    <p>A signed-in caller can request a soft-delete: <code>POST /v1/privacy/soft-delete</code>. That sets <code>deleted_at</code> on the user, orders, and leases, and revokes the access token used for that call. The email stays on the row until a later erase. Other refresh tokens can remain until they expire. The call does not, by itself, erase a waitlist email or every backup.</p>
+    <p><code>POST /v1/privacy/hard-delete</code> accepts a request and records it. It does not yet wipe every replica. Hard-delete of backups is a later job.</p>
+    <p>To remove a waitlist email, use the address on the <a href="support.html">Support</a> page and ask us to delete that address. If that mailbox is still being set up, the request waits until someone is reading it.</p>
     <nav class="legal-nav" aria-label="Legal">
       <a href="terms.html">Terms</a>
       <a href="privacy.html">Privacy</a>

@@ -129,7 +129,7 @@ def public_status() -> dict[str, Any]:
         "support_email": email,
         "support_email_placeholder": placeholder,
         "support_note": (
-            "Placeholder address until a custom domain is attached."
+            "The support mailbox is being set up."
             if placeholder
             else "Configured support address."
         ),

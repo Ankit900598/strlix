@@ -1,3 +1,5 @@
+/* Canonical source: static/legal. Public URL: /market/legal/*.html.
+   Keep web-market/legal in sync (same bytes). */
 :root {
   color-scheme: dark;
   --bg: #05070c;
@@ -25,7 +27,7 @@ h2 { font-size: 1rem; margin: 1.4rem 0 0.4rem; }
 p, li { font-size: 0.95rem; }
 a { color: var(--accent); }
 .updated, .back { color: var(--muted); font-size: 0.8rem; }
-.placeholder {
+.banner {
   border: 1px solid rgba(251, 191, 36, 0.45);
   background: rgba(251, 191, 36, 0.08);
   color: var(--warn);
