@@ -2,111 +2,130 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Strlix — Cloud Phone Marketplace</title>
-  <meta name="description" content="Strlix cloud Android with AI inside the phone. Pick model, Android version, RAM, ROM — open fullscreen." />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Strlix — Cloud Phone</title>
+  <meta name="description" content="Strlix cloud Android with AI inside the phone. Free first month — no card." />
+  <meta name="theme-color" content="#0B0D12" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/market.css" />
 </head>
 <body>
-  <a class="sr-only" href="#phoneStage">Skip to phone preview</a>
-  <a class="sr-only" href="#catalog">Skip to device catalog</a>
-  <header class="top">
-    <div class="brand"><div class="logo" aria-hidden="true">S</div> Strlix <span class="pill">Cloud phone + in-phone AI</span></div>
-    <div class="top-actions">
-      <span class="pill test" id="payPill" title="Free first month. Stripe stays in test mode — no card.">FREE MONTH</span>
-      <span class="pill" id="sessionPill">Guest preview · no signup</span>
-      <span class="pill">Android 7+ graceful viewer</span>
-      <button class="btn" type="button" onclick="location.href='../static/index.html'">Legacy viewer</button>
-      <button class="btn primary" type="button" id="btnTry">Open cloud phone</button>
+  <a class="sr-only" href="#heroPhone">Skip to phone</a>
+
+  <header class="shell-top" role="banner">
+    <div class="brand" aria-label="Strlix">
+      <span class="mark" aria-hidden="true">S</span>
+      <span class="word">Strlix</span>
+    </div>
+    <div class="shell-meta">
+      <span class="pill free" id="payPill" title="Free first month. Stripe stays in test mode.">Free month</span>
+      <span class="pill soft" id="sessionPill">Guest · no signup</span>
+      <span class="pill soft latency" id="latencyChip" title="HTTP RTT to stream">RTT —</span>
+      <button class="btn ghost" type="button" id="btnCatalog">Devices</button>
+      <button class="btn primary" type="button" id="btnTry">Open phone</button>
     </div>
   </header>
 
-  <section class="hero" aria-label="Hero">
-    <div>
-      <h1>Your cloud Android.<br/>AI lives <em>inside</em> the phone.</h1>
-      <p>
-        Tap the mini phone to expand into a fullscreen bezel experience.
-        <strong id="freeMonthCopy">Free for your first month — no card required.</strong>
-        Filter by model, Android version, RAM, and ROM. Stripe stays in test mode and is not required to open a phone.
-      </p>
-      <div class="hero-cta">
-        <button class="btn primary" type="button" id="btnTry2" onclick="document.getElementById('btnTry').click()">Try live preview</button>
-        <a class="btn" href="#catalog">Browse devices</a>
-      </div>
-    </div>
-    <div>
-      <div class="mini-phone" id="miniPhone" role="button" tabindex="0"
-           aria-label="Open cloud phone fullscreen preview">
-        <div class="notch" aria-hidden="true"></div>
-        <div class="screen">
-          <div>
-            <strong>Open cloud phone</strong>
-            <span>Homepage entry → immersive fullscreen</span>
-          </div>
+  <main class="stage-home" id="home">
+    <section class="hero" aria-label="Cloud phone">
+      <div class="hero-copy">
+        <p class="eyebrow" id="freeMonthCopy">Free for your first month — no card required.</p>
+        <h1 class="hero-title">
+          <span class="hero-brand">Strlix</span>
+          <span class="hero-line">Your cloud Android.</span>
+        </h1>
+        <p class="hero-sub">AI Ask lives inside the phone — not a side chat. Tap the device to go immersive.</p>
+        <div class="hero-cta">
+          <button class="btn primary lg" type="button" id="btnTry2">Open cloud phone</button>
+          <a class="btn ghost lg" href="#catalog">Browse devices</a>
         </div>
       </div>
-    </div>
-  </section>
 
-  <section class="section" id="catalog" aria-labelledby="catalogTitle">
-    <h2 id="catalogTitle">Device catalog</h2>
-    <div class="compat-note">
-      <strong>Android 7+ note:</strong> Catalog includes legacy images (7.1 / 8.1). The <em>web shell</em> degrades gracefully (no WebCodecs required — JPEG fallback via existing viewer).
-      Device pool images may be conceptual until provisioned; live preview uses the current emulator pool.
-    </div>
-    <div class="filters" role="search" aria-label="Filter devices">
-      <label>Android
-        <select id="fAndroid" aria-label="Filter by Android version"></select>
-      </label>
-      <label>RAM
-        <select id="fRam" aria-label="Filter by RAM"></select>
-      </label>
-      <label>ROM
-        <select id="fRom" aria-label="Filter by ROM"></select>
-      </label>
-      <label>Tier
-        <select id="fTier" aria-label="Filter by tier"></select>
-      </label>
-      <label>Search
-        <input id="fQ" type="search" placeholder="Pixel, Galaxy…" aria-label="Search devices" />
-      </label>
-    </div>
-    <div class="grid" id="deviceGrid" aria-live="polite"></div>
-  </section>
+      <button type="button" class="hero-phone" id="heroPhone" aria-label="Open cloud phone fullscreen">
+        <span class="bezel" aria-hidden="true">
+          <span class="bezel-shine"></span>
+          <span class="screen">
+            <span class="status-fake"><span>9:41</span><span class="bars"></span></span>
+            <span class="home-fake">
+              <span class="home-mark">S</span>
+              <span class="home-spacer"></span>
+              <span class="ask-fake">
+                <span class="ask-s">S</span>
+                <span class="ask-ph">Ask Strlix…</span>
+                <span class="ask-mic" aria-hidden="true"></span>
+              </span>
+            </span>
+            <span class="wake-line"></span>
+          </span>
+        </span>
+        <span class="phone-caption">Tap to expand</span>
+      </button>
+    </section>
 
-  <footer class="footer">
-    <p>Strlix · free first month · no card · Stripe test mode only.</p>
-    <nav class="legal-nav" aria-label="Legal">
-      <a href="/market/legal/terms.html">Terms</a>
-      <a href="/market/legal/privacy.html">Privacy</a>
-      <a href="/market/legal/support.html">Support</a>
-      <a href="/market/legal/capabilities.html">What Strlix can and can't do</a>
-    </nav>
-    <p>support@strlix.app is the default address. The mailbox is being set up. GET /v1/launch is the configured address.</p>
-  </footer>
+    <section class="catalog" id="catalog" aria-labelledby="catalogTitle">
+      <div class="catalog-head">
+        <h2 id="catalogTitle">Devices</h2>
+        <p>Pick a model when you want more than the live pool preview. Catalog is secondary — the phone is the product.</p>
+      </div>
+      <div class="filters" role="search" aria-label="Filter devices">
+        <label>Android
+          <select id="fAndroid" aria-label="Filter by Android version"></select>
+        </label>
+        <label>RAM
+          <select id="fRam" aria-label="Filter by RAM"></select>
+        </label>
+        <label>ROM
+          <select id="fRom" aria-label="Filter by ROM"></select>
+        </label>
+        <label>Tier
+          <select id="fTier" aria-label="Filter by tier"></select>
+        </label>
+        <label class="grow">Search
+          <input id="fQ" type="search" placeholder="Pixel, Redroid…" aria-label="Search devices" />
+        </label>
+      </div>
+      <div class="device-list" id="deviceGrid" aria-live="polite"></div>
+    </section>
 
-  <!-- Fullscreen phone -->
+    <footer class="footer">
+      <p>Strlix · free first month · Stripe test mode only.</p>
+      <nav class="legal-nav" aria-label="Legal">
+        <a href="/market/legal/terms.html">Terms</a>
+        <a href="/market/legal/privacy.html">Privacy</a>
+        <a href="/market/legal/support.html">Support</a>
+        <a href="/market/legal/capabilities.html">What Strlix can and can't do</a>
+      </nav>
+    </footer>
+  </main>
+
+  <!-- Immersive phone stage — Ask is inside the stream viewer, not an external chat panel -->
   <div id="phoneStage" class="" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="stageTitle">
-    <a class="sr-only" href="#closeStage">Skip phone stream</a>
-    <div class="chrome">
-      <strong id="stageTitle">Cloud phone</strong>
+    <div class="stage-chrome">
+      <div class="stage-brand">
+        <span class="mark sm" aria-hidden="true">S</span>
+        <strong id="stageTitle">Cloud phone</strong>
+        <span class="live-dot" id="stageLive" aria-hidden="true"></span>
+      </div>
       <span id="stageStatus" class="sr-only" aria-live="polite">Phone preview closed</span>
-      <div style="display:flex;gap:8px;align-items:center">
-        <span class="pill latency muted" id="latencyChip" title="Measured HTTP RTT to stream — never hardcoded">RTT —</span>
-        <span class="pill">Esc to close</span>
-        <button class="btn" type="button" id="closeStage">Close</button>
+      <div class="stage-actions">
+        <button class="btn ghost" type="button" id="btnAskHint" title="Ask lives inside the phone">Ask inside</button>
+        <button class="btn ghost" type="button" id="closeStage">Close</button>
       </div>
     </div>
-    <div class="device-frame" role="application" tabindex="0" aria-label="Cloud Android phone stream">
-      <div class="screen" id="stageScreen" aria-label="Phone screen"></div>
+
+    <div class="stage-body">
+      <div class="device-frame" id="deviceFrame" role="application" tabindex="0" aria-label="Cloud Android phone stream">
+        <div class="device-notch" aria-hidden="true"></div>
+        <div class="screen" id="stageScreen" aria-label="Phone screen"></div>
+      </div>
     </div>
+
     <aside class="claim-prompt" id="claimPrompt" hidden aria-live="polite">
       <div>
         <strong>Your phone is live.</strong>
-        <span>Free for your first month — no card required. Save this phone with an email, no password.</span>
+        <span>Free for your first month — no card. Save with email, no password.</span>
       </div>
       <form id="claimForm">
         <label class="sr-only" for="claimEmail">Email</label>
@@ -114,28 +133,30 @@
         <label class="sr-only" for="claimName">Name (optional)</label>
         <input id="claimName" type="text" autocomplete="name" maxlength="120" placeholder="Name (optional)" />
         <button class="btn primary" type="submit">Save rental</button>
-        <button class="btn" type="button" id="dismissClaim">Not now</button>
+        <button class="btn ghost" type="button" id="dismissClaim">Not now</button>
       </form>
       <p class="claim-message" id="claimMessage"></p>
     </aside>
   </div>
 
-  <!-- Pay modal -->
-  <div class="modal-back" id="payModal" role="dialog" aria-modal="true" aria-label="Checkout">
+  <div class="modal-back" id="payModal" role="dialog" aria-modal="true" aria-label="Free month">
     <div class="modal">
-      <h3>Checkout (test mode)</h3>
+      <h3>Start free month</h3>
       <div id="payBody"></div>
     </div>
   </div>
 
   <script>
+    // Production: same-origin only. Never ship 127.0.0.1 here — phones on
+    // https://…azurefd.net cannot reach your laptop, and HTTPS→HTTP is blocked.
+    // Operators: attach desktop-api under /stream/ (see web-market/DEPLOY.md).
+    // Local override: ?api=http://127.0.0.1:8792&stream=http://127.0.0.1:8789
     window.STRLIX_MARKET = {
       // Same-origin via AFD (/v1/* → market-api). Empty string => fetch("/v1/...").
       marketApi: "",
-      // HTTPS stream: AFD /stream/* → Azure VM desktop-api :8789. WS at /ws/* same host.
-      // interim public HTTPS (cloudflared systemd on Azure VM). AFD target: https://strlix-stream-aabqdheycacyfah2.z03.azurefd.net
+      // Interim public HTTPS (cloudflared on Azure VM). Prefer AFD /stream when attached.
       streamUrl: "https://graduation-cope-elementary-defence.trycloudflare.com",
-      streamFallback: "",
+      streamFallback: "/stream",
       payMode: "test",
       billingMode: "free_month",
       freeLaunch: true
