@@ -1,6 +1,6 @@
 # Remaining work — soft-launch ledger
 
-**Updated:** 2026-09-22 ~09:20 IST
+**Updated:** 2026-09-22 ~09:42 IST
 **Billing:** first month **FREE**. Keep `pay_mode=test` and live-charge gates OFF until after the free period.
 
 The AFD soft-launch route is `https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/market/`; legal is under `/market/legal/`. The free-month path and Entra app are ready; `STRLIX_AUTH_MODE=anon` remains the demo default. See `demo/launch/LAUNCH-CHECKLIST.md` and `demo/launch/SOFT-LAUNCH-READY.md`.
@@ -23,6 +23,6 @@ The AFD soft-launch route is `https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.n
 ## Done enough for soft-launch (do not redo)
 
 - Entra app `strlix-market-api` provisioned via CLI (client `58e20155-d677-4985-86bf-ee48521dc6f8`, tenant `d0a3e72e-ad10-41f9-a96b-152c5d2d2cb2`); Key Vault secret set; auth mode remains `anon`.
-- Market-api **0.6.2** (`ca-market-api--0000006`) live; waitlist, free grant, `/health`, and `/market/legal/*` were smoked via AFD.
-- Migration 006, WAF rules, and `ag-strlix-ops` alerts are applied. AWS GPU `i-0531c567f620877c3` remains **stopped**.
+- Market-api **0.6.3** (`ca-market-api--0000007`) live with soft-launch legal rewrite; waitlist, free grant, `/health`, and `/market/legal/*` smoked via AFD (banner: Soft-launch terms…).
+- Migration 006, WAF rules, and `ag-strlix-ops` alerts are applied. AWS GPU `i-0531c567f620877c3` is **RUNNING** (see WORKER-LIVE.md); idle-stop when done.
 - Live Stripe remains **OFF**.

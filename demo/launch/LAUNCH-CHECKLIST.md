@@ -26,7 +26,7 @@ Updated 22 September 2026 (~09:40 IST).
 - [x] **Private Redis runbook.** Public access stays on. Disable only with `--apply` and `CONFIRM=yes`, and only after a CAE VNet exists. `infra/hardening/PRIVATE-REDIS.md` / `PRIVATE-REDIS-NEXT.sh`.
 - [x] **Ops stubs.** Monitoring, phone-pool capacity, incident, Postgres + Key Vault backup. `infra/ops/`.
 
-Live market-api: bump on deploy after legal rewrite; keep `billing_mode=free_month`, `pay_mode=test`, `redis:true`, `live_charges_allowed:false`.
+Live market-api: **0.6.3** (`ca-market-api--0000007`); keep `billing_mode=free_month`, `pay_mode=test`, `redis:true`, `live_charges_allowed:false`.
 
 ## Needs Ankit (external blockers — do not fake these)
 
