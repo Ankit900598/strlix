@@ -352,7 +352,7 @@
       `<iframe id="streamFrame" title="Cloud phone stream" src="${escapeHtml(src)}"
         allow="${IFRAME_ALLOW}"
         allowfullscreen
-        referrerpolicy="same-origin"
+        referrerpolicy="no-referrer-when-downgrade"
         importance="high"></iframe>`;
 
     const frame = document.getElementById("streamFrame");
@@ -363,6 +363,8 @@
       if (settled || !bootEl) return;
       settled = true;
       bootEl.hidden = true;
+      bootEl.style.display = "none";
+      try { bootEl.remove(); } catch (_) {}
     };
 
     probeStreamReady(activeStreamBase).then((ok) => {
@@ -404,6 +406,16 @@
         activeStreamBase = pickStreamBase(liveDevice, lease);
       }
       const src = streamViewerSrc(activeStreamBase);
+      // Cross-origin interim stream (trycloudflare): same-tab nav so the Android
+      // screen appears immediately. Avoids the .stream-boot "Waking" overlay that
+      // stayed visible over a working iframe when display:flex beat [hidden].
+      try {
+        const abs = new URL(src, location.href);
+        if (device.preview === "live" && abs.origin !== location.origin) {
+          location.assign(abs.href);
+          return;
+        }
+      } catch (_) {}
       if (device.preview === "live") {
         mountLiveIframe(src, device);
       } else {

@@ -430,6 +430,9 @@ a:hover { text-decoration: underline; }
   touch-action: manipulation;
 }
 
+/* hidden must beat author display:flex — mobile Chrome kept "Waking" over live iframe */
+[hidden] { display: none !important; }
+
 .stream-boot {
   position: absolute; inset: 0;
   display: flex; flex-direction: column;
@@ -451,6 +454,7 @@ a:hover { text-decoration: underline; }
   border: 1px solid var(--accent);
   color: var(--faint); font-size: 14px;
 }
+.stream-boot[hidden] { display: none !important; }
 .stream-boot.err { color: var(--err); }
 
 .inphone-ask {
