@@ -3,6 +3,8 @@
 **Touchable cloud Android phone** — AI lives *inside* the phone (home Ask / Live). The web UI is a phone-first window onto that device (full-bleed Pixel bezel, live screenshot preview), not a chat cockpit. Optional floating **Ask** drawer for rare host-side prompts; `/chat` still serves the in-phone agent.
 
 
+**Client apps (Android, iOS, desktop):** [`clients/README.md`](clients/README.md). They open the soft-launch phone at `https://strlix-stream-aabqdheycacyfah2.z03.azurefd.net`.
+
 **Public demo URL (HTTPS):** https://dicke-materials-vendors-maritime.trycloudflare.com
 
 > Quick tunnels rotate when restarted. Current URL is also in `demo/public-url.txt`. Restart with `./scripts/public-tunnel.sh`.

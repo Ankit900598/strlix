@@ -1,0 +1,17 @@
+{
+  "appId": "com.strlix.phone",
+  "appName": "Strlix",
+  "webDir": "../player/www",
+  "android": {
+    "backgroundColor": "#000000",
+    "allowMixedContent": false
+  },
+  "ios": {
+    "backgroundColor": "#000000",
+    "contentInset": "never",
+    "allowsLinkPreview": false
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}

@@ -26,6 +26,15 @@ __pycache__/
 # node
 node_modules/
 npm-debug.log*
+clients/**/*.js.map
+clients/mobile/android/local.properties
+clients/mobile/android/.gradle/
+clients/mobile/android/build/
+clients/mobile/android/app/build/
+clients/mobile/android/capacitor-cordova-android-plugins/build/
+clients/mobile/ios/App/Pods/
+clients/mobile/ios/App/build/
+clients/mobile/ios/DerivedData/
 
 # android / gradle
 android-agent/.gradle/

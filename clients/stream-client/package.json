@@ -1,0 +1,14 @@
+{
+  "name": "@strlix/stream-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "WebSocket H.264 + Opus client for the Strlix cloud phone. Transport today is WebSocket; packet types are the seam for a future WebRTC peer.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "node --experimental-strip-types --test test/*.test.ts",
+    "probe": "node --experimental-strip-types scripts/probe.ts"
+  }
+}
