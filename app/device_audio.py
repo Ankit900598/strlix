@@ -42,8 +42,8 @@ if TYPE_CHECKING:  # pragma: no cover
 
 # scrcpy codec ids are big-endian fourcc on the audio socket.
 CODEC_OPUS = 0x6F707573  # "opus"
-CODEC_AAC = 0x00616163  # "aac "
-CODEC_PCM = 0x00726177  # "raw "
+CODEC_AAC = 0x61616320  # "aac "
+CODEC_PCM = 0x72617720  # "raw "
 CODEC_NAMES = {CODEC_OPUS: "opus", CODEC_AAC: "aac", CODEC_PCM: "pcm"}
 
 SCRCPY_FLAG_CONFIG = 1 << 63
@@ -246,6 +246,10 @@ class DeviceAudioBroker:
             return False
         self.started_at = time.time()
         try:
+            # tunnel_forward always prefixes one dummy byte before the codec id
+            # (even with send_device_meta=false). Video raw_stream skips this;
+            # audio must consume it or we parse "\x00sdk..." as a fake fourcc.
+            await self._read_exact(reader, 1, timeout=8.0)
             header = await self._read_exact(reader, 4, timeout=8.0)
             self.codec = parse_codec_id(header)
             if self.codec != "opus":

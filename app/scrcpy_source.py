@@ -199,7 +199,7 @@ class ScrcpyRawSession:
             # video=false so this socket is the audio socket (scrcpy ≥ 2.0).
             opts = (
                 f"scid={self.scid} tunnel_forward=true video=false audio=true "
-                f"control=false cleanup=false "
+                f"control=false cleanup=false send_device_meta=false "
                 f"audio_codec=opus audio_bit_rate={self.bitrate}"
             )
         else:
