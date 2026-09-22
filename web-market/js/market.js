@@ -1,8 +1,16 @@
 (function () {
   const cfg = window.STRLIX_MARKET || {};
-  const MARKET_API = cfg.marketApi || null; // e.g. http://127.0.0.1:8792
-  const STREAM = cfg.streamUrl || "http://127.0.0.1:8789";
-  const STREAM_FALLBACK = cfg.streamFallback || "http://127.0.0.1:8787";
+  // marketApi "" = same-origin (AFD). Do not coerce "" with || null.
+  const MARKET_API = (cfg.marketApi === undefined || cfg.marketApi === null)
+    ? null
+    : String(cfg.marketApi);
+  const STREAM = (cfg.streamUrl === undefined || cfg.streamUrl === null || cfg.streamUrl === "")
+    ? ""
+    : String(cfg.streamUrl);
+  const STREAM_FALLBACK = (cfg.streamFallback === undefined || cfg.streamFallback === null)
+    ? ""
+    : String(cfg.streamFallback);
+  const hasMarketApi = MARKET_API !== null; // "" is same-origin and valid
   let PAY_MODE = cfg.payMode || "test";
   let FREE_MONTH = (cfg.billingMode || "free_month") === "free_month" || cfg.freeLaunch !== false;
   let LAUNCH_COPY = "Free for your first month — no card required.";
@@ -25,7 +33,7 @@
       : "Stripe/Razorpay test mode — no real charges";
   }
   async function refreshPayGates() {
-    if (!MARKET_API) { paintLaunch(); return; }
+    if (!hasMarketApi) { paintLaunch(); return; }
     try {
       const base = MARKET_API.replace(/\/$/, "");
       const [gates, launch] = await Promise.all([
@@ -145,7 +153,7 @@
   }
 
   async function loadDevices() {
-    if (MARKET_API) {
+    if (hasMarketApi) {
       const r = await fetch(MARKET_API + "/v1/devices");
       const j = await r.json();
       devices = j.devices || [];
@@ -286,7 +294,7 @@
   }
 
   async function refreshAuth() {
-    if (!MARKET_API || !refreshToken) return false;
+    if (!hasMarketApi || !refreshToken) return false;
     try {
       const r = await fetch(MARKET_API + "/v1/auth/refresh", {
         method: "POST",
@@ -306,7 +314,7 @@
 
   async function ensureAuth() {
     if (els.token) return els.token;
-    if (!MARKET_API) {
+    if (!hasMarketApi) {
       els.token = "local-demo";
       return els.token;
     }
@@ -335,7 +343,7 @@
   // Minimal async-task bridge for phone-first UI surfaces. The API stores only
   // an allow-listed kind and returns queued → running → done; no chat payloads.
   async function createPollableJob(kind = "phone_task") {
-    if (!MARKET_API) throw new Error("async jobs require market-api");
+    if (!hasMarketApi) throw new Error("async jobs require market-api");
     return apiJson("/v1/jobs", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -429,7 +437,7 @@
     const email = (els.modalBody.querySelector("#freeEmail").value || "").trim();
     const invite = (els.modalBody.querySelector("#freeInvite").value || "").trim();
     try {
-      if (MARKET_API && email) {
+      if (hasMarketApi && email) {
         const joined = await fetch(MARKET_API.replace(/\/$/, "") + "/v1/waitlist", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -437,7 +445,7 @@
         });
         await readJson(joined);
       }
-      if (!MARKET_API) {
+      if (!hasMarketApi) {
         els.modal.classList.remove("open");
         openFullscreen(device, { local: true, plan: "free_month", device_id: device.id, card_required: false });
         return;
@@ -477,7 +485,7 @@
     const buttons = [...els.modalBody.querySelectorAll("[data-plan]")];
     buttons.forEach((button) => { button.disabled = true; });
     try {
-      if (!MARKET_API) {
+      if (!hasMarketApi) {
         // Local stub without API
         els.modal.classList.remove("open");
         openFullscreen(device, { local: true, plan, device_id: device.id });

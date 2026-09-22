@@ -130,9 +130,12 @@
 
   <script>
     window.STRLIX_MARKET = {
-      marketApi: "http://127.0.0.1:8792",
-      streamUrl: "http://127.0.0.1:8789",
-      streamFallback: "http://127.0.0.1:8787",
+      // Same-origin via AFD (/v1/* → market-api). Empty string => fetch("/v1/...").
+      marketApi: "",
+      // HTTPS stream: AFD /stream/* → Azure VM desktop-api :8789. WS at /ws/* same host.
+      // interim public HTTPS (cloudflared systemd on Azure VM). AFD target: https://strlix-stream-aabqdheycacyfah2.z03.azurefd.net
+      streamUrl: "https://graduation-cope-elementary-defence.trycloudflare.com",
+      streamFallback: "",
       payMode: "test",
       billingMode: "free_month",
       freeLaunch: true
