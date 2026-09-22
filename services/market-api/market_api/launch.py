@@ -135,10 +135,10 @@ def public_status() -> dict[str, Any]:
         ),
         "invite_required": invite_required(),
         "legal": {
-            "terms": "/legal/terms.html",
-            "privacy": "/legal/privacy.html",
-            "support": "/legal/support.html",
-            "capabilities": "/legal/capabilities.html",
+            "terms": "/market/legal/terms.html",
+            "privacy": "/market/legal/privacy.html",
+            "support": "/market/legal/support.html",
+            "capabilities": "/market/legal/capabilities.html",
         },
     }
 

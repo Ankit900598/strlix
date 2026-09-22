@@ -7,15 +7,15 @@
 
 ## Update 2026-09-22 ~09:12 IST
 
-- Deployed **market-api 0.6.1** (`ca-market-api--0000005`) with `static/legal` in image; origin `/legal/*.html` **200**.
-- AFD `route-market` patterns include `/legal/*`; `/health` **200**. Edge `/legal/*` may still 404 until POP sync (parent applying/verifying).
+- Deployed **market-api 0.6.2** (`ca-market-api--0000006`) with `static/legal` in image; origin `/legal/*.html` **200**.
+- AFD `route-market` patterns include `/legal/*`; `/health` **200**. Edge `/legal/*` still Azure-404s; use `/market/legal/*` (web-market/legal) until resolved. See CUSTOM-DOMAIN.md.
 - Waitlist + grant smoked via AFD. Stripe live still OFF. AWS GPU still stopped.
 ## Health (verified this pass)
 
 | Check | Result |
 |-------|--------|
-| AFD `https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/health` | **200** · `ok:true` · `pay_mode=test` · `redis:true` · `redis_error:null` · market-api **0.6.0** · `billing_mode=free_month` · `free_month_active:true` · `live_charges_allowed:false` |
-| Origin `ca-market-api…/health` | prior pass **200** · rev **`ca-market-api--0000004`** |
+| AFD `https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/health` | **200** · `ok:true` · `pay_mode=test` · `redis:true` · `redis_error:null` · market-api **0.6.2** · `billing_mode=free_month` · `free_month_active:true` · `live_charges_allowed:false` |
+| Origin `ca-market-api…/health` | prior pass **200** · rev **`ca-market-api--0000006`** |
 | Waitlist `POST /v1/waitlist` via AFD | prior pass **200** · `card_required:false` |
 | Managed Redis `redis-strlix-amr` | **publicNetworkAccess=Enabled** (unchanged) — do not disable |
 | Azure GPU VMs in RG | **None** — do not create |

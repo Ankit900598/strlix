@@ -29,14 +29,27 @@ The managed certificate stays pending until both records validate. Leave the `*.
 
 ## Routes
 
-Today `route-market` matches `/v1/*`, `/market/*`, `/health`, `/ready`. Legal pages need `/legal/*`:
+Today `route-market` matches `/v1/*`, `/market/*`, `/health`, `/ready`, and (control-plane) `/legal/*`.
+
+**AFD `/legal/*` mysteriously 404s** at the edge (Azure 404 ~266KB) even when the pattern is present and origin `ca-market-api` `/legal/terms.html` returns 200. Until that is resolved, **publish and link legal pages under `/market/legal/*`** (files live in `web-market/legal/`; market-api still mounts `/legal` from `static/legal/` for direct origin use).
+
+```bash
+# Prefer for public AFD URLs:
+curl -sS -o /dev/null -w '%{http_code}\n' https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/market/legal/terms.html
+# expect 200
+
+# Known-bad until AFD quirk is fixed:
+# https://strlix-edge-….azurefd.net/legal/terms.html → Azure 404
+```
+
+Optional pattern extend (does not fix the edge 404 quirk):
 
 ```bash
 ./infra/hardening/EXTEND-AFD-ROUTES.sh
 ./infra/hardening/EXTEND-AFD-ROUTES.sh --apply
 ```
 
-The phone-first viewer is served by desktop-api (`/` and `/static/legal/*`). It is not an origin on this Front Door. Linking a custom domain to AFD does not by itself put the phone UI on that host.
+The phone-first viewer is served by desktop-api (`/` and historically `/static/legal/*`). Soft-launch chrome links prefer `/market/legal/*` for the public AFD URL. Linking a custom domain to AFD does not by itself put the phone UI on that host.
 
 ## Support email
 

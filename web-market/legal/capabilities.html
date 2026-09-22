@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Strlix — What it can and can't do</title>
+  <link rel="stylesheet" href="legal.css" />
+</head>
+<body>
+  <main>
+    <p class="placeholder">Product limits for the preview. Not a promise of a physical device, an App Store listing, or a granted Android assistant role.</p>
+    <a class="back" href="/market/">← Market</a>
+    <h1>What Strlix can and can't do</h1>
+    <p class="updated">Last updated 21 September 2026</p>
+    <h2>Can</h2>
+    <ul>
+      <li>Open a cloud Android phone in the browser, phone-first, without a card during the free first month.</li>
+      <li>Let you tap, swipe, and type on that cloud phone.</li>
+      <li>Run in-phone help (Ask / Live) against the cloud device when the agent and stream are up.</li>
+      <li>Save an email on the waitlist or claim a session later. Payment is not required for either.</li>
+      <li>Record a free-month entitlement (default 30 days, amount zero) without calling Stripe.</li>
+    </ul>
+    <h2>Can't — read this before a demo</h2>
+    <ul>
+      <li><strong>Not your phone.</strong> Strlix does not control the handset in your pocket. It controls a cloud Android we host.</li>
+      <li><strong>Emulator ceiling.</strong> The live pool is one shared emulator unless a physical device is plugged in and measured. Emulator latency is not a sub-100&nbsp;ms certificate. The market-api free-month row is an entitlement (about 30 days). The live session broker still expires around an hour and does not keep a private phone warm for each signup.</li>
+      <li><strong><code>ROLE_ASSISTANT</code> is a stub.</strong> <code>AssistantRoleHook</code> does not request or hold Android's assistant role. Strlix is not the system default assistant, does not declare <code>VoiceInteractionService</code>, and must not be described as one.</li>
+      <li><strong>No on-device model yet.</strong> The on-device model hook reports disabled. It does not invent model output.</li>
+      <li><strong>No live billing.</strong> Checkout, if you hit it, stays in Stripe test mode. The free-month grant does not call Stripe.</li>
+      <li><strong>No iOS app.</strong> There is no App Store build. Signing secrets are not in this repo.</li>
+      <li><strong>No GPU fleet.</strong> GPU quota is still a support ticket. Don't expect a GPU worker.</li>
+      <li><strong>Play Store, banking, and calls</strong> on the cloud image are best-effort and often blocked. Don't put a real payment instrument on the emulator.</li>
+    </ul>
+    <h2>Abuse</h2>
+    <p>Anonymous session create, login, and waitlist are rate-limited. A configured Redis that is down fails closed (429) instead of opening the floodgates. The free month does not disable those limits.</p>
+    <nav class="legal-nav" aria-label="Legal">
+      <a href="terms.html">Terms</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="support.html">Support</a>
+      <a href="capabilities.html">Limits</a>
+    </nav>
+  </main>
+</body>
+</html>

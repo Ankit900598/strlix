@@ -2,7 +2,7 @@
 
 Phone-first cloud Android. First month free. No live Stripe. Resource group `rg-zevi-cloudphone` only.
 
-Updated 22 September 2026 (~09:12 IST).
+Updated 22 September 2026 (~03:49 IST).
 
 ## Done in this launch prep
 
@@ -11,9 +11,9 @@ Updated 22 September 2026 (~09:12 IST).
 - [x] **Phone grant without payment.** `POST /v1/access/grant` writes a $0 `provider=free_month` lease. `/v1/auth/anon` and `/v1/auth/claim` do not require checkout. **Smoked 2026-09-22** → **200** `granted_free` for `pixel-7a-a14`.
 - [x] **Stripe stays test-gated.** `pay_mode=test`. Live calls still need `STRLIX_PAY_MODE=live` AND `PAYMENTS_LIVE=true` AND `STRLIX_ALLOW_LIVE_CHARGES=true`. Those stay off. Checkout is not required to open a phone.
 - [x] **Copy.** Phone chrome and the catalog say "Free for your first month — no card required."
-- [x] **Entra is implemented and off.** `STRLIX_AUTH_MODE=anon|entra`, default `anon`. Portal steps and env vars: `infra/hardening/ENTRA-EXTERNAL-ID.md`.
-- [x] **Legal pages in image.** Terms/Privacy/Support/Capabilities in `static/legal/`. Served at `/legal/*` on market-api. **market-api 0.6.1** (`ca-market-api--0000005`) ships `static/legal` (Dockerfile + `.dockerignore` fix). Origin `…/legal/terms.html` → **200**. Prefer `*.html` paths (`/legal/terms` without `.html` is 404).
-- [x] **AFD route patterns include `/legal/*`.** Applied on `afd-zevi-strlix` / `route-market` (patterns: `/v1/*`,`/market/*`,`/health`,`/ready`,`/legal/*`). `/health` stays **200**. Edge POP may lag on `/legal/*` (parent re-checking); verify `https://strlix-edge-….azurefd.net/legal/terms.html` → 200 before sharing that URL.
+- [x] **Legal pages in image.** Terms/Privacy/Support/Capabilities in `static/legal/` (origin `/legal/*`) **and** `web-market/legal/` (AFD-safe `/market/legal/*`). **market-api 0.6.2**. Prefer `*.html` paths. Public links use `/market/legal/...`.
+- [x] **AFD legal via `/market/legal/*`.** `route-market` still lists `/legal/*`, but edge `/legal/*` returns Azure 404 (~266KB) while origin is 200. Use `https://strlix-edge-….azurefd.net/market/legal/terms.html` → **200**. See `infra/hardening/CUSTOM-DOMAIN.md`.
+- [x] **Entra applied (code + docs).** `STRLIX_AUTH_MODE=anon|entra`, default `anon`. Portal steps: `infra/hardening/ENTRA-EXTERNAL-ID.md`. Keep anon for demos until portal app is finished.
 - [x] **Abuse controls / WAF apply DONE.** `TIGHTEN-WAF.sh --apply` on `wafzevistrlix`: **RateLimitAuthAnon** (110), **RateLimitWaitlist** (120), **RateLimitAuthLogin** (130) — 100/min/IP. `/health` not matched.
 - [x] **Ops alerts DONE.** Action group `ag-strlix-ops` (see `demo/launch/OPS-ALERTS.md`).
 - [x] **Postgres migration 006 DONE** on `psql-zevi-strlix` (waitlist + free_month plan).
@@ -23,7 +23,7 @@ Updated 22 September 2026 (~09:12 IST).
 - [x] **Private Redis runbook.** Public access stays on. Disable only with `--apply` and `CONFIRM=yes`, and only after a CAE VNet exists. `infra/hardening/PRIVATE-REDIS.md` / `PRIVATE-REDIS-NEXT.sh`.
 - [x] **Ops stubs.** Monitoring, phone-pool capacity, incident, Postgres + Key Vault backup. `infra/ops/`.
 
-Live market-api: **0.6.1**, `billing_mode=free_month`, `pay_mode=test`, `redis:true`, `live_charges_allowed:false`.
+Live market-api: **0.6.2** (`ca-market-api--0000006`), `billing_mode=free_month`, `pay_mode=test`, `redis:true`, `live_charges_allowed:false`.
 
 ## Needs Ankit (external blockers — do not fake these)
 
@@ -33,7 +33,7 @@ Live market-api: **0.6.1**, `billing_mode=free_month`, `pay_mode=test`, `redis:t
 - [ ] **Azure GPU ticket.** Support **2609210040005251** — eastus2 NCasT4 / NVadsA10 still limit 0. Do not create an Azure GPU VM until cleared.
 - [ ] **Counsel pass** on `static/legal/*` before a wide (not soft) public launch. The pages say they are placeholders.
 - [ ] **iOS signing.** No App Store credentials in this repo. There is no iOS ship in this launch.
-- [ ] **Confirm AFD `/legal/*` edge 200** after POP sync (control plane already has the pattern; origin already 200).
+- [x] **AFD legal smoke via `/market/legal/*`.** Edge `/legal/*` still mysteriously 404s; public URLs use `/market/legal/*` until resolved.
 
 ## Deferred (after the free month, or explicitly out of this launch)
 
@@ -50,10 +50,10 @@ Live market-api: **0.6.1**, `billing_mode=free_month`, `pay_mode=test`, `redis:t
 
 ```bash
 curl -sS https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/health
-# expect ok, version 0.6.1+, pay_mode=test, free_month_active=true, card_required=false, redis=true
+# expect ok, version 0.6.2+, pay_mode=test, free_month_active=true, card_required=false, redis=true
 
-curl -sS -o /dev/null -w '%{http_code}\n' https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/legal/terms.html
-# expect 200 (after AFD edge sync)
+curl -sS -o /dev/null -w '%{http_code}\n' https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/market/legal/terms.html
+# expect 200 (prefer /market/legal/* — AFD /legal/* still Azure-404s)
 
 curl -sS -X POST https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/v1/waitlist \
   -H 'Content-Type: application/json' -d '{"email":"you@example.com"}'

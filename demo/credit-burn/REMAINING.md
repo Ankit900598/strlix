@@ -14,7 +14,7 @@ Ops notes: `../launch/OPS-ALERTS.md`, `../launch/PRIVATE-REDIS-PATH.md`, `../lau
 4. **Azure GPU wait** — Support **2609210040005251**: eastus2 NCasT4 / NVadsA10 still **limit 0**. Do not create an Azure GPU VM until cleared.
 5. **Counsel** on `static/legal/*` before wide public launch.
 6. **iOS** — no App Store credentials; out of this launch.
-7. **Confirm AFD edge `/legal/*` → 200** — control-plane pattern applied; origin `ca-market-api` `/legal/terms.html` **200** (0.6.1). Parent re-checking edge.
+7. **AFD legal:** edge `/legal/*` still Azure-404s; use `/market/legal/*` (0.6.2 / `ca-market-api--0000006`). See CUSTOM-DOMAIN.md.
 
 ## Done enough for soft-launch (do not redo)
 
