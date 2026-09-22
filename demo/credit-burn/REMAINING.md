@@ -1,27 +1,35 @@
 # Remaining work — soft-launch ledger
 
-**Updated:** 2026-09-22 ~00:15 IST  
+**Updated:** 2026-09-22 ~09:12 IST  
 **Billing:** first month **FREE**. Keep `pay_mode=test` and live-charge gates OFF until after the free period.
 
-Free-month path (flag, waitlist, no-card grant, legal pages, Entra-ready auth defaulting to anon) is in the repo. Split of done vs blocked vs deferred: `demo/launch/LAUNCH-CHECKLIST.md`.  
+Free-month path (flag, waitlist, no-card grant, legal pages, Entra-ready auth defaulting to anon) is live. Split of done vs blocked vs deferred: `demo/launch/LAUNCH-CHECKLIST.md`.  
 Ops notes: `../launch/OPS-ALERTS.md`, `../launch/PRIVATE-REDIS-PATH.md`, `../launch/SOFT-LAUNCH-STATUS.md`.
 
-## Remaining list
+## Remaining list (Needs Ankit / external)
 
-1. **Azure GPU wait** — Support **2609210040005251**: eastus2 NCasT4 / NVadsA10 still **limit 0**. Do not create an Azure GPU VM until cleared.  
-   - **AWS:** G/VT On-Demand quota **4**; worker **`strlix-gpu-worker-1`** (`i-0531c567f620877c3`, g4dn.xlarge) already created — stop when idle (~$0.526/hr).
-2. **Custom domain + TLS on AFD** — still on `strlix-edge-….azurefd.net`. Runbook: `infra/hardening/ATTACH-CUSTOM-DOMAIN.sh` (needs Ankit DNS).
-3. **Private Redis cutover (gated)** — PE on eastus `pe-subnet`; CAE eastus2 has no VNet. Keep AMR **public Enabled**. Script: `infra/hardening/PRIVATE-REDIS-PATH.sh` (`CONFIRM=yes`; no-ops without CAE VNet).
-4. **Key Vault PE (optional)** — SKIP: KV eastus2 vs VNet eastus.
-5. **Live Stripe — deferred** until after free month. Key Vault only when ready (`PAYMENTS-KEYVAULT.md`).
-6. **Real-device latency proof** — physical phone required; emulator does not qualify.
-7. **Domain DNS + Entra portal** — Ankit owns DNS/clicks; code defaults stay `anon` / placeholder DOMAIN.
-8. **Postgres migration 006** — apply `services/market-api/migrations/006_free_month.sql` on `psql-zevi-strlix` before production waitlist.
-9. **Action-group email** — confirm `ay186mnc@gmail.com` received Monitor confirm for `ag-strlix-ops` if needed.
+1. **Domain DNS + TLS on AFD** — still on `strlix-edge-….azurefd.net`. Runbook: `infra/hardening/ATTACH-CUSTOM-DOMAIN.sh` (Ankit DNS).
+2. **Entra portal** — if CLI cannot finish app registration / secrets; code defaults stay `anon`.
+3. **Physical phone** — real-device latency proof; emulator does not qualify.
+4. **Azure GPU wait** — Support **2609210040005251**: eastus2 NCasT4 / NVadsA10 still **limit 0**. Do not create an Azure GPU VM until cleared.
+5. **Counsel** on `static/legal/*` before wide public launch.
+6. **iOS** — no App Store credentials; out of this launch.
+7. **Confirm AFD edge `/legal/*` → 200** — control-plane pattern applied; origin `ca-market-api` `/legal/terms.html` **200** (0.6.1). Parent re-checking edge.
 
 ## Done enough for soft-launch (do not redo)
 
-- AFD + WAF healthy; market-api on Managed Redis (`redis:true`).
-- Monitor alerts (`ag-strlix-ops`).
-- Free-month / waitlist / legal / Entra-ready code merged.
-- AWS g4dn.xlarge GPU worker provisioned (SSM-only).
+- Migration **006** applied on `psql-zevi-strlix`.
+- WAF apply DONE: RateLimitAuthAnon / RateLimitWaitlist / RateLimitAuthLogin on `wafzevistrlix`.
+- Alerts DONE: `ag-strlix-ops`.
+- Free-month market-api **0.6.1** live (`ca-market-api--0000005`); `/health` via AFD **200** · `pay_mode=test` · `redis:true` · `free_month_active:true`.
+- Waitlist + grant smoked via AFD (2026-09-22).
+- AFD `route-market` patterns include `/legal/*` (with `/health` retained).
+- AWS GPU `i-0531c567f620877c3` / `strlix-gpu-worker-1` created then **STOPPED** (idle). Start when needed; do not terminate.
+- `cae-infra-subnet` `10.0.2.0/23` reserved (eastus). Redis public access still Enabled — do not disable.
+- Live Stripe **OFF**.
+
+## Deferred / gated
+
+- Private Redis cutover (CAE/VNet region split) — subnet only; `CONFIRM=yes` not used.
+- Key Vault / Postgres private endpoints — region mismatch; skipped.
+- Live Stripe — after free month only.

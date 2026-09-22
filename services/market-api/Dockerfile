@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
  && rm -rf /var/lib/apt/lists/*
 COPY services/market-api /app/services/market-api
 COPY web-market /app/web-market
+COPY static/legal /app/static/legal
 RUN pip install --upgrade pip && pip install /app/services/market-api \
  && mkdir -p /workspace && ln -sfn /app /workspace/zevi-cloudphone
 WORKDIR /app/services/market-api

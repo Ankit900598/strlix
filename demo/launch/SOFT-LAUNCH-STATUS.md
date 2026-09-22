@@ -4,6 +4,12 @@
 **Billing posture:** Ankit first calendar month **FREE** (soft-launch); do not enable Stripe **live** charges.  
 **CloudAgent note:** new launch docs live under `demo/launch/`. Prefer editing here over duplicating into `demo/credit-burn/` mid-flight to avoid merge fights; `REMAINING.md` was updated in credit-burn as the single remaining-work ledger.
 
+
+## Update 2026-09-22 ~09:12 IST
+
+- Deployed **market-api 0.6.1** (`ca-market-api--0000005`) with `static/legal` in image; origin `/legal/*.html` **200**.
+- AFD `route-market` patterns include `/legal/*`; `/health` **200**. Edge `/legal/*` may still 404 until POP sync (parent applying/verifying).
+- Waitlist + grant smoked via AFD. Stripe live still OFF. AWS GPU still stopped.
 ## Health (verified this pass)
 
 | Check | Result |

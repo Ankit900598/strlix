@@ -5,7 +5,10 @@
 demo
 android-agent
 platform-tools
-static
+# Exclude phone UI static (large/bak); keep legal for market-api /legal/* mount
+static/*
+!static/legal
+!static/legal/**
 app
 **/*.md
 **/.env
