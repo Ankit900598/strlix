@@ -5,9 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Strlix — Cloud Phone</title>
   <meta name="description" content="Strlix cloud Android with AI inside the phone. Free first month — no card." />
-  <meta name="theme-color" content="#0f0f0f" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#0B0D12" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -156,11 +154,11 @@
     window.STRLIX_MARKET = {
       // Same-origin via AFD (/v1/* → market-api). Empty string => fetch("/v1/...").
       marketApi: "",
-      // Interim public HTTPS (cloudflared on Azure VM). Prefer AFD /stream when attached.
-      // Stable AFD stream host. trycloudflare rotates and was the flaky path.
+      // Azure Front Door → desktop-api on vm-zevi-cloudphone. Same-origin
+      // /stream is the fallback when this page is served beside the API.
       streamUrl: "https://strlix-stream-aabqdheycacyfah2.z03.azurefd.net",
       streamFallback: "/stream",
-      viewerRev: "0.7.0",
+      viewerRev: "20260922-audio",
       payMode: "test",
       billingMode: "free_month",
       freeLaunch: true

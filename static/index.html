@@ -684,16 +684,17 @@
       top: 36px;
       right: 10px;
       z-index: 12;
-      width: 36px;
-      height: 36px;
+      width: 44px;
+      height: 44px;
       border-radius: 999px;
       border: 0;
       background: rgba(15, 15, 15, 0.72);
       color: #fff;
       font: inherit;
-      font-size: 14px;
+      font-size: 16px;
       cursor: pointer;
       backdrop-filter: blur(8px);
+      touch-action: manipulation;
     }
     .audio-btn[data-state="live"] { background: rgba(62, 166, 255, 0.9); color: #0f0f0f; }
     .audio-btn[data-state="blocked"] { background: rgba(240, 113, 120, 0.85); }
@@ -701,17 +702,17 @@
       position: absolute;
       top: 44px;
       left: 10px;
-      right: 52px;
+      right: 60px;
       z-index: 12;
       pointer-events: none;
-      font-size: 11px;
+      font-size: 12px;
       line-height: 1.35;
-      color: rgba(255,255,255,0.86);
+      color: rgba(255,255,255,0.92);
       background: rgba(0,0,0,0.55);
       border-radius: 8px;
       padding: 6px 8px;
     }
-    html.embed .audio-note { top: calc(52px + env(safe-area-inset-top, 0px)); }
+    html.embed .audio-note { top: calc(56px + env(safe-area-inset-top, 0px)); }
   </style>
 </head>
 <body>
@@ -748,7 +749,7 @@
           </div>
         </div>
         <div id="touchLayer" role="application" tabindex="0" aria-label="Phone screen — tap, swipe, paste, or drop to control"></div>
-        <button type="button" id="audioBtn" class="audio-btn" data-state="off" aria-pressed="false" title="Play cloud-phone sound on this device">🔊</button>
+        <button type="button" id="audioBtn" class="audio-btn" data-state="off" aria-pressed="false" title="Tap to play phone sound">🔊</button>
         <div id="audioNote" class="audio-note" hidden></div>
         <div id="continuityDrop" aria-hidden="true">
           <div class="continuity-card">
@@ -900,8 +901,6 @@
     let interactiveUntil = 0;
 
     // ---- layout: exact letterbox rect for the device aspect ----
-    // Fullscreen / embed / mobile browser chrome: recompute on visualViewport
-    // too — otherwise letterbox math drifts and taps land off the painted pixels.
     function layoutView() {
       const sr = screenEl.getBoundingClientRect();
       if (!sr.width || !sr.height || !deviceW || !deviceH) return;
@@ -968,7 +967,7 @@
       // AU arrival times keyed by timestamp, so we can separate "the device
       // was slow" from "decoding was slow" instead of guessing.
       arrivals: new Map(), decodeMs: null, paintMs: null, droppedLate: 0,
-      catchup: null, pokes: 0,
+      catchup: null, pokes: 0, keyWaitSince: 0, lastError: '', config: null,
     };
 
     function h264Connect() {
@@ -1047,6 +1046,7 @@
         dec.configure(config);
         h264.dec = dec;
         h264.codec = codec;
+        h264.config = config;
         h264.needKey = true;
       } catch (e) { h264Fail('configure: ' + e.message); }
     }
@@ -1057,12 +1057,28 @@
       const dv = new DataView(buf);
       const key = (dv.getUint8(1) & 1) === 1;
       const ts = dv.getFloat64(8, true);
-      if (h264.needKey && !key) return;            // decoding deltas first = garbage
-      // Do not let the decoder queue grow — late P-frames only add glass latency.
-      if (!key && typeof dec.decodeQueueSize === 'number' && dec.decodeQueueSize > 1) {
-        h264.droppedLate += 1;
+      // Dropping a P-frame and then decoding the next one paints macroblocks
+      // until the following IDR. Wait for a key instead of showing garbage.
+      if (h264.needKey && !key) {
+        if (!h264.keyWaitSince) h264.keyWaitSince = performance.now();
+        else if (performance.now() - h264.keyWaitSince > 1500) {
+          h264Send({ type: 'keyframe' });
+          h264.keyWaitSince = performance.now();
+        }
         return;
       }
+      if (!key && typeof dec.decodeQueueSize === 'number' && dec.decodeQueueSize > 8) {
+        h264.droppedLate += 1;
+        h264.needKey = true;
+        h264.keyWaitSince = performance.now();
+        h264.lastError = 'decode queue overflow — waiting for IDR';
+        try {
+          dec.reset();
+          dec.configure(h264.config || { codec: h264.codec || 'avc1.42E01E', optimizeForLatency: true, hardwareAcceleration: 'no-preference' });
+        } catch (_) {}
+        return;
+      }
+      if (key) h264.keyWaitSince = 0;
       try {
         dec.decode(new window.EncodedVideoChunk({
           type: key ? 'key' : 'delta',
@@ -1080,9 +1096,12 @@
     function h264DecoderError(e) {
       // Lost reference frames (dropped AUs, restored tab): only an IDR fixes it.
       h264.needKey = true;
+      h264.keyWaitSince = performance.now();
+      h264.lastError = (e && e.message) ? e.message : String(e || 'decode error');
       h264Send({ type: 'keyframe' });
       if (h264.dec && h264.dec.state === 'closed') h264Configure(h264.codec || 'avc1.42E01E');
       shotStamp.textContent = 'video resync…';
+      reportClientDebug();
     }
 
     function h264Paint(frame) {
@@ -1495,10 +1514,15 @@
     }
 
     // ───────────── Pointer → device coordinates ─────────────
-    // Prefer the painted video element's client rect (canvas or MJPEG img).
-    // Fullscreen/embed letterbox CSS can drift from viewRect math after
-    // orientation / URL-bar / iframe bezel changes; the painted box is truth.
+    // The painted canvas/img is the source of truth. visualViewport.offset*
+    // is non-zero when the mobile URL bar or keyboard shifts the visual
+    // viewport relative to getBoundingClientRect (layout viewport).
     const EDGE_TOL = 40;  // device px of slack into the letterbox bars
+    function viewportShift() {
+      const vv = window.visualViewport;
+      if (!vv) return { x: 0, y: 0 };
+      return { x: vv.offsetLeft || 0, y: vv.offsetTop || 0 };
+    }
     function paintedVideoRect() {
       const el = (!liveCanvas.hidden && liveCanvas.offsetParent !== null) ? liveCanvas
         : ((!liveShot.hidden && liveShot.offsetParent !== null) ? liveShot : null);
@@ -1510,24 +1534,25 @@
     }
     function clientToDevice(clientX, clientY) {
       if (!viewRect.width) layoutView();
+      const shift = viewportShift();
+      const px = clientX + shift.x;
+      const py = clientY + shift.y;
       const painted = paintedVideoRect();
-      let left, top, width, height, scaleX, scaleY;
+      let left, top, scaleX, scaleY;
       if (painted) {
         left = painted.left; top = painted.top;
-        width = painted.width; height = painted.height;
-        scaleX = width / deviceW; scaleY = height / deviceH;
+        scaleX = painted.width / deviceW;
+        scaleY = painted.height / deviceH;
       } else {
         const sr = screenEl.getBoundingClientRect();
-        if (!sr.width || !sr.height) return null;
-        if (!viewRect.width || !viewRect.scale) return null;
+        if (!sr.width || !sr.height || !viewRect.width || !viewRect.scale) return null;
         left = sr.left + viewRect.left;
         top = sr.top + viewRect.top;
-        width = viewRect.width; height = viewRect.height;
         scaleX = scaleY = viewRect.scale;
       }
       if (!scaleX || !scaleY) return null;
-      const ix = (clientX - left) / scaleX;
-      const iy = (clientY - top) / scaleY;
+      const ix = (px - left) / scaleX;
+      const iy = (py - top) / scaleY;
       if (ix < -EDGE_TOL || iy < -EDGE_TOL || ix > deviceW + EDGE_TOL || iy > deviceH + EDGE_TOL) {
         return null;
       }
@@ -1559,7 +1584,7 @@
       ev.preventDefault();
       try { touchLayer.focus({ preventScroll: true }); } catch (_) {}
       try { touchLayer.setPointerCapture(ev.pointerId); } catch (_) {}
-      ptrDown = { id: ev.pointerId, ...pt, cx: ev.clientX, cy: ev.clientY, t: Date.now() };
+      ptrDown = { id: ev.pointerId, ...pt, cx: ev.clientX, cy: ev.clientY, t: Date.now(), pointerType: ev.pointerType };
       showRipple(ev.clientX, ev.clientY);
       interactiveUntil = Date.now() + 5000;
     }
@@ -1575,9 +1600,11 @@
       interactiveUntil = Date.now() + 5000;
       const clientDist = Math.hypot(ev.clientX - start.cx, ev.clientY - start.cy);
       const dt = Date.now() - start.t;
+      // Fingers jitter more than a mouse. 14px turned real taps into swipes.
+      const slop = start.pointerType === 'touch' ? 28 : SWIPE_PX;
 
       // Fire-and-forget: never block the UI on the ADB round-trip.
-      if (clientDist < SWIPE_PX) {
+      if (clientDist < slop) {
         const label = 'Tap at ' + start.x + ',' + start.y;
         shotStamp.textContent = 'tap ' + start.x + ',' + start.y;
         const event = replayRecordInput(label, 'tap', { x: start.x, y: start.y });
@@ -1595,21 +1622,20 @@
     function sendInput(url, body, label, replayEvent = null) {
       const t0 = performance.now();
       lastInputAt = t0;
-      // The POST leaves before replay bookkeeping. Tap latency is this RTT
-      // plus adb, not the health-check RTT on the market page.
-      const pending = fetch(url, {
+      if (replayEvent) {
+        // The first thumbnail is what the user saw before the input; these
+        // delayed refreshes become the per-tap confirmation frame.
+        setTimeout(() => replayRefreshEvent(replayEvent), 300);
+        setTimeout(() => replayRefreshEvent(replayEvent), 850);
+      }
+      // Optimistic: wake the producer immediately so the opened app appears ASAP.
+      nudgeStream();
+      fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
         keepalive: true,
-        priority: 'high',
-      });
-      nudgeStream();
-      if (replayEvent) {
-        setTimeout(() => replayRefreshEvent(replayEvent), 300);
-        setTimeout(() => replayRefreshEvent(replayEvent), 850);
-      }
-      pending.then((r) => {
+      }).then((r) => {
         const ms = Math.round(performance.now() - t0);
         if (!r.ok) { shotStamp.textContent = label + ' ✗ ' + r.status; return; }
         shotStamp.textContent = label + ' · ' + ms + 'ms';
@@ -1632,8 +1658,6 @@
     touchLayer.addEventListener('pointerdown', (ev) => { ensureDeviceAudio(); onPtrDown(ev); }, { passive: false });
     touchLayer.addEventListener('pointerup', onPtrUp, { passive: false });
     touchLayer.addEventListener('pointercancel', onPtrCancel);
-    // Kill the legacy 300ms tap delay and scroll chaining. Pointer events
-    // still deliver the gesture; this only stops the browser from waiting.
     touchLayer.addEventListener('touchstart', (ev) => { ev.preventDefault(); }, { passive: false });
     touchLayer.addEventListener('touchmove', (ev) => { ev.preventDefault(); }, { passive: false });
     touchLayer.addEventListener('dragstart', (e) => e.preventDefault());
@@ -1767,14 +1791,42 @@
       } catch (_) {}
     }
 
+    let _debugAt = 0;
+    function reportClientDebug() {
+      const now = Date.now();
+      if (now - _debugAt < 4000) return;
+      _debugAt = now;
+      const body = {
+        audio_error: deviceAudio.blocked || '',
+        audio_packets: deviceAudio.packets || 0,
+        audio_played: deviceAudio.played || 0,
+        audio_codec: deviceAudio.codec || '',
+        h264_error: h264.lastError || '',
+        h264_frames: h264.frames || 0,
+        h264_dropped: h264.droppedLate || 0,
+        ua: navigator.userAgent.slice(0, 180),
+      };
+      try {
+        fetch('/debug/client', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+          keepalive: true,
+        }).catch(() => {});
+      } catch (_) {}
+    }
+
     // ───────────── Device audio → this device's speakers ─────────────
-    // Autoplay policy: the AudioContext resumes on the first tap or on the
-    // speaker button. The stream itself is video-only; sound is /ws/audio.
+    // OpusHead must be AudioDecoder description, never a decode() packet.
+    // Production sent it with flags=0; decode() then threw "Decoding error"
+    // and the decoder stayed closed, so the red speaker never cleared.
     const audioBtn = document.getElementById('audioBtn');
     const audioNote = document.getElementById('audioNote');
     const deviceAudio = {
       ws: null, ctx: null, dec: null, gain: null, playAt: 0,
       codec: null, muted: false, configured: false, blocked: '',
+      description: null, channels: 2, sampleRate: 48000,
+      packets: 0, played: 0, errors: 0, healthy: 0, gen: 0,
     };
 
     function setAudioNote(text) {
@@ -1795,7 +1847,9 @@
       if (deviceAudio.ctx) return deviceAudio.ctx;
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return null;
-      const ctx = new AC({ latencyHint: 'interactive' });
+      let ctx;
+      try { ctx = new AC({ latencyHint: 'interactive' }); }
+      catch (_) { ctx = new AC(); }
       const gain = ctx.createGain();
       gain.gain.value = deviceAudio.muted ? 0 : 1;
       gain.connect(ctx.destination);
@@ -1811,25 +1865,37 @@
       src.buffer = buffer;
       src.connect(deviceAudio.gain);
       const now = ctx.currentTime;
-      if (deviceAudio.playAt < now + 0.02) deviceAudio.playAt = now + 0.05;
-      if (deviceAudio.playAt > now + 0.35) deviceAudio.playAt = now + 0.05;
+      if (deviceAudio.playAt < now + 0.02) deviceAudio.playAt = now + 0.03;
+      if (deviceAudio.playAt > now + 0.12) deviceAudio.playAt = now + 0.03;
       src.start(deviceAudio.playAt);
       deviceAudio.playAt += buffer.duration;
+    }
+
+    function markAudioHealthy() {
+      deviceAudio.played += 1;
+      deviceAudio.healthy += 1;
+      deviceAudio.errors = 0;
+      if (deviceAudio.blocked) {
+        deviceAudio.blocked = '';
+        setAudioNote('');
+      }
+      if (!deviceAudio.muted) setAudioBtn('live', 'Phone sound is on');
     }
 
     function playPcm16(bytes) {
       const ctx = ensureAudioContext();
       if (!ctx) return;
       const view = new Int16Array(bytes.buffer, bytes.byteOffset, Math.floor(bytes.byteLength / 2));
-      const channels = 2;
+      const channels = deviceAudio.channels || 2;
       const frames = Math.floor(view.length / channels);
       if (!frames) return;
-      const buffer = ctx.createBuffer(channels, frames, 48000);
+      const buffer = ctx.createBuffer(channels, frames, deviceAudio.sampleRate || 48000);
       for (let c = 0; c < channels; c++) {
         const out = buffer.getChannelData(c);
         for (let i = 0; i < frames; i++) out[i] = view[i * channels + c] / 32768;
       }
       scheduleBuffer(buffer);
+      markAudioHealthy();
     }
 
     function playAudioData(audioData) {
@@ -1843,12 +1909,38 @@
           audioData.copyTo(buffer.getChannelData(c), { planeIndex: c, format: 'f32' });
         }
         scheduleBuffer(buffer);
+        markAudioHealthy();
       } catch (err) {
-        setAudioNote('Speaker decode failed: ' + (err && err.message ? err.message : err));
-        setAudioBtn('blocked', 'Audio decode failed');
+        noteAudioError(err);
       } finally {
         audioData.close();
       }
+    }
+
+    function noteAudioError(err, gen) {
+      if (gen != null && gen !== deviceAudio.gen) return;
+      deviceAudio.errors += 1;
+      const msg = (err && err.message) ? err.message : String(err || 'decode error');
+      deviceAudio.blocked = 'Opus decoder: ' + msg;
+      // One bad packet (the OpusHead itself, historically) must not stick.
+      // Reconfigure and keep going. Only surface the banner if it persists.
+      deviceAudio.configured = false;
+      if (deviceAudio.dec) {
+        try { deviceAudio.dec.close(); } catch (_) {}
+        deviceAudio.dec = null;
+      }
+      if (deviceAudio.errors >= 4) {
+        setAudioNote(deviceAudio.blocked + ' — tap the speaker to retry');
+        setAudioBtn('blocked', deviceAudio.blocked);
+        reportClientDebug();
+      }
+    }
+
+    function looksLikeOpusHead(payload) {
+      return payload && payload.byteLength >= 19
+        && payload[0] === 0x4f && payload[1] === 0x70 && payload[2] === 0x75
+        && payload[3] === 0x73 && payload[4] === 0x48 && payload[5] === 0x65
+        && payload[6] === 0x61 && payload[7] === 0x64;
     }
 
     function configureOpus(description) {
@@ -1860,23 +1952,36 @@
       }
       const ctx = ensureAudioContext();
       if (!ctx) return;
+      if (description && description.byteLength >= 19) {
+        deviceAudio.description = description;
+        deviceAudio.channels = description[9] || 2;
+        const rate = description[12] | (description[13] << 8) | (description[14] << 16) | (description[15] << 24);
+        if (rate > 0) deviceAudio.sampleRate = rate;
+      }
       try { if (deviceAudio.dec) deviceAudio.dec.close(); } catch (_) {}
+      const gen = ++deviceAudio.gen;
       const dec = new window.AudioDecoder({
-        output: (data) => playAudioData(data),
-        error: (err) => {
-          deviceAudio.blocked = 'Opus decoder: ' + (err && err.message ? err.message : err);
-          setAudioNote(deviceAudio.blocked);
-          setAudioBtn('blocked', deviceAudio.blocked);
-        },
+        output: (data) => { if (gen === deviceAudio.gen) playAudioData(data); else { try { data.close(); } catch (_) {} } },
+        error: (err) => noteAudioError(err, gen),
       });
-      const config = { codec: 'opus', sampleRate: 48000, numberOfChannels: 2 };
-      if (description && description.byteLength) config.description = description;
+      const config = {
+        codec: 'opus',
+        sampleRate: deviceAudio.sampleRate || 48000,
+        numberOfChannels: deviceAudio.channels || 2,
+      };
+      if (deviceAudio.description && deviceAudio.description.byteLength) {
+        config.description = deviceAudio.description;
+      }
       try {
         dec.configure(config);
       } catch (err) {
-        if (!config.description) throw err;
-        delete config.description;
-        dec.configure(config);
+        try {
+          delete config.description;
+          dec.configure(config);
+        } catch (err2) {
+          noteAudioError(err2);
+          return;
+        }
       }
       deviceAudio.dec = dec;
       deviceAudio.configured = true;
@@ -1884,24 +1989,25 @@
     }
 
     function onAudioStatus(msg) {
-      if (msg.type === 'hello' || msg.type === 'audio') {
-        if (msg.codec === 'opus' && !deviceAudio.configured) configureOpus(null);
-        if (msg.codec === 'pcm') {
-          deviceAudio.codec = 'pcm';
-          ensureAudioContext();
-        }
-        const live = msg.codec && (msg.source === 'scrcpy' || msg.source === 'pulse');
-        if (msg.source === 'error') {
-          deviceAudio.blocked = msg.reason || 'Device audio is not available yet';
-          setAudioNote(deviceAudio.blocked);
-          setAudioBtn('blocked', deviceAudio.blocked);
-        } else if (live) {
-          deviceAudio.blocked = '';
+      if (msg.type !== 'hello' && msg.type !== 'audio' && msg.type !== 'stats') return;
+      if (msg.codec === 'opus' && !deviceAudio.configured) configureOpus(deviceAudio.description);
+      if (msg.codec === 'pcm') {
+        deviceAudio.codec = 'pcm';
+        ensureAudioContext();
+      }
+      if (msg.channels) deviceAudio.channels = msg.channels;
+      if (msg.sample_rate) deviceAudio.sampleRate = msg.sample_rate;
+      if (msg.source === 'error') {
+        deviceAudio.blocked = msg.reason || 'Device audio is not available yet';
+        setAudioNote(deviceAudio.blocked);
+        setAudioBtn('blocked', deviceAudio.blocked);
+      } else if (msg.source === 'scrcpy' && deviceAudio.errors < 4) {
+        if (!deviceAudio.blocked) {
           setAudioNote('');
-          setAudioBtn('live', 'Phone sound is on');
-        } else if (msg.reason && msg.source !== 'idle') {
-          setAudioNote(msg.reason);
+          if (!deviceAudio.muted) setAudioBtn('live', 'Phone sound is on');
         }
+      } else if (msg.reason && msg.source && msg.source !== 'idle' && msg.source !== 'starting' && deviceAudio.errors < 4) {
+        setAudioNote(msg.reason);
       }
     }
 
@@ -1911,28 +2017,36 @@
       if (dv.getUint8(0) !== 1) return;
       const flags = dv.getUint8(1);
       const payload = new Uint8Array(buf, 16);
+      deviceAudio.packets += 1;
       if (deviceAudio.codec === 'pcm') {
         playPcm16(payload);
-        setAudioBtn('live', 'Phone sound (PCM)');
         return;
       }
-      if (flags & 1) {
+      // Flag bit 0, or the OpusHead magic even when a server forgot the flag.
+      if ((flags & 1) || looksLikeOpusHead(payload)) {
         configureOpus(payload);
+        deviceAudio.errors = 0;
+        if (!deviceAudio.muted) setAudioBtn('live', 'Phone sound is on');
+        setAudioNote('');
         return;
       }
-      if (!deviceAudio.configured) configureOpus(null);
+      if (!deviceAudio.configured) configureOpus(deviceAudio.description);
       const dec = deviceAudio.dec;
-      if (!dec || dec.state !== 'configured') return;
+      if (!dec || dec.state !== 'configured') {
+        configureOpus(deviceAudio.description);
+      }
+      const liveDec = deviceAudio.dec;
+      if (!liveDec || liveDec.state !== 'configured') return;
+      let ts = dv.getFloat64(8, true);
+      if (!Number.isFinite(ts) || ts < 0) ts = deviceAudio.packets * 20000;
       try {
-        dec.decode(new window.EncodedAudioChunk({
+        liveDec.decode(new window.EncodedAudioChunk({
           type: 'key',
-          timestamp: dv.getFloat64(8, true),
+          timestamp: Math.round(ts),
           data: payload,
         }));
-        setAudioBtn('live', 'Phone sound is on');
-        if (!deviceAudio.blocked) setAudioNote('');
       } catch (err) {
-        setAudioNote('Could not play a sound frame.');
+        noteAudioError(err);
       }
     }
 
@@ -1961,7 +2075,7 @@
       ws.onerror = () => {};
       ws.onclose = () => {
         deviceAudio.ws = null;
-        if (!deviceAudio.muted && !deviceAudio.blocked) {
+        if (!deviceAudio.muted && deviceAudio.errors < 4) {
           setAudioBtn('off', 'Sound disconnected — tap to retry');
         }
       };
@@ -1978,12 +2092,15 @@
       audioBtn.addEventListener('click', (ev) => {
         ev.stopPropagation();
         ev.preventDefault();
-        if (deviceAudio.blocked) {
+        if (deviceAudio.blocked || deviceAudio.errors) {
           deviceAudio.blocked = '';
+          deviceAudio.errors = 0;
           deviceAudio.muted = false;
+          deviceAudio.configured = false;
           if (deviceAudio.gain) deviceAudio.gain.gain.value = 1;
           if (deviceAudio.ws) { try { deviceAudio.ws.close(); } catch (_) {} deviceAudio.ws = null; }
-          setAudioNote('Retrying phone sound…');
+          setAudioNote('');
+          setAudioBtn('off', 'Connecting phone sound…');
           ensureDeviceAudio();
           return;
         }
@@ -1991,15 +2108,17 @@
           deviceAudio.muted = false;
           if (deviceAudio.gain) deviceAudio.gain.gain.value = 1;
           setAudioBtn('off', 'Connecting phone sound…');
-          setAudioNote('Connecting phone sound…');
+          setAudioNote('');
           ensureDeviceAudio();
         } else {
           deviceAudio.muted = true;
           if (deviceAudio.gain) deviceAudio.gain.gain.value = 0;
-          setAudioBtn('off', 'Sound muted');
+          setAudioBtn('off', 'Sound muted — tap to hear the phone');
+          setAudioNote('');
         }
       });
     }
+    setInterval(reportClientDebug, 8000);
 
     // ───────────── Boot ─────────────
     refreshHealth();

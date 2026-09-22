@@ -29,22 +29,63 @@ from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:  # pragma: no cover
     from .adb_client import AdbClient
 
-# Portable default for VMs/containers. Override with SCRCPY_SERVER_PATH.
-# Never default to a developer-box path (/home/box/...) — that broke prod audio/H264.
-SCRCPY_SERVER_PATH = os.environ.get(
-    "SCRCPY_SERVER_PATH", "/opt/strlix/scrcpy-server"
-)
+def default_scrcpy_server_path() -> str:
+    """Prefer the portable VM path, then the dev-box path."""
+    env = os.environ.get("SCRCPY_SERVER_PATH", "").strip()
+    if env:
+        return env
+    for path in (
+        "/opt/strlix/scrcpy-server",
+        "/home/box/.local/scrcpy/scrcpy-server",
+        "/usr/local/share/scrcpy/scrcpy-server",
+    ):
+        if os.path.isfile(path):
+            return path
+    return "/opt/strlix/scrcpy-server"
+
+
+def codec_options() -> str:
+    """Low-latency MediaCodec extras. ``priority:int=0`` is realtime."""
+    raw = os.environ.get(
+        "SCRCPY_CODEC_OPTIONS", "i-frame-interval:int=1,latency:int=1"
+    ).strip().strip(",")
+    if "priority:" not in raw:
+        raw = (raw + ",priority:int=0") if raw else "priority:int=0"
+    return raw
+
+
+def encoder_fps(serial: str, requested: int) -> tuple[int, str]:
+    """Swiftshader emulators corrupt or stall when asked for 60–90 fps.
+
+    The encoder misses deadlines, the browser then drops P-frames, and the
+    picture turns into macroblocks. GPU / Redroid serials keep the request.
+    """
+    if serial.startswith("emulator-") and requested > 30:
+        return 30, f"emulator fps clamped {requested}→30"
+    return requested, ""
+
+
+def encoder_bitrate(serial: str, requested: int) -> tuple[int, str]:
+    """Cap emulator bitrate so one IDR cannot flood a phone decoder.
+
+    1.8 Mbps at 486×1080 is enough for YouTube-in-a-phone. Higher targets on
+    swiftshader show up as queue growth and broken reference frames, not as
+    extra detail. GPU serials keep the request.
+    """
+    if serial.startswith("emulator-") and requested > 1_800_000:
+        return 1_800_000, f"emulator bitrate clamped {requested}→1800000"
+    return requested, ""
+
+
+SCRCPY_SERVER_PATH = default_scrcpy_server_path()
 SCRCPY_VERSION = os.environ.get("SCRCPY_VERSION", "4.1")
 # 0 = ask adb to allocate an ephemeral local TCP port (preferred).
 SCRCPY_PORT = int(os.environ.get("SCRCPY_PORT", "0"))
-# Gaming / interactive: 90 fps cap (device/encoder may deliver less).
-SCRCPY_MAX_FPS = int(os.environ.get("SCRCPY_MAX_FPS", "90"))
-# Cap long edge. 1080 keeps native phone sharpness for games; lower via env on weak VMs.
+# 30 is the soft-launch emulator ceiling. Override on a GPU device.
+SCRCPY_MAX_FPS = int(os.environ.get("SCRCPY_MAX_FPS", "30"))
+# Cap long edge. 1080 keeps a 1080×2400 phone readable for YouTube.
 SCRCPY_MAX_SIZE = int(os.environ.get("SCRCPY_MAX_SIZE", "1080"))
-# MediaCodec extras, e.g. "i-frame-interval:int=1,latency:int=1"
-SCRCPY_CODEC_OPTIONS = os.environ.get(
-    "SCRCPY_CODEC_OPTIONS", "i-frame-interval:int=1,latency:int=1"
-).strip()
+SCRCPY_CODEC_OPTIONS = codec_options()
 # Device-side jar path (shell-writable).
 _REMOTE_JAR = "/data/local/tmp/scrcpy-server.jar"
 
@@ -81,7 +122,6 @@ class ScrcpyRawSession:
         version: str = SCRCPY_VERSION,
         codec_options: str = SCRCPY_CODEC_OPTIONS,
         scid: Optional[str] = None,
-        kind: str = "video",
     ) -> None:
         self.adb = adb
         self.max_size = max(64, int(max_size))
@@ -91,9 +131,6 @@ class ScrcpyRawSession:
         self.server_path = server_path
         self.version = version
         self.codec_options = (codec_options or "").strip()
-        # "video" is the Annex-B mirror. "audio" is a second server (opus)
-        # so device sound can reach the browser without touching the video pipe.
-        self.kind = "audio" if kind == "audio" else "video"
         # scid is parsed as hex and must fit in 31 bits; socket is scrcpy_%08x.
         self.scid = scid or f"{secrets.randbits(31):08x}"
         self.reader: Optional[asyncio.StreamReader] = None
@@ -194,24 +231,15 @@ class ScrcpyRawSession:
         await self._adb("shell", f"pkill -f 'scid={self.scid}' || true")
 
     async def _spawn_server(self) -> None:
-        if self.kind == "audio":
-            # Not raw_stream: we need the 4-byte codec id, then 12-byte packets.
-            # video=false so this socket is the audio socket (scrcpy ≥ 2.0).
-            opts = (
-                f"scid={self.scid} tunnel_forward=true video=false audio=true "
-                f"control=false cleanup=false send_device_meta=false "
-                f"audio_codec=opus audio_bit_rate={self.bitrate}"
-            )
-        else:
-            # raw_stream disables dummy byte + device/frame meta → pure Annex-B.
-            opts = (
-                f"scid={self.scid} tunnel_forward=true audio=false control=false "
-                f"cleanup=false raw_stream=true max_size={self.max_size} "
-                f"video_bit_rate={self.bitrate} max_fps={self.max_fps}"
-            )
-            if self.codec_options:
-                # Commas inside the value are part of the option list; no spaces.
-                opts += f" video_codec_options={self.codec_options}"
+        # raw_stream disables dummy byte + device/frame meta → pure Annex-B.
+        opts = (
+            f"scid={self.scid} tunnel_forward=true audio=false control=false "
+            f"cleanup=false raw_stream=true max_size={self.max_size} "
+            f"video_bit_rate={self.bitrate} max_fps={self.max_fps}"
+        )
+        if self.codec_options:
+            # Commas inside the value are part of the option list; no spaces.
+            opts += f" video_codec_options={self.codec_options}"
         args = (
             f"CLASSPATH={_REMOTE_JAR} app_process / "
             f"com.genymobile.scrcpy.Server {self.version} {opts}"
@@ -236,12 +264,7 @@ class ScrcpyRawSession:
             if chunk:
                 buf += chunk
                 low = buf.lower()
-                if (
-                    b"device:" in low
-                    or b"using video encoder" in low
-                    or b"using audio encoder" in low
-                    or b"audio capture" in low
-                ):
+                if b"device:" in low or b"using video encoder" in low:
                     return
                 if b"error" in low or b"exception" in low:
                     raise ScrcpyError(buf.decode(errors="replace")[:400])

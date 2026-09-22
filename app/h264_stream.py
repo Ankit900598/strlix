@@ -47,11 +47,15 @@ import time
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Optional
 
+from .audio_framing import normalize_annexb
 from .scrcpy_source import (
     SCRCPY_CODEC_OPTIONS,
+    SCRCPY_MAX_FPS,
     SCRCPY_MAX_SIZE,
     ScrcpyError,
     ScrcpyRawSession,
+    encoder_bitrate,
+    encoder_fps,
     scrcpy_available,
 )
 
@@ -60,8 +64,8 @@ if TYPE_CHECKING:  # pragma: no cover - typing only
 
 # ---- ops knobs (env) ------------------------------------------------------
 H264_ENABLED = os.environ.get("H264_ENABLED", "1") not in ("0", "false", "no")
-H264_WIDTH = int(os.environ.get("H264_WIDTH", "1080"))
-H264_BITRATE = int(os.environ.get("H264_BITRATE", "2500000"))
+H264_WIDTH = int(os.environ.get("H264_WIDTH", "360"))
+H264_BITRATE = int(os.environ.get("H264_BITRATE", "1800000"))
 H264_MAX_CLIENTS = int(os.environ.get("H264_MAX_CLIENTS", "12"))
 # Re-segment the recording this often (seconds). Each new segment starts with
 # SPS/PPS + IDR, which is what makes a late joiner cheap. 0 = never re-segment
@@ -82,8 +86,10 @@ H264_FLUSH_IDLE_MS = float(os.environ.get("H264_FLUSH_IDLE_MS", "12"))
 # Don't let joiners restart the encoder more often than this.
 H264_KEYFRAME_COOLDOWN_S = float(os.environ.get("H264_KEYFRAME_COOLDOWN_S", "2.5"))
 
-# Producer: "screenrecord" (default legacy), "scrcpy" (server jar, no SDL), or
-# "auto" (try scrcpy once per process, fall back to screenrecord on failure).
+# Producer: "screenrecord", "scrcpy", or "auto" (scrcpy, then a single
+# screenrecord segment, then scrcpy again). Never pin the process to
+# screenrecord after one scrcpy error — that path has rare IDRs and is what
+# leaves YouTube looking broken while scrcpy is installed.
 H264_SOURCE = os.environ.get("H264_SOURCE", "auto").strip().lower()
 # Shorter segments → more IDRs (screenrecord ignores i-frame-interval).
 # 15s keeps joins cheap without restarting on every tap.
@@ -298,7 +304,12 @@ class H264Broker:
         self.enabled = H264_ENABLED
         self._source_pref = H264_SOURCE if H264_SOURCE in ("screenrecord", "scrcpy", "auto") else "auto"
         self._active_source = "screenrecord"
-        self._scrcpy_disabled = False  # sticky fallback after hard fail
+        self._scrcpy_disabled = False  # only when the jar is missing
+        self._scrcpy_fail_streak = 0
+        self._fps_note = ""
+        self._bitrate_note = ""
+        self._fps_effective = SCRCPY_MAX_FPS
+        self._bitrate_effective = bitrate
         self._scrcpy: Optional[ScrcpyRawSession] = None
 
         self._subs: set[Subscriber] = set()
@@ -353,11 +364,7 @@ class H264Broker:
         self._misflushes = 0
         self._misflush_bytes = 0
         self._clean_flushes = 0
-        # Two quiet ticks publish one frame, so this ceiling is ~2× added
-        # latency. 96ms (was 250ms) keeps a safety margin over a ~70ms ADB
-        # stall without letting the window grow into a noticeable tap delay.
-        cap_ms = float(os.environ.get("H264_FLUSH_CAP_MS", "96"))
-        self.max_flush_idle = min(max(0.25, self.flush_idle * 8), max(self.flush_idle, cap_ms / 1000.0))
+        self.max_flush_idle = max(0.25, self.flush_idle * 8)
         self._unavailable = False   # screenrecord not usable on this device
 
     # ---- introspection ---------------------------------------------------
@@ -388,9 +395,14 @@ class H264Broker:
             "height": self._enc_height,
             "device_width": dw or None,
             "device_height": dh or None,
-            "bitrate": self.bitrate,
+            "bitrate": self._bitrate_effective,
+            "bitrate_requested": self.bitrate,
+            "bitrate_note": self._bitrate_note or None,
+            "scrcpy_max_fps": self._fps_effective,
+            "scrcpy_fps_note": self._fps_note or None,
             "scrcpy_max_size": SCRCPY_MAX_SIZE,
             "scrcpy_codec_options": SCRCPY_CODEC_OPTIONS or None,
+            "annexb_start_code": 4,
             "viewers": self.subscribers,
             "max_clients": H264_MAX_CLIENTS,
             "gop_ready": self._gop_valid,
@@ -413,9 +425,14 @@ class H264Broker:
             "codec": self._codec,
             "size": [self._enc_width, self._enc_height] if self._enc_width else None,
             "device": list(self._device_size) if self._device_size[0] else None,
-            "bitrate": self.bitrate,
+            "bitrate": self._bitrate_effective,
+            "bitrate_requested": self.bitrate,
+            "bitrate_note": self._bitrate_note or None,
+            "scrcpy_max_fps": self._fps_effective,
+            "scrcpy_fps_note": self._fps_note or None,
             "scrcpy_max_size": SCRCPY_MAX_SIZE,
             "scrcpy_codec_options": SCRCPY_CODEC_OPTIONS or None,
+            "annexb_start_code": 4,
             "segment_s": self.segment_s,
             "segments": self._segments,
             "restarts": self._restarts,
@@ -611,40 +628,58 @@ class H264Broker:
         return scrcpy_available()
 
     async def _segment_dispatch(self) -> None:
-        """Pick scrcpy-server (preferred) or screenrecord; sticky-fallback on fail."""
+        """Prefer scrcpy. A failure covers one screenrecord segment, then retries.
+
+        Sticky ``_scrcpy_disabled`` used to pin the viewer on screenrecord for
+        the life of the process. screenrecord IDRs are rare, so YouTube then
+        stayed blocky even though the jar was on disk.
+        """
         if self._want_scrcpy():
             try:
+                with contextlib.suppress(Exception):
+                    await self.adb.ensure_connected()
                 await self._segment_scrcpy()
+                self._scrcpy_fail_streak = 0
                 return
             except asyncio.CancelledError:
                 raise
             except Exception as e:  # noqa: BLE001
                 self._errors += 1
                 self._last_error = f"scrcpy: {type(e).__name__}: {e}"
-                # Hard fail → stick to screenrecord for this process so the
-                # viewer is never wedged in a scrcpy crash loop.
-                self._scrcpy_disabled = True
-                self._active_source = "screenrecord"
+                self._scrcpy_fail_streak += 1
+                if not scrcpy_available():
+                    self._scrcpy_disabled = True
+                else:
+                    await asyncio.sleep(min(1.5, 0.3 * self._scrcpy_fail_streak))
+                    if self._scrcpy_fail_streak < 3:
+                        return
+                    # One screenrecord segment so the phone is not black, then
+                    # the outer loop tries scrcpy again.
+                    self._scrcpy_fail_streak = 0
         await self._segment()
 
     async def _segment_scrcpy(self) -> None:
         """One scrcpy-server raw Annex-B segment (no SDL)."""
-        dw, dh, _ew_legacy, _eh_legacy = await self._device_geometry()
-        self._active_source = "scrcpy"
-        # Prefer SCRCPY_MAX_SIZE (long-edge cap). Do NOT inherit H264_WIDTH (screenrecord
-        # JPEG-era 360 default) — that under-reported size and starved gaming sharpness.
-        max_size = SCRCPY_MAX_SIZE if SCRCPY_MAX_SIZE > 0 else max(dw, dh)
-        if max_size > 0 and max(dw, dh) > 0:
-            scale = min(1.0, max_size / float(max(dw, dh)))
-            ew = max(4, int(dw * scale) & ~3)
-            eh = max(4, int(dh * scale) & ~3)
-        else:
-            ew, eh = _ew_legacy, _eh_legacy
+        dw, dh, ew, eh = await self._device_geometry()
         self._enc_width, self._enc_height = ew, eh
+        self._active_source = "scrcpy"
+        fps, self._fps_note = encoder_fps(self.adb.serial, SCRCPY_MAX_FPS)
+        bitrate, self._bitrate_note = encoder_bitrate(self.adb.serial, self.bitrate)
+        self._fps_effective = fps
+        self._bitrate_effective = bitrate
+        # Prefer SCRCPY_MAX_SIZE (long-edge cap). Fall back to geometry estimate.
+        max_size = SCRCPY_MAX_SIZE if SCRCPY_MAX_SIZE > 0 else max(ew, eh)
+        # Keep reported enc size coherent with the cap (client letterboxes via device_*).
+        if max_size < max(ew, eh) and max(ew, eh) > 0:
+            scale = max_size / float(max(ew, eh))
+            ew = max(4, int(ew * scale) & ~3)
+            eh = max(4, int(eh * scale) & ~3)
+            self._enc_width, self._enc_height = ew, eh
         session = ScrcpyRawSession(
             self.adb,
             max_size=max_size,
-            bitrate=self.bitrate,
+            bitrate=bitrate,
+            max_fps=fps,
             codec_options=SCRCPY_CODEC_OPTIONS,
         )
         self._scrcpy = session
@@ -694,9 +729,7 @@ class H264Broker:
                 if gap > self._intra_gap_max:
                     self._intra_gap_max = min(MAX_INTRA_GAP_S, gap)
                 else:
-                    # Decay stalls quickly so one slow read does not pin
-                    # every later frame ~2 ticks behind (touch feels late).
-                    self._intra_gap_max *= 0.96
+                    self._intra_gap_max *= 0.997
             last_read = now
             quiet_len = -1
             buf += chunk
@@ -777,7 +810,7 @@ class H264Broker:
                     if gap > self._intra_gap_max:
                         self._intra_gap_max = min(MAX_INTRA_GAP_S, gap)
                     else:
-                        self._intra_gap_max *= 0.96
+                        self._intra_gap_max *= 0.997
                 last_read = now
                 quiet_len = -1
                 buf += chunk
@@ -841,10 +874,10 @@ class H264Broker:
         if not any(t in VCL_TYPES for t in types):
             return  # config-only: cached above, nothing to decode yet
         key = NAL_IDR in types
-        payload = b"".join(nals)
+        payload = normalize_annexb(b"".join(nals))
         if key and self._sps and self._pps and NAL_SPS not in types:
             # Every key AU must be independently decodable.
-            payload = self._sps + self._pps + payload
+            payload = normalize_annexb(self._sps + self._pps + payload)
 
         now = time.time()
         if not self._t0:

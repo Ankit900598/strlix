@@ -23,20 +23,25 @@ ADB is **not** opened to `0.0.0.0/0` for the phone path (emulator stays on VM lo
 | `https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/market/` | Market UI (AFD → ca-market-api) |
 | `https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/v1/*` | market-api (grant / devices / anon auth) — **same-origin** |
 | `https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/health` | market-api health (`0.6.7`) |
-| `https://graduation-cope-elementary-defence.trycloudflare.com/` | **Interim HTTPS stream viewer** (cloudflared on VM → desktop-api `:8789`) |
-| `https://graduation-cope-elementary-defence.trycloudflare.com/health` | desktop-api health |
-| `wss://graduation-cope-elementary-defence.trycloudflare.com/ws/stream` | JPEG WS (verified frames) |
-| `wss://graduation-cope-elementary-defence.trycloudflare.com/ws/h264` | H.264 WS |
+| `https://strlix-stream-aabqdheycacyfah2.z03.azurefd.net/` | **Public HTTPS stream viewer** (AFD → desktop-api `:8789`) |
+| `https://strlix-stream-aabqdheycacyfah2.z03.azurefd.net/health` | desktop-api health (audio + h264 + client_debug) |
+| `wss://strlix-stream-aabqdheycacyfah2.z03.azurefd.net/ws/h264` | H.264 WS |
+| `wss://strlix-stream-aabqdheycacyfah2.z03.azurefd.net/ws/audio` | Opus WS (flags bit 0 = OpusHead) |
 
-Market `index.html` now sets:
+Market `index.html` sets:
 
 ```js
 marketApi: "",  // same-origin via AFD
-streamUrl: "https://graduation-cope-elementary-defence.trycloudflare.com",
-streamFallback: "",
+streamUrl: "https://strlix-stream-aabqdheycacyfah2.z03.azurefd.net",
+streamFallback: "/stream",
 ```
 
-## AFD stream path (preferred end-state) — **not healthy yet**
+Touch, audio, and what “feels like a phone” can and cannot mean:
+`demo/launch/PHONE-TOUCH-AUDIO.md`.
+
+## AFD stream path — healthy as of 2026-09-22
+
+`GET /health` on `strlix-stream-aabqdheycacyfah2.z03.azurefd.net` returns desktop-api JSON (HTTP 200, `access-control-allow-origin: *`). Market `streamUrl` points here. The trycloudflare hostname is no longer the phone path.
 
 Created in `rg-zevi-cloudphone` / profile `afd-zevi-strlix`:
 
@@ -46,15 +51,10 @@ Created in `rg-zevi-cloudphone` / profile `afd-zevi-strlix`:
 - Also on main edge: `route-stream-ws` `/ws/*`, `route-stream-adb` `/adb/*`
 - Profile `originResponseTimeoutSeconds` raised to **240** for WS idle
 
-**Blocker:** requests to `strlix-stream-…azurefd.net/health` still return AFD **CONFIG_NOCACHE HTML 404** after create/update (route exists in ARM, POPs not serving it / origin not accepted). Main-edge `/ws/*` similarly 404. Needs follow-up (origin health in portal, possible recreate route, or put TLS-terminated nginx/Caddy on VM:443 and use HttpsOnly like market-api).
-
-Until AFD stream POPs go healthy, phones use the **cloudflared interim** URL above (`strlix-desktop-tunnel.service` on the VM). **Quick-tunnel hostnames change on restart** — after any tunnel restart, update `web-market/index.html` `streamUrl` and ship a new market-api image.
-
 ## Remaining blockers for “real phone stream” polish
 
-1. **AFD → desktop-api 404** — prefer replacing CF tunnel with `https://strlix-stream-….azurefd.net` (or `/stream/*` on main edge once rewrite works).
-2. **Ephemeral trycloudflare.com hostname** — replace with named Cloudflare tunnel or working AFD.
-3. **Wire AWS Redroid** into desktop-api ADB serial for GPU demos on the same public viewer (today public viewer = Azure emulator).
+1. **Restart the emulator without `-no-audio`** or YouTube stays silent. See `PHONE-TOUCH-AUDIO.md`.
+2. **Wire AWS Redroid** into desktop-api ADB serial for GPU demos on the same public viewer (today public viewer = Azure emulator). Sub-50 ms game latency is that path, not this emulator.
 4. **Custom domain** `app.zevilabs.dev` still blocked on Name.com DNS (see `CUSTOM-DOMAIN-BLOCKER.md`).
 5. Do **not** expose ADB (`5555`/`5556`) publicly; keep SSM/SSH tunnels only.
 
@@ -65,9 +65,8 @@ Until AFD stream POPs go healthy, phones use the **cloudflared interim** URL abo
 curl -sS https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/health | jq .version
 curl -sS https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/market/ | grep streamUrl
 
-# interim stream
-curl -sS https://graduation-cope-elementary-defence.trycloudflare.com/health | jq .
-ssh vm 'systemctl status strlix-desktop-api strlix-desktop-tunnel --no-pager'
+# stream
+curl -sS https://strlix-stream-aabqdheycacyfah2.z03.azurefd.net/health | jq '{version,audio:.audio.codec,h264:.h264.source}'
 
 # AFD stream (expect 200 once fixed)
 curl -sS -D- -o /dev/null https://strlix-stream-aabqdheycacyfah2.z03.azurefd.net/health | head

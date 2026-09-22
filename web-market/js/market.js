@@ -184,7 +184,7 @@
       const band = last < 60 ? "ok" : last < 120 ? "warn" : "err";
       setLatencyChip(
         "RTT " + last + " ms",
-        "Health RTT to " + url + " (" + mode + "). Taps are POST /adb/tap on the phone stream, measured on the phone as tap · Nms. See demo/launch/PHONE-TOUCH-AUDIO.md.",
+        "Health RTT to " + url + " (" + mode + "). Taps are POST /adb/tap, shown on the phone as tap · Nms. See demo/launch/PHONE-TOUCH-AUDIO.md.",
         band
       );
       if (els.stageLive) els.stageLive.classList.toggle("on", band === "ok" || band === "warn");
@@ -308,7 +308,6 @@
     const root = stripSlash(base) + "/";
     const u = new URL(root, location.href);
     u.searchParams.set("embed", "1");
-    // Bust the static viewer when market-api ships a new embed.
     if (cfg.viewerRev) u.searchParams.set("v", String(cfg.viewerRev));
     // Absolute stream hosts must keep origin.
     // Path-only return made phones load /?embed=1 on azurefd (404) forever.
@@ -324,6 +323,7 @@
   function showStreamUnavailable(bootEl, reason) {
     if (!bootEl) return;
     bootEl.hidden = false;
+    bootEl.classList.remove("gone");
     bootEl.classList.add("err");
     bootEl.innerHTML = `<div>
         <strong>Stream not reachable yet</strong>
@@ -339,7 +339,7 @@
         method: "GET",
         cache: "no-store",
         mode: "cors",
-        credentials: "same-origin",
+        credentials: "omit",
       });
       return r.ok;
     } catch (_) {
@@ -373,23 +373,23 @@
       bootEl.classList.add("gone");
     };
 
+    // The boot layer does not receive taps (see CSS). Hide it as soon as the
+    // iframe document loads; the viewer also posts strlix-first-frame.
+    if (frame) {
+      frame.addEventListener("load", () => {
+        try { frame.focus({ preventScroll: true }); } catch (_) {}
+        hideBoot();
+      }, { once: true });
+    }
+    setTimeout(hideBoot, 900);
+
     probeStreamReady(activeStreamBase).then((ok) => {
-      if (!ok) {
-        showStreamUnavailable(
-          bootEl,
-          "No response from " + stripSlash(activeStreamBase) + "/health. Attach desktop-api under /stream on AFD, then retry."
-        );
-        settled = true;
-        return;
-      }
-      // Health ok — keep boot until iframe paints, then reveal stream.
-      if (frame) {
-        frame.addEventListener("load", hideBoot, { once: true });
-        setTimeout(() => {
-          try { frame.focus({ preventScroll: true }); } catch (_) {}
-          hideBoot();
-        }, 2200);
-      }
+      if (ok || settled) return;
+      showStreamUnavailable(
+        bootEl,
+        "No response from " + stripSlash(activeStreamBase) + "/health. Attach desktop-api under /stream on AFD, then retry."
+      );
+      settled = true;
     });
 
     if (frame) {
@@ -412,16 +412,8 @@
         activeStreamBase = pickStreamBase(liveDevice, lease);
       }
       const src = streamViewerSrc(activeStreamBase);
-      // Cross-origin interim stream (trycloudflare): same-tab nav so the Android
-      // screen appears immediately. Avoids the .stream-boot "Waking" overlay that
-      // stayed visible over a working iframe when display:flex beat [hidden].
-      try {
-        const abs = new URL(src, location.href);
-        if (device.preview === "live" && abs.origin !== location.origin) {
-          location.assign(abs.href);
-          return;
-        }
-      } catch (_) {}
+      // Stay in the market shell (iframe). Navigating away dropped the Close
+      // control and made the phone feel like a separate broken page.
       if (device.preview === "live") {
         mountLiveIframe(src, device);
       } else {
@@ -758,7 +750,7 @@
   document.getElementById("btnAskHint").onclick = () => {
     const frame = document.getElementById("streamFrame");
     if (frame && frame.contentWindow) {
-      try { frame.contentWindow.postMessage({ type: "strlix-open-ask" }, location.origin); } catch (_) {}
+      try { frame.contentWindow.postMessage({ type: "strlix-open-ask" }, "*"); } catch (_) {}
     }
     const hint = document.createElement("div");
     hint.className = "inphone-ask";
