@@ -1,4 +1,4 @@
-# Soft-launch status snapshot — 2026-09-22 ~00:16 IST
+# Soft-launch status snapshot — 2026-09-22 ~07:46 IST
 
 **Operator:** box agent (not CloudAgent) · **RG lock:** `rg-zevi-cloudphone`  
 **Billing posture:** Ankit first calendar month **FREE** (soft-launch); do not enable Stripe **live** charges.  
@@ -9,31 +9,30 @@
 | Check | Result |
 |-------|--------|
 | AFD `https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/health` | **200** · `ok:true` · `pay_mode=test` · `redis:true` · `redis_error:null` · market-api **0.6.0** · `billing_mode=free_month` · `free_month_active:true` · `live_charges_allowed:false` |
-| Origin `ca-market-api…/health` | **200** · same payload · rev **`ca-market-api--0000004`** Healthy · traffic 100% |
-| Waitlist `POST /v1/waitlist` via AFD | **200** · `{"status":"joined",…,"card_required":false}` (dry smoke email) |
-| Origin `ca-android-api…/health` | unchanged this pass (not re-verified) |
-| Managed Redis `redis-strlix-amr` | left alone (public Enabled) — do not disable |
-| GPU VMs in RG | **None** (Azure) — only `vm-zevi-cloudphone` = `Standard_D4nls_v6` |
-| Stripe live | **OFF** · `STRLIX_PAY_MODE=test` · code defaults `billing_mode=free_month` |
+| Origin `ca-market-api…/health` | prior pass **200** · rev **`ca-market-api--0000004`** |
+| Waitlist `POST /v1/waitlist` via AFD | prior pass **200** · `card_required:false` |
+| Managed Redis `redis-strlix-amr` | **publicNetworkAccess=Enabled** (unchanged) — do not disable |
+| Azure GPU VMs in RG | **None** — do not create |
+| AWS GPU `i-0531c567f620877c3` / `strlix-gpu-worker-1` (`g4dn.xlarge`, us-east-1) | **stopped** (idle hygiene 2026-09-22) — start with `aws ec2 start-instances --instance-ids i-0531c567f620877c3 --region us-east-1` when needed |
+| Stripe live | **OFF** · `STRLIX_PAY_MODE=test` · `billing_mode=free_month` |
 
-## Applied this pass
+## Applied this pass (2026-09-22 ~07:46 IST)
 
-- **Postgres migration 006** on `psql-zevi-strlix` / db `strlix`: `market.waitlist` + `orders_plan_check` includes `free_month`; RLS insert policy + `GRANT INSERT` to `strlix_app`. Applied via Key Vault `database-url-admin` from the box (secrets not printed).
-- **market-api image** `acrzevistrlix.azurecr.io/market-api:0.6.0` built from `/workspace/zevi-cloudphone` and pushed; `ca-market-api` revision **`ca-market-api--0000004`** (image + `STRLIX_PAY_MODE=test`, hardening mark `soft-launch-006-20260921T1842IST`).
-- **WAF:** `TIGHTEN-WAF.sh --apply` **skipped / failed** — Azure CLI rejected `--match-condition` JSON on this az version. No custom WAF rules added; `/health` untouched. Script remains dry-run-safe for a later CLI-compatible fix.
+- **AWS GPU idle stop:** `i-0531c567f620877c3` → **stopped** (not terminated). Confirmed `State=stopped`.
+- **WAF tighten:** fixed `TIGHTEN-WAF.sh` for current az (`--match-variable` / `--operator` / `--values`; no `--match-condition` JSON). Dry-run then `--apply` on `wafzevistrlix` / AFD `afd-zevi-strlix`. Rules: **RateLimitAuthAnon** (110), **RateLimitWaitlist** (120), **RateLimitAuthLogin** (130) — 100/min/IP, RequestUri Contains, `/health` not matched. Post-apply AFD `/health` **200**.
+- **Private Redis NEXT:** reserved empty subnet **`cae-infra-subnet` `10.0.2.0/23`** on `vm-zevi-cloudphone-vnet` (eastus), delegated `Microsoft.App/environments`. CAE unchanged (`vnetConfiguration: null`, eastus2). Redis public access **still Enabled**. Script: `infra/hardening/PRIVATE-REDIS-NEXT.sh` (`CONFIRM=yes` gate).
 
 ## Docs this pass
 
-- This file updated with migration + deploy + smoke results.
+- This file; `QUOTA-TICKETS.md` GPU stopped note; `PRIVATE-REDIS-PATH.md` next-step pointer; new `PRIVATE-REDIS-NEXT.sh`; fixed `TIGHTEN-WAF.sh`.
 
 ## Blockers
 
 | Area | State |
 |------|--------|
-| Custom domain / branded URL | Still on `*.azurefd.net` — not configured this pass |
-| WAF rate-limit rules | `TIGHTEN-WAF.sh` CLI syntax mismatch — no RateLimit* rules on `wafzevistrlix` yet |
+| Custom domain / branded URL | Still on `*.azurefd.net` |
 | Azure GPU NCasT4 / NVadsA10 | **Still limit 0** in eastus2 — do not create GPU VM |
-| Private Redis cutover | Region split CAE eastus2 vs VNet/Redis eastus — see `PRIVATE-REDIS-PATH.md` |
+| Private Redis cutover | Region split CAE eastus2 vs VNet/Redis eastus — reserved `cae-infra-subnet` only; **no** public-access disable until eastus CAE Option B |
 | Stripe live | **Deferred** — pay_mode stays `test` |
 
 ## Curl helpers
@@ -43,4 +42,6 @@ curl -sS https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/health
 curl -sS -X POST https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/v1/waitlist \
   -H 'Content-Type: application/json' \
   -d '{"email":"you@example.com"}'
+# Restart AWS GPU worker when needed:
+aws ec2 start-instances --instance-ids i-0531c567f620877c3 --region us-east-1
 ```

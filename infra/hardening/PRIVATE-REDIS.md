@@ -56,3 +56,7 @@ rediss://:<key>@redis-strlix-amr.eastus.redis.azure.net:10000/0
 ```
 
 That hostname is correct for both public and private access; private DNS overrides the A record inside the linked VNet.
+
+## Reserved subnet (2026-09-22)
+
+`cae-infra-subnet` `10.0.2.0/23` on `vm-zevi-cloudphone-vnet` is reserved for a *future* eastus CAE. See `PRIVATE-REDIS-NEXT.sh` and `demo/launch/PRIVATE-REDIS-PATH.md`. Public Redis access remains Enabled.

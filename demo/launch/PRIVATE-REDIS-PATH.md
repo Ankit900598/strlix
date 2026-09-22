@@ -53,6 +53,16 @@ Only after **all** are true:
 
 Until then: **`publicNetworkAccess=Enabled` stays.**
 
+## Progress 2026-09-22 (~07:46 IST)
+
+- **Still do not disable** `publicNetworkAccess` on `redis-strlix-amr` (verified Enabled).
+- Cheap reversible step applied: reserved empty subnet **`cae-infra-subnet` `10.0.2.0/23`** on `vm-zevi-cloudphone-vnet` (eastus), delegated to `Microsoft.App/environments`.
+- **pe-subnet stays `10.0.1.0/27`** (PE only) — do not enlarge it for CAE; CAE needs a dedicated ≥/23 infra subnet.
+- Script: `../../infra/hardening/PRIVATE-REDIS-NEXT.sh`
+  - default = inspect + plan
+  - `CONFIRM=yes ./PRIVATE-REDIS-NEXT.sh --apply` = create reserved subnet (already done; idempotent SKIP)
+- **Not done:** CAE recreate in eastus / app cutover / peering / public-access disable. Those remain Option B and need a separate operator gate.
+
 ## Related
 
 - PE applied notes: `../credit-burn/HARDENING-APPLIED.md` §3  
