@@ -1,4 +1,4 @@
-# Soft-launch status snapshot — 2026-09-22 ~07:46 IST
+# Soft-launch status snapshot — 2026-09-22 ~09:30 IST
 
 **Operator:** box agent (not CloudAgent) · **RG lock:** `rg-zevi-cloudphone`  
 **Billing posture:** Ankit first calendar month **FREE** (soft-launch); do not enable Stripe **live** charges.  
@@ -19,10 +19,17 @@
 | Waitlist `POST /v1/waitlist` via AFD | prior pass **200** · `card_required:false` |
 | Managed Redis `redis-strlix-amr` | **publicNetworkAccess=Enabled** (unchanged) — do not disable |
 | Azure GPU VMs in RG | **None** — do not create |
-| AWS GPU `i-0531c567f620877c3` / `strlix-gpu-worker-1` (`g4dn.xlarge`, us-east-1) | **stopped** (idle hygiene 2026-09-22) — start with `aws ec2 start-instances --instance-ids i-0531c567f620877c3 --region us-east-1` when needed |
+| AWS GPU `i-0531c567f620877c3` / `strlix-gpu-worker-1` (`g4dn.xlarge`, us-east-1) | **RUNNING** · pub `44.204.83.61` · priv `172.31.82.79` · SSM Online · `nvidia-smi` green (T4 / 595.91.07 / CUDA 13.2) · Redroid **UP** ADB `127.0.0.1:5556` boot=1 Android 12 · ≈ **$0.526/hr** — `infra/gpu-worker/aws/WORKER-LIVE.md` |
 | Stripe live | **OFF** · `STRLIX_PAY_MODE=test` · `billing_mode=free_month` |
 
-## Applied this pass (2026-09-22 ~07:46 IST)
+## Applied this pass (2026-09-22 ~09:30 IST)
+
+- **AWS GPU start (item 3 → AWS):** `i-0531c567f620877c3` **stopped → running**. SSM Online. `nvidia-smi` green (Tesla T4, driver 595.91.07, CUDA 13.2). Docker + nvidia runtime verified. Redroid container `strlix-redroid-1` **UP** (`guest` GPU mode; ADB `127.0.0.1:5556`, `boot_completed=1`, Android 12). Host `:5555` = nv-hostengine. Runbook: `infra/gpu-worker/aws/WORKER-LIVE.md`.
+- **Azure GPU:** still **limit 0** — **do not create**.
+- **Stripe live:** still **OFF**.
+
+## Prior applied (2026-09-22 ~07:46 IST)
+
 
 - **AWS GPU idle stop:** `i-0531c567f620877c3` → **stopped** (not terminated). Confirmed `State=stopped`.
 - **WAF tighten:** fixed `TIGHTEN-WAF.sh` for current az (`--match-variable` / `--operator` / `--values`; no `--match-condition` JSON). Dry-run then `--apply` on `wafzevistrlix` / AFD `afd-zevi-strlix`. Rules: **RateLimitAuthAnon** (110), **RateLimitWaitlist** (120), **RateLimitAuthLogin** (130) — 100/min/IP, RequestUri Contains, `/health` not matched. Post-apply AFD `/health` **200**.
@@ -30,7 +37,7 @@
 
 ## Docs this pass
 
-- This file; `QUOTA-TICKETS.md` GPU stopped note; `PRIVATE-REDIS-PATH.md` next-step pointer; new `PRIVATE-REDIS-NEXT.sh`; fixed `TIGHTEN-WAF.sh`.
+- This file; `QUOTA-TICKETS.md` AWS GPU **RUNNING**; new `infra/gpu-worker/aws/WORKER-LIVE.md` (nvidia + Redroid next commands). Prior: `PRIVATE-REDIS-PATH.md` / `PRIVATE-REDIS-NEXT.sh`; `TIGHTEN-WAF.sh`.
 
 ## Blockers
 
@@ -48,6 +55,8 @@ curl -sS https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/health
 curl -sS -X POST https://strlix-edge-fwf6grbbbzbggxbs.z03.azurefd.net/v1/waitlist \
   -H 'Content-Type: application/json' \
   -d '{"email":"you@example.com"}'
-# Restart AWS GPU worker when needed:
-aws ec2 start-instances --instance-ids i-0531c567f620877c3 --region us-east-1
+# AWS GPU worker is RUNNING — health / session:
+aws ssm send-command --region us-east-1 --instance-ids i-0531c567f620877c3 --document-name AWS-RunShellScript --parameters 'commands=["nvidia-smi"]'
+# Idle stop (do not terminate):
+# aws ec2 stop-instances --region us-east-1 --instance-ids i-0531c567f620877c3
 ```

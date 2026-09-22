@@ -4,17 +4,17 @@
 **Do not** create Azure GPU (`CONFIRM_GPU_CREATE` / NC4as) — Azure NCasT4 / NVadsA10 remain **limit 0**.  
 **Stripe live:** stays **OFF** (first month free).
 
-## Live instance (created 2026-09-21 ~23:46 IST)
+## Live instance (created 2026-09-21 ~23:46 IST; **restarted RUNNING** 2026-09-22 ~09:27 IST)
 
 | Field | Value |
 |-------|--------|
 | Instance id | `i-0531c567f620877c3` |
 | Name tag | `strlix-gpu-worker-1` |
 | Type | `g4dn.xlarge` (1× NVIDIA T4, 4 vCPU) |
-| State | `running` (at create) |
+| State | **RUNNING** (restarted from stopped 2026-09-22; see `WORKER-LIVE.md`) |
 | AZ | `us-east-1b` |
 | Subnet | `subnet-0e1a710803da5929d` (default VPC) |
-| Public IP | `44.201.216.57` |
+| Public IP | `44.204.83.61` (was `44.201.216.57` at create; changes on stop/start) |
 | Private IP | `172.31.82.79` |
 | AMI | Deep Learning Base OSS Nvidia Driver GPU (Ubuntu 22.04) via SSM param `/aws/service/deeplearning/ami/x86_64/base-oss-nvidia-driver-gpu-ubuntu-22.04/latest/ami-id` (`ami-0defd610006e0417c` at create) |
 | SG | `sg-07cc11f2d8fdc0058` (`strlix-gpu-worker-sg`) — **no public inbound**; egress all (SSM HTTPS) |
