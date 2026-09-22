@@ -308,6 +308,9 @@
     const root = stripSlash(base) + "/";
     const u = new URL(root, location.href);
     u.searchParams.set("embed", "1");
+    // Absolute stream hosts (e.g. trycloudflare.com) must keep origin.
+    // Path-only return made phones load /?embed=1 on azurefd (404) forever.
+    if (u.origin !== location.origin) return u.href;
     return u.pathname + u.search + u.hash;
   }
 
