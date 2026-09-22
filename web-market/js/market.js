@@ -1,41 +1,95 @@
 (function () {
   const cfg = window.STRLIX_MARKET || {};
-  // marketApi "" = same-origin (AFD). Do not coerce "" with || null.
-  const MARKET_API = (cfg.marketApi === undefined || cfg.marketApi === null)
-    ? null
-    : String(cfg.marketApi);
-  const STREAM = (cfg.streamUrl === undefined || cfg.streamUrl === null || cfg.streamUrl === "")
-    ? ""
-    : String(cfg.streamUrl);
-  const STREAM_FALLBACK = (cfg.streamFallback === undefined || cfg.streamFallback === null)
-    ? ""
-    : String(cfg.streamFallback);
-  const hasMarketApi = MARKET_API !== null; // "" is same-origin and valid
+  const params = new URLSearchParams(location.search);
+
+  function isLoopbackHost(hostname) {
+    const h = String(hostname || "").toLowerCase();
+    return h === "localhost" || h === "127.0.0.1" || h === "[::1]" || h === "::1";
+  }
+
+  function isLoopbackUrl(value) {
+    try {
+      const u = new URL(value, location.href);
+      return isLoopbackHost(u.hostname);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function stripSlash(s) {
+    return String(s || "").replace(/\/$/, "");
+  }
+
+  // Same-origin on public HTTPS. Never keep 127.0.0.1 when the page is not local —
+  // that is why real phones break (unreachable + mixed content).
+  function resolveApiBase() {
+    if (params.has("api")) return stripSlash(params.get("api"));
+    if (Object.prototype.hasOwnProperty.call(cfg, "marketApi")) {
+      const raw = cfg.marketApi;
+      if (raw == null) return null;
+      const v = stripSlash(raw);
+      if (v && isLoopbackUrl(v) && !isLoopbackHost(location.hostname)) return "";
+      return v;
+    }
+    return "";
+  }
+
+  function resolveStreamBase(key, fallback) {
+    const q = key === "streamUrl" ? params.get("stream") : params.get("streamFallback");
+    if (q) return stripSlash(q);
+    const raw = cfg[key];
+    if (raw != null && String(raw).trim() !== "") {
+      const v = stripSlash(raw);
+      if (isLoopbackUrl(v) && !isLoopbackHost(location.hostname)) return fallback;
+      return v;
+    }
+    return fallback;
+  }
+
+  // "" marketApi = same-origin /v1. Stream may be https://*.trycloudflare.com or /stream.
+  // Loopback is dropped on public hosts (never iframe 127.0.0.1 from a phone).
+  const MARKET_API = resolveApiBase(); // "" = same-origin; null = static-only
+  const hasMarketApi = MARKET_API !== null;
+  const STREAM = resolveStreamBase("streamUrl", "/stream");
+  const STREAM_FALLBACK = resolveStreamBase("streamFallback", STREAM);
+
   let PAY_MODE = cfg.payMode || "test";
   let FREE_MONTH = (cfg.billingMode || "free_month") === "free_month" || cfg.freeLaunch !== false;
   let LAUNCH_COPY = "Free for your first month — no card required.";
   let INVITE_REQUIRED = false;
+
+  const IFRAME_ALLOW = [
+    "autoplay",
+    "clipboard-read",
+    "clipboard-write",
+    "microphone",
+    "camera",
+    "fullscreen",
+    "display-capture",
+  ].join("; ");
+
   function paintLaunch() {
     const payPill = document.getElementById("payPill");
     const copy = document.getElementById("freeMonthCopy");
     if (copy) copy.textContent = LAUNCH_COPY;
     if (!payPill) return;
     if (FREE_MONTH) {
-      payPill.textContent = "FREE MONTH";
-      payPill.classList.add("test");
+      payPill.textContent = "Free month";
+      payPill.classList.add("free");
       payPill.title = LAUNCH_COPY + " Stripe stays in test mode.";
       return;
     }
     payPill.textContent = "PAY: " + String(PAY_MODE).toUpperCase();
-    payPill.classList.toggle("test", PAY_MODE !== "live");
+    payPill.classList.toggle("free", false);
     payPill.title = PAY_MODE === "live"
       ? "LIVE gated on — real charges possible"
       : "Stripe/Razorpay test mode — no real charges";
   }
+
   async function refreshPayGates() {
     if (!hasMarketApi) { paintLaunch(); return; }
     try {
-      const base = MARKET_API.replace(/\/$/, "");
+      const base = MARKET_API;
       const [gates, launch] = await Promise.all([
         fetch(base + "/v1/payments/status").then((r) => r.json()),
         fetch(base + "/v1/launch").then((r) => r.json()),
@@ -62,6 +116,7 @@
     stage: document.getElementById("phoneStage"),
     stageTitle: document.getElementById("stageTitle"),
     stageScreen: document.getElementById("stageScreen"),
+    stageLive: document.getElementById("stageLive"),
     modal: document.getElementById("payModal"),
     modalBody: document.getElementById("payBody"),
     sessionPill: document.getElementById("sessionPill"),
@@ -79,12 +134,12 @@
   let selected = null;
   let refreshToken = localStorage.getItem("strlix_refresh_token") || "";
   let isAnonymous = false;
+  let activeStreamBase = STREAM;
 
   function money(cents) {
     return `$${(cents / 100).toFixed(2)}`;
   }
 
-  // M06 revise: real RTT from stream /health — never hardcode ms.
   let latencyTimer = null;
   const rttSamples = [];
 
@@ -93,12 +148,12 @@
     if (!el) return;
     el.textContent = text;
     el.title = title || "";
-    el.className = "pill latency" + (cls ? " " + cls : "");
+    el.className = "pill soft latency" + (cls ? " " + cls : "");
   }
 
   async function measureStreamRtt() {
-    const base = (selected && selected.preview === "live" ? STREAM : STREAM_FALLBACK) || STREAM;
-    const url = base.replace(/\/$/, "") + "/health";
+    const base = activeStreamBase || STREAM;
+    const url = stripSlash(base) + "/health";
     const t0 = performance.now();
     try {
       const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
@@ -110,10 +165,10 @@
           method: "GET",
           cache: "no-store",
           mode: "cors",
+          credentials: "same-origin",
           signal: ctrl ? ctrl.signal : undefined,
         });
-      } catch (corsErr) {
-        // Cross-origin without ACAO: still time an opaque request (honest RTT, labeled est.)
+      } catch (_) {
         mode = "no-cors";
         r = await fetch(url, {
           method: "GET",
@@ -125,18 +180,19 @@
       clearTimeout(to);
       try { if (mode === "cors") await r.text(); } catch (_) {}
       const ms = Math.round(performance.now() - t0);
-      if (mode === "cors" && !r.ok && r.status === 0) throw new Error("unreachable");
       rttSamples.push(ms);
       if (rttSamples.length > 30) rttSamples.shift();
       const last = rttSamples[rttSamples.length - 1];
       const band = last < 60 ? "ok" : last < 120 ? "warn" : "err";
       setLatencyChip(
-        "RTT est. " + last + " ms",
-        "HTTP RTT to stream /health via " + mode + " (not hardcoded). Samples: " + rttSamples.slice(-5).join(", "),
+        "RTT " + last + " ms",
+        "HTTP RTT to " + url + " via " + mode,
         band
       );
-    } catch (e) {
-      setLatencyChip("RTT —", "not measured — stream /health unreachable", "muted");
+      if (els.stageLive) els.stageLive.classList.toggle("on", band === "ok" || band === "warn");
+    } catch (_) {
+      setLatencyChip("RTT —", "stream /health unreachable — is /stream attached to AFD?", "muted");
+      if (els.stageLive) els.stageLive.classList.remove("on");
     }
   }
 
@@ -152,9 +208,13 @@
     rttSamples.length = 0;
   }
 
+  function apiUrl(path) {
+    return MARKET_API + path;
+  }
+
   async function loadDevices() {
     if (hasMarketApi) {
-      const r = await fetch(MARKET_API + "/v1/devices");
+      const r = await fetch(apiUrl("/v1/devices"));
       const j = await r.json();
       devices = j.devices || [];
     } else {
@@ -200,8 +260,7 @@
     const list = filtered();
     els.grid.innerHTML = list.map((d) => {
       const legacy = d.android <= 8 ? "legacy" : "";
-      const gone = d.available ? "" : "gone";
-      return `<article class="card" data-id="${d.id}">
+      return `<article class="device-row" data-id="${d.id}">
         <h3>${escapeHtml(d.model)}</h3>
         <div class="meta">
           <span class="chip ${legacy}">${escapeHtml(d.android_label)}</span>
@@ -215,7 +274,7 @@
         <p class="meta">${escapeHtml(d.notes || "")}</p>
         <div class="actions">
           <button class="btn primary" data-act="open" ${d.available ? "" : "disabled"}>Open phone</button>
-          <button class="btn" data-act="buy" ${d.available ? "" : "disabled"}>${FREE_MONTH ? "Free month" : "Rent"}</button>
+          <button class="btn ghost" data-act="buy" ${d.available ? "" : "disabled"}>${FREE_MONTH ? "Free month" : "Rent"}</button>
         </div>
       </article>`;
     }).join("") || `<p class="meta">No devices match filters.</p>`;
@@ -229,48 +288,135 @@
     if (els.sessionPill) els.sessionPill.textContent = text;
   }
 
+  function publicStream(value) {
+    if (value == null) return "";
+    const v = stripSlash(value);
+    if (!v) return "";
+    if (isLoopbackUrl(v) && !isLoopbackHost(location.hostname)) return "";
+    return v;
+  }
+
+  function isAbsoluteHttp(value) {
+    return /^https?:\/\//i.test(String(value || ""));
+  }
+
+  function pickStreamBase(device, lease) {
+    const page = publicStream(STREAM) || "/stream";
+    const fallback = publicStream(STREAM_FALLBACK) || page;
+    const preferred = device && device.preview === "live" ? page : fallback;
+    const fromLease = publicStream(lease && (lease.stream_url || lease.stream_after_pay));
+    if (!fromLease) return preferred;
+    // https tunnel (trycloudflare or a future stream host) wins over a relative path.
+    if (isAbsoluteHttp(fromLease)) return fromLease;
+    // API "/stream" must not replace a working https URL while AFD /stream is 404.
+    if (isAbsoluteHttp(preferred)) return preferred;
+    return fromLease;
+  }
+
+  function streamViewerSrc(base) {
+    const root = stripSlash(base) + "/";
+    const u = new URL(root, location.href);
+    u.searchParams.set("embed", "1");
+    // Keep the Cloudflare (or other) host. Path-only would iframe AFD /stream, which is still 404.
+    if (u.origin !== location.origin) return u.href;
+    return u.pathname + u.search + u.hash;
+  }
+
+  function mountLiveIframe(src, device) {
+    const boot = `<div class="stream-boot" id="streamBoot">
+      <div>
+        <strong>Waking ${escapeHtml(device.model)}</strong>
+        <p>Stream loads inside this bezel. Ask Strlix stays on the phone — not a side panel.</p>
+      </div>
+      <div class="ask-peek"><span class="ask-s">S</span> Ask Strlix…</div>
+    </div>`;
+    els.stageScreen.innerHTML = boot +
+      `<iframe id="streamFrame" title="Cloud phone stream" src="${escapeHtml(src)}"
+        allow="${IFRAME_ALLOW}"
+        allowfullscreen
+        referrerpolicy="same-origin"
+        importance="high"></iframe>`;
+
+    const frame = document.getElementById("streamFrame");
+    const bootEl = document.getElementById("streamBoot");
+    const hideBoot = () => { if (bootEl) bootEl.hidden = true; };
+    if (frame) {
+      frame.addEventListener("load", hideBoot);
+      // Focus the iframe so keyboard / touch targeting works on mobile browsers.
+      setTimeout(() => {
+        try { frame.focus({ preventScroll: true }); } catch (_) {}
+        hideBoot();
+      }, 1800);
+      frame.addEventListener("error", () => {
+        if (!bootEl) return;
+        bootEl.classList.add("err");
+        bootEl.innerHTML = `<div><strong>Stream unreachable</strong>
+          <p>Public path <code>/stream/</code> is not attached yet, or the stream host is down.
+          Operators: see <code>web-market/DEPLOY.md</code>.</p></div>`;
+      });
+    }
+  }
+
   function openFullscreen(device, lease, options = {}) {
     selected = device;
     els.stageTitle.textContent = `${device.model} · ${device.android_label}`;
-    const streamBase = device.preview === "live" ? STREAM : STREAM_FALLBACK;
-    // Prefer embedding existing viewer; graceful note for mock SKUs
-    const src = device.preview === "live"
-      ? streamBase + "/"
-      : null;
-    if (src) {
-      els.stageScreen.innerHTML = `<iframe title="Cloud phone stream" src="${src}" allow="autoplay; clipboard-read; clipboard-write; microphone"></iframe>
-        <div class="ask-hint">AI lives inside the phone · Ask on device · Esc to exit</div>`;
-    } else {
-      els.stageScreen.innerHTML = `<div style="padding:20px;text-align:center">
-          <strong>${escapeHtml(device.model)}</strong>
-          <p style="color:#8b9bb8;font-size:13px;line-height:1.5;margin:10px 0">
-            Conceptual pool image (${escapeHtml(device.android_label)}, ${device.ram_gb}/${device.rom_gb} GB).
-            Live stream binds when this SKU is provisioned. JPEG/H.264 viewer still works on Android&nbsp;7+ web shells via graceful fallback.
-          </p>
-          <button class="btn primary" id="openLiveAnyway">Open live pool preview</button>
-        </div>
-        <div class="ask-hint">Esc / Close exits fullscreen</div>`;
-      setTimeout(() => {
+    activeStreamBase = pickStreamBase(device, lease);
+
+    if (device.preview === "live" || (lease && (lease.stream_url || lease.granted_free || lease.local))) {
+      const liveDevice = device.preview === "live" ? device : (devices.find((d) => d.preview === "live") || device);
+      if (device.preview !== "live" && liveDevice !== device) {
+        // Conceptual SKU — still open the live pool so the phone path works.
+        activeStreamBase = pickStreamBase(liveDevice, lease);
+      }
+      const src = streamViewerSrc(activeStreamBase);
+      if (device.preview === "live") {
+        mountLiveIframe(src, device);
+      } else {
+        els.stageScreen.innerHTML = `<div class="stream-boot">
+          <div>
+            <strong>${escapeHtml(device.model)}</strong>
+            <p>Conceptual pool image (${escapeHtml(device.android_label)}, ${device.ram_gb}/${device.rom_gb} GB).
+            Live stream binds when this SKU is provisioned.</p>
+          </div>
+          <button class="btn primary" id="openLiveAnyway" type="button">Open live pool preview</button>
+        </div>`;
         const b = document.getElementById("openLiveAnyway");
-        if (b) b.onclick = () => {
-          els.stageScreen.innerHTML = `<iframe title="Cloud phone stream" src="${STREAM_FALLBACK}/" allow="autoplay; microphone"></iframe>`;
-        };
-      }, 0);
+        if (b) b.onclick = () => mountLiveIframe(streamViewerSrc(STREAM_FALLBACK || STREAM), liveDevice);
+      }
+    } else {
+      els.stageScreen.innerHTML = `<div class="stream-boot">
+        <div>
+          <strong>${escapeHtml(device.model)}</strong>
+          <p>No live preview for this SKU yet.</p>
+        </div>
+        <button class="btn primary" id="openLiveAnyway" type="button">Open live pool preview</button>
+      </div>`;
+      const b = document.getElementById("openLiveAnyway");
+      if (b) b.onclick = () => {
+        activeStreamBase = STREAM_FALLBACK || STREAM;
+        mountLiveIframe(streamViewerSrc(activeStreamBase), device);
+        startLatencyLoop();
+      };
     }
+
     els.stage.classList.add("open");
     els.stage.setAttribute("aria-hidden", "false");
-    if (els.stageStatus) els.stageStatus.textContent = `${device.model} preview opened. Phone stream is ready for keyboard focus.`;
+    document.body.style.overflow = "hidden";
+    if (els.stageStatus) els.stageStatus.textContent = `${device.model} preview opened.`;
     document.getElementById("closeStage").focus();
     if (lease) sessionStorage.setItem("strlix_lease", JSON.stringify(lease));
     if (options.wow && isAnonymous) showClaimPrompt();
+    startLatencyLoop();
   }
 
   function closeFullscreen() {
     els.stage.classList.remove("open");
     els.stage.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
     if (els.stageStatus) els.stageStatus.textContent = "Phone preview closed";
     els.stageScreen.innerHTML = "";
     if (els.claimPrompt) els.claimPrompt.hidden = true;
+    if (els.stageLive) els.stageLive.classList.remove("on");
     stopLatencyLoop();
   }
 
@@ -279,10 +425,9 @@
     isAnonymous = !!j.is_anonymous;
     if (j.refresh_token) {
       refreshToken = j.refresh_token;
-      // Only a bearer refresh token is persisted; no email or device metadata.
       localStorage.setItem("strlix_refresh_token", refreshToken);
     }
-    setSessionPill(isAnonymous ? "Anonymous session · Save account" : "Account session");
+    setSessionPill(isAnonymous ? "Anonymous · Save account" : "Account session");
     return els.token;
   }
 
@@ -296,7 +441,7 @@
   async function refreshAuth() {
     if (!hasMarketApi || !refreshToken) return false;
     try {
-      const r = await fetch(MARKET_API + "/v1/auth/refresh", {
+      const r = await fetch(apiUrl("/v1/auth/refresh"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refresh_token: refreshToken }),
@@ -307,7 +452,7 @@
       els.token = null;
       refreshToken = "";
       localStorage.removeItem("strlix_refresh_token");
-      setSessionPill("Guest preview · no signup");
+      setSessionPill("Guest · no signup");
       return false;
     }
   }
@@ -318,11 +463,9 @@
       els.token = "local-demo";
       return els.token;
     }
-    // Remove the old pre-anonymous fake identity, but only when a visitor
-    // actually starts checkout. Preview remains zero-auth and zero-storage.
     localStorage.removeItem("strlix_email");
     if (await refreshAuth()) return els.token;
-    const r = await fetch(MARKET_API + "/v1/auth/anon", {
+    const r = await fetch(apiUrl("/v1/auth/anon"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
     });
@@ -332,16 +475,14 @@
   async function apiJson(path, options = {}) {
     const token = await ensureAuth();
     const headers = Object.assign({}, options.headers || {}, { Authorization: "Bearer " + token });
-    let r = await fetch(MARKET_API + path, Object.assign({}, options, { headers }));
+    let r = await fetch(apiUrl(path), Object.assign({}, options, { headers }));
     if (r.status === 401 && refreshToken && await refreshAuth()) {
       headers.Authorization = "Bearer " + els.token;
-      r = await fetch(MARKET_API + path, Object.assign({}, options, { headers }));
+      r = await fetch(apiUrl(path), Object.assign({}, options, { headers }));
     }
     return readJson(r);
   }
 
-  // Minimal async-task bridge for phone-first UI surfaces. The API stores only
-  // an allow-listed kind and returns queued → running → done; no chat payloads.
   async function createPollableJob(kind = "phone_task") {
     if (!hasMarketApi) throw new Error("async jobs require market-api");
     return apiJson("/v1/jobs", {
@@ -369,8 +510,6 @@
     }
   }
 
-  // Native wrappers and the in-phone viewer can opt into the same helper without
-  // adding an outside chat surface: window.StrlixJobs.create(...), .poll(...).
   window.StrlixJobs = {
     create: createPollableJob,
     get: getPollableJob,
@@ -418,14 +557,14 @@
          <input id="freeInvite" type="text" maxlength="64" placeholder="Invite code" required />`
       : `<label class="sr-only" for="freeInvite">Invite code (optional)</label>
          <input id="freeInvite" type="text" maxlength="64" placeholder="Invite code (optional)" />`;
-    els.modalBody.innerHTML = `<p class="pill test">${escapeHtml(LAUNCH_COPY)}</p>
-      <p>Open <strong>${escapeHtml(device.model)}</strong> for the free month. Stripe is not used. Test checkout stays available on the API and cannot charge a card.</p>
+    els.modalBody.innerHTML = `<p class="pill free">${escapeHtml(LAUNCH_COPY)}</p>
+      <p>Open <strong>${escapeHtml(device.model)}</strong> for the free month. Stripe is not used.</p>
       <label class="sr-only" for="freeEmail">Email for the waitlist (optional)</label>
       <input id="freeEmail" type="email" autocomplete="email" placeholder="Email for the waitlist (optional)" />
       ${invite}
       <div class="row">
         <button class="btn primary" id="freeStart" type="button">Start free month</button>
-        <button class="btn" id="payCancel" type="button">Cancel</button>
+        <button class="btn ghost" id="payCancel" type="button">Cancel</button>
       </div>`;
     els.modalBody.querySelector("#payCancel").onclick = () => els.modal.classList.remove("open");
     els.modalBody.querySelector("#freeStart").onclick = () => confirmFree(device);
@@ -438,7 +577,7 @@
     const invite = (els.modalBody.querySelector("#freeInvite").value || "").trim();
     try {
       if (hasMarketApi && email) {
-        const joined = await fetch(MARKET_API.replace(/\/$/, "") + "/v1/waitlist", {
+        const joined = await fetch(apiUrl("/v1/waitlist"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, invite_code: invite || undefined }),
@@ -447,7 +586,7 @@
       }
       if (!hasMarketApi) {
         els.modal.classList.remove("open");
-        openFullscreen(device, { local: true, plan: "free_month", device_id: device.id, card_required: false });
+        openFullscreen(device, { local: true, plan: "free_month", device_id: device.id, card_required: false }, { wow: false });
         return;
       }
       const granted = await apiJson("/v1/access/grant", {
@@ -467,14 +606,14 @@
     if (FREE_MONTH) return startFreeMonth(device);
     selected = device;
     els.modal.classList.add("open");
-    els.modalBody.innerHTML = `<p class="pill test">PAYMENT MODE: ${PAY_MODE.toUpperCase()} — no real charges</p>
+    els.modalBody.innerHTML = `<p class="pill soft">PAYMENT MODE: ${PAY_MODE.toUpperCase()} — no real charges</p>
       <p>Rent <strong>${escapeHtml(device.model)}</strong> (${escapeHtml(device.android_label)}, ${device.ram_gb} GB / ${device.rom_gb} GB).</p>
       <div class="row">
         <button class="btn primary" data-plan="hour">Pay ${money(device.price_hour_cents)} / hour</button>
         <button class="btn primary" data-plan="day">Pay ${money(device.price_day_cents)} / day</button>
-        <button class="btn" id="payCancel">Cancel</button>
+        <button class="btn ghost" id="payCancel">Cancel</button>
       </div>
-      <p style="margin-top:12px;font-size:11px">Gated payments · intent id only stored · live needs PAYMENTS_LIVE + Key Vault keys</p>`;
+      <p style="margin-top:12px;font-size:11px">Gated payments · live needs PAYMENTS_LIVE + Key Vault keys</p>`;
     els.modalBody.querySelector("#payCancel").onclick = () => els.modal.classList.remove("open");
     els.modalBody.querySelectorAll("[data-plan]").forEach((btn) => {
       btn.onclick = () => confirmPay(device, btn.getAttribute("data-plan"));
@@ -486,7 +625,6 @@
     buttons.forEach((button) => { button.disabled = true; });
     try {
       if (!hasMarketApi) {
-        // Local stub without API
         els.modal.classList.remove("open");
         openFullscreen(device, { local: true, plan, device_id: device.id });
         return;
@@ -513,14 +651,26 @@
     els.claimPrompt.hidden = true;
   });
 
-  document.getElementById("miniPhone").addEventListener("click", () => {
+  function openHeroPhone() {
     const live = devices.find((d) => d.preview === "live") || devices[0];
     if (live) openFullscreen(live);
-  });
-  document.getElementById("miniPhone").addEventListener("keydown", (e) => {
-    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); document.getElementById("miniPhone").click(); }
-  });
+  }
+
+  document.getElementById("heroPhone").addEventListener("click", openHeroPhone);
   document.getElementById("closeStage").onclick = closeFullscreen;
+  document.getElementById("btnAskHint").onclick = () => {
+    const frame = document.getElementById("streamFrame");
+    if (frame && frame.contentWindow) {
+      let targetOrigin = location.origin;
+      try { targetOrigin = new URL(frame.src, location.href).origin; } catch (_) {}
+      try { frame.contentWindow.postMessage({ type: "strlix-open-ask" }, targetOrigin); } catch (_) {}
+    }
+    const hint = document.createElement("div");
+    hint.className = "inphone-ask";
+    hint.innerHTML = `<span class="smark">S</span><span>Ask is inside the phone · ⌘K / Ctrl+K in the stream</span>`;
+    els.stageScreen.appendChild(hint);
+    setTimeout(() => hint.remove(), 2800);
+  };
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeFullscreen(); });
   ["fAndroid", "fRam", "fRom", "fTier", "fQ"].forEach((id) => {
     document.getElementById(id).addEventListener("input", render);
@@ -535,7 +685,11 @@
     if (btn.dataset.act === "open") openFullscreen(d);
     if (btn.dataset.act === "buy") startCheckout(d);
   });
-  document.getElementById("btnTry").onclick = () => document.getElementById("miniPhone").click();
+  document.getElementById("btnTry").onclick = openHeroPhone;
+  document.getElementById("btnTry2").onclick = openHeroPhone;
+  document.getElementById("btnCatalog").onclick = () => {
+    document.getElementById("catalog").scrollIntoView({ behavior: "smooth" });
+  };
 
   loadDevices().catch((err) => {
     els.grid.innerHTML = `<p class="meta">Failed to load catalog: ${escapeHtml(err.message)}</p>`;

@@ -7,6 +7,18 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    // Market embeds this viewer under /stream/?embed=1 — hide outer chrome so the
+    // market bezel is the only frame and Ask stays inside the phone screen.
+    (function () {
+      try {
+        var q = new URLSearchParams(location.search);
+        if (q.get("embed") === "1" || q.get("embed") === "true") {
+          document.documentElement.classList.add("embed");
+        }
+      } catch (_) {}
+    })();
+  </script>
   <style>
     :root {
       --bg: #05070c;
@@ -614,6 +626,48 @@
       .device-screen { border-radius: 28px; }
       #liveOrb { width:128px; height:128px; }
       #liveLayer[data-state="docked"] #liveOrb { width:160px; height:160px; left:40px; top:40px; }
+    }
+
+    /* Embedded in web-market bezel: full-bleed screen, Ask stays in-phone */
+    html.embed, html.embed body {
+      overflow: hidden;
+      background: #000;
+      overscroll-behavior: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    html.embed .topbar,
+    html.embed .device-footer,
+    html.embed .trust-row,
+    html.embed .punch {
+      display: none !important;
+    }
+    html.embed .stage {
+      height: 100dvh;
+      padding: 0;
+      gap: 0;
+    }
+    html.embed .device-wrap,
+    html.embed .device {
+      width: 100%;
+      height: 100%;
+      max-width: none;
+      border-radius: 0;
+      padding: 0;
+      border: 0;
+      box-shadow: none;
+      background: #000;
+    }
+    html.embed .device-screen {
+      border-radius: 0;
+      touch-action: none;
+    }
+    html.embed .nav-rail-zone {
+      opacity: 0.92;
+    }
+    html.embed #touchLayer {
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
     }
   </style>
 </head>
@@ -2356,6 +2410,24 @@
     window.__strlixOrb={dock:()=>setAgentActive(true,'Working…'),undock:()=>setAgentActive(false),get state(){return orbState;}};
     window.__strlixLive={playHostAudio,doBargeIn,stopTtsImmediate,startBargeWatch,shareReplayGif,get ttsPlaying(){return ttsPlaying;},get bargeArmed(){return bargeArmed;},get bargeStats(){return {path:bargePath,workletWanted:bargeWorkletWanted,rms:bargeRms,floor:bargeFloor,threshold:bargeThreshold,voiceMs:bargeVoiceMs,apm:{...bargeApm}};}};
     window.__strlixReplay={open:openReplay,close:closeReplay,addEvent:replayAddEvent,select:replaySelect,share:shareReplayGif,get events(){return replay.events;}};
+
+    // Parent market shell can request Ask without an external chat panel.
+    window.addEventListener("message", (ev) => {
+      const msg = ev.data || {};
+      if (msg.type !== "strlix-open-ask") return;
+      if (location.protocol === "https:" && String(ev.origin || "").indexOf("https://") !== 0) return;
+        try {
+          const askQ = document.getElementById("askQ");
+          const dock = document.getElementById("askDock");
+          if (dock) {
+            dock.dataset.mode = "ask";
+            dock.setAttribute("aria-hidden", "false");
+          }
+          const overlay = document.getElementById("askOverlay");
+          if (overlay) overlay.classList.add("open");
+          if (askQ) askQ.focus();
+        } catch (_) {}
+    });
 
   </script>
 </body>

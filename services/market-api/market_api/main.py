@@ -25,7 +25,7 @@ def _repo_root() -> Path:
 ROOT = _repo_root()
 DEVICES = ROOT / "web-market" / "devices.json"
 
-app = FastAPI(title="Strlix market-api", version="0.6.7")
+app = FastAPI(title="Strlix market-api", version="0.6.8")
 origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
@@ -102,7 +102,7 @@ def health():
     return {
         "ok": True,
         "service": "market-api",
-        "version": "0.6.7",
+        "version": "0.6.8",
         "pay_mode": gates["effective_mode"],
         "pay_gates": gates,
         "billing_mode": launch.billing_mode(),
