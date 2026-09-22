@@ -26,11 +26,14 @@ class Settings(BaseSettings):
     stripe_webhook_secret: str = "whsec_test_REPLACE_ME"
     razorpay_key_id: str = "rzp_test_REPLACE_ME"
     razorpay_key_secret: str = "REPLACE_ME"
-    checkout_success_url: str = "http://127.0.0.1:8080/market/?paid=1"
-    checkout_cancel_url: str = "http://127.0.0.1:8080/market/?canceled=1"
+    # Relative / same-origin defaults for Azure Front Door. Local override via env.
+    checkout_success_url: str = "/market/?paid=1"
+    checkout_cancel_url: str = "/market/?canceled=1"
 
-    stream_url: str = "http://127.0.0.1:8789"
-    stream_fallback: str = "http://127.0.0.1:8787"
+    # Public path after operators attach desktop-api (see web-market/DEPLOY.md).
+    # Do NOT default to 127.0.0.1 — grant payloads would break real phones.
+    stream_url: str = "/stream"
+    stream_fallback: str = "/stream"
     cors_origins: str = "*"
 
     rate_limit_per_min: int = 60
