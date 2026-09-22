@@ -303,6 +303,32 @@
     return u.pathname + u.search + u.hash;
   }
 
+  function showStreamUnavailable(bootEl, reason) {
+    if (!bootEl) return;
+    bootEl.hidden = false;
+    bootEl.classList.add("err");
+    bootEl.innerHTML = `<div>
+        <strong>Stream not reachable yet</strong>
+        <p>${escapeHtml(reason || "Public /stream is not attached to Front Door, or the stream host is down.")}</p>
+        <p style="margin-top:8px;color:var(--muted)">Operators: <code>web-market/DEPLOY.md</code> · <code>ATTACH-AFD-STREAM.sh</code></p>
+      </div>
+      <div class="ask-peek"><span class="ask-s">S</span> Ask stays inside the phone</div>`;
+  }
+
+  async function probeStreamReady(base) {
+    try {
+      const r = await fetch(stripSlash(base) + "/health", {
+        method: "GET",
+        cache: "no-store",
+        mode: "cors",
+        credentials: "same-origin",
+      });
+      return r.ok;
+    } catch (_) {
+      return false;
+    }
+  }
+
   function mountLiveIframe(src, device) {
     const boot = `<div class="stream-boot" id="streamBoot">
       <div>
@@ -320,20 +346,37 @@
 
     const frame = document.getElementById("streamFrame");
     const bootEl = document.getElementById("streamBoot");
-    const hideBoot = () => { if (bootEl) bootEl.hidden = true; };
+    let settled = false;
+
+    const hideBoot = () => {
+      if (settled || !bootEl) return;
+      settled = true;
+      bootEl.hidden = true;
+    };
+
+    probeStreamReady(activeStreamBase).then((ok) => {
+      if (!ok) {
+        showStreamUnavailable(
+          bootEl,
+          "No response from " + stripSlash(activeStreamBase) + "/health. Attach desktop-api under /stream on AFD, then retry."
+        );
+        settled = true;
+        return;
+      }
+      // Health ok — keep boot until iframe paints, then reveal stream.
+      if (frame) {
+        frame.addEventListener("load", hideBoot, { once: true });
+        setTimeout(() => {
+          try { frame.focus({ preventScroll: true }); } catch (_) {}
+          hideBoot();
+        }, 2200);
+      }
+    });
+
     if (frame) {
-      frame.addEventListener("load", hideBoot);
-      // Focus the iframe so keyboard / touch targeting works on mobile browsers.
-      setTimeout(() => {
-        try { frame.focus({ preventScroll: true }); } catch (_) {}
-        hideBoot();
-      }, 1800);
       frame.addEventListener("error", () => {
-        if (!bootEl) return;
-        bootEl.classList.add("err");
-        bootEl.innerHTML = `<div><strong>Stream unreachable</strong>
-          <p>Public path <code>/stream/</code> is not attached yet, or the stream host is down.
-          Operators: see <code>web-market/DEPLOY.md</code>.</p></div>`;
+        showStreamUnavailable(bootEl, "The stream iframe failed to load.");
+        settled = true;
       });
     }
   }
