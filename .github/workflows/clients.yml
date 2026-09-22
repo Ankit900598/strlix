@@ -1,0 +1,28 @@
+name: clients
+
+on:
+  pull_request:
+  push:
+    paths:
+      - "clients/**"
+      - ".github/workflows/clients.yml"
+
+jobs:
+  stream-client:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: clients/package-lock.json
+      - name: Install
+        working-directory: clients
+        run: npm install
+      - name: Test the shared stream client
+        working-directory: clients
+        run: npm test
+      - name: Bundle the phone player
+        working-directory: clients
+        run: npm run build

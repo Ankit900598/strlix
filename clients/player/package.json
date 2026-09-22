@@ -1,0 +1,12 @@
+{
+  "name": "@strlix/player",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/main.ts --bundle --outfile=www/app.js --format=iife --target=es2022 --sourcemap"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  }
+}

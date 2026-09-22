@@ -1,0 +1,23 @@
+{
+  "name": "strlix-clients",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Strlix cloud-phone clients — shared stream library, phone player, Android, iOS, desktop.",
+  "workspaces": [
+    "stream-client",
+    "player",
+    "desktop",
+    "mobile"
+  ],
+  "scripts": {
+    "build": "npm run build -w @strlix/player",
+    "test": "npm test -w @strlix/stream-client",
+    "start": "npm run build && npm start -w @strlix/desktop",
+    "android:sync": "npm run build && npm run sync:android -w @strlix/mobile",
+    "ios:sync": "npm run build && npm run sync:ios -w @strlix/mobile",
+    "probe": "npm run probe -w @strlix/stream-client"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

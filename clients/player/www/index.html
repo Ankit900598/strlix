@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Strlix</title>
+  <link rel="stylesheet" href="./app.css" />
+</head>
+<body>
+  <div id="app">
+    <header>
+      <p id="status">Connecting…</p>
+      <div class="tools">
+        <button type="button" id="sound" aria-label="Sound" title="Phone sound">🔊</button>
+        <button type="button" id="full" aria-label="Fullscreen" title="Fullscreen">⛶</button>
+        <button type="button" id="serverBtn" aria-label="Stream server" title="Stream server">···</button>
+      </div>
+    </header>
+    <div id="screen">
+      <canvas id="video" width="1080" height="2400"></canvas>
+      <div id="touch" tabindex="0" role="application" aria-label="Cloud phone screen"></div>
+      <p id="hint">Tap for sound</p>
+    </div>
+    <nav id="nav" aria-label="Phone buttons">
+      <button type="button" data-key="BACK" aria-label="Back">‹</button>
+      <button type="button" data-key="HOME" aria-label="Home">●</button>
+      <button type="button" data-key="RECENTS" aria-label="Recents">▢</button>
+      <button type="button" data-key="VOLUME_DOWN" aria-label="Volume down">−</button>
+      <button type="button" data-key="VOLUME_UP" aria-label="Volume up">+</button>
+    </nav>
+  </div>
+  <form id="server" hidden>
+    <label for="serverUrl">Stream host</label>
+    <input id="serverUrl" type="url" inputmode="url" autocomplete="off" spellcheck="false" />
+    <div class="row">
+      <button type="button" id="serverCancel">Cancel</button>
+      <button type="submit">Connect</button>
+    </div>
+    <p class="fine">The phone opens immediately. This is only if you need a different host.</p>
+  </form>
+  <script src="./app.js"></script>
+</body>
+</html>

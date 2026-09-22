@@ -1,0 +1,21 @@
+{
+  "name": "@strlix/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Strlix Android and iOS shells. The phone UI is clients/player.",
+  "scripts": {
+    "sync:android": "cap sync android",
+    "sync:ios": "cap sync ios",
+    "open:android": "cap open android",
+    "open:ios": "cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.2.0",
+    "@capacitor/core": "^7.2.0",
+    "@capacitor/ios": "^7.2.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.2.0",
+    "typescript": "^7.0.2"
+  }
+}
