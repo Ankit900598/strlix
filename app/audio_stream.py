@@ -84,6 +84,8 @@ class _WireQueue:
 
     async def get(self):
         packet = await self._sub.queue.get()
+        if isinstance(packet, dict):
+            return packet
         return self._broker.wire(packet)
 
 
@@ -266,6 +268,33 @@ class AudioBroker:
     def wire(self, packet: AudioPacket) -> bytes:
         return pack_audio(packet)
 
+    def _status(self, **extra: object) -> None:
+        """Fan out a JSON status dict (same shape DeviceAudioBroker uses)."""
+        note = {
+            "type": "audio",
+            "source": self._source,
+            "codec": self._codec,
+            "reason": self._reason,
+            "available": self._available,
+            **extra,
+        }
+        for sub in list(self._subs):
+            if sub.closed:
+                continue
+            # Status shares the packet queue; drop oldest non-config if full.
+            try:
+                sub.queue.put_nowait(note)  # type: ignore[arg-type]
+            except asyncio.QueueFull:
+                with contextlib.suppress(asyncio.QueueEmpty):
+                    sub.queue.get_nowait()
+                with contextlib.suppress(asyncio.QueueFull):
+                    sub.queue.put_nowait(note)  # type: ignore[arg-type]
+
+    def _idle(self) -> None:
+        self._source = "idle"
+        self._available = False
+        self._reason = "no listeners yet"
+
     async def _run(self) -> None:
         self._started_at = time.time()
         try:
@@ -280,32 +309,74 @@ class AudioBroker:
                     self._source = "error"
                     self._reason = self._last_error
                     self._available = False
+                    self._status()
                     await asyncio.sleep(0.8)
                 if not self._subs:
-                    return
+                    break
         finally:
             self._task = None
-            if not self._stopping and self._subs:
+            if self._subs and not self._stopping:
                 self._task = asyncio.create_task(self._run(), name="audio-producer")
+            else:
+                # Clear the sticky "opening scrcpy audio socket" toast reason.
+                self._idle()
 
     async def _segment(self) -> None:
         self._source = "starting"
         self._reason = "opening scrcpy audio socket"
+        self._available = False
+        # Do not fan out "opening…" — client treats it as a hard error toast.
         with contextlib.suppress(Exception):
-            await self.adb.ensure_connected()
+            await asyncio.wait_for(self.adb.ensure_connected(), 5.0)
+        if not self._subs or self._stopping:
+            return
         session = ScrcpyAudioSession(self.adb)
         self._session = session
         buf = b""
         preface: Optional[Preface] = None
+        opened_at = time.time()
         try:
-            reader = await session.start()
+            # Hard cap: a hung adb/scrcpy start must not pin the broker forever.
+            try:
+                reader = await asyncio.wait_for(session.start(), 12.0)
+            except asyncio.TimeoutError as e:
+                self._errors += 1
+                self._last_error = "scrcpy audio socket open timed out"
+                self._source = "error"
+                self._reason = self._last_error
+                self._available = False
+                self._status()
+                raise AudioError(self._last_error) from e
+            # start() returned with at least one peeked byte; wait for codec id.
+            self._reason = "waiting for scrcpy audio codec header"
             while not self._stopping and self._subs:
+                # Abort if we never see a preface — avoids sticky "opening…".
+                if preface is None and (time.time() - opened_at) > 10.0:
+                    self._errors += 1
+                    self._last_error = "scrcpy audio preface timed out"
+                    self._source = "error"
+                    self._reason = self._last_error
+                    self._available = False
+                    self._status()
+                    return
                 try:
                     chunk = await asyncio.wait_for(reader.read(4096), 2.0)
                 except asyncio.TimeoutError:
                     continue
                 if not chunk:
-                    break
+                    if preface is None:
+                        self._errors += 1
+                        self._last_error = "scrcpy audio socket EOF before codec header"
+                        self._source = "error"
+                        self._reason = self._last_error
+                        self._available = False
+                        self._status()
+                    else:
+                        self._reason = "scrcpy audio socket closed"
+                        self._source = "error"
+                        self._available = False
+                        self._status()
+                    return
                 buf += chunk
                 if preface is None:
                     preface, buf = parse_preface(buf)
@@ -324,10 +395,12 @@ class AudioBroker:
                             else "scrcpy audio configuration error"
                         )
                         self._last_error = self._reason
+                        self._status()
                         return
                     self._source = "scrcpy"
                     self._available = True
                     self._reason = "opus from scrcpy — browser plays it on user speakers"
+                    self._status()
                 packets, buf = pop_packets(buf, codec=self._codec)
                 if len(buf) > 12 and not packets:
                     self._errors += 1

@@ -1,6 +1,6 @@
 [project]
 name = "strlix-market-api"
-version = "0.7.5+play1"
+version = "0.7.6+nav1"
 requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.115",

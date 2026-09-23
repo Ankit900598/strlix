@@ -1044,23 +1044,33 @@
     // `input motionevent`. Until then taps stay on the single-shot path.
     let motionCaps = false;
 
-    // ---- layout: exact letterbox rect for the device aspect ----
+    // ---- layout: letterbox/pillarbox so the FULL Android frame stays on-screen ----
+    // phone-fs previously used object-fit:cover (Math.max). On 390×844 vs 1080×2400
+    // that cropped ~11px top+bottom and sank the system nav (back/home/recents)
+    // under the fold — untappable. Prefer height-aware contain: fit the full
+    // device height (nav stays visible); accept thin side bars if needed.
     function layoutView() {
       const sr = screenEl.getBoundingClientRect();
       if (!sr.width || !sr.height || !deviceW || !deviceH) return;
-      // Phone-first / embed: cover the viewport (crop letterbox bars). Desktop
-      // keeps contain so the full Android frame stays visible in the bezel.
       const immersive = document.documentElement.classList.contains('phone-fs')
         || document.documentElement.classList.contains('embed');
-      const scale = immersive
-        ? Math.max(sr.width / deviceW, sr.height / deviceH)
-        : Math.min(sr.width / deviceW, sr.height / deviceH);
+      const scaleW = sr.width / deviceW;
+      const scaleH = sr.height / deviceH;
+      // Always contain for soft-launch: never crop the nav bar off-screen.
+      // (Cover is what made bottom keys "sink" under the viewport edge.)
+      const scale = Math.min(scaleW, scaleH);
       const w = deviceW * scale, h = deviceH * scale;
-      viewRect = { left: (sr.width - w) / 2, top: (sr.height - h) / 2, width: w, height: h, scale };
-      if (immersive) {
-        // Clip overflow from cover-scale so bars never show.
-        screenEl.style.overflow = 'hidden';
-      }
+      viewRect = {
+        left: (sr.width - w) / 2,
+        top: (sr.height - h) / 2,
+        width: w,
+        height: h,
+        scale,
+        mode: immersive ? 'contain-nav' : 'contain',
+      };
+      // Black bars only in the unused strip; do not clip device pixels.
+      screenEl.style.overflow = 'hidden';
+      screenEl.style.background = '#000';
       for (const el of [liveCanvas, liveShot]) {
         el.style.left = viewRect.left + 'px';
         el.style.top = viewRect.top + 'px';
@@ -1761,45 +1771,20 @@
     }
 
     // ───────────── Pointer → device coordinates ─────────────
-    // The painted canvas/img is the source of truth. visualViewport.offset*
-    // is non-zero when the mobile URL bar or keyboard shifts the visual
-    // viewport relative to getBoundingClientRect (layout viewport).
-    const EDGE_TOL = 40;  // device px of slack into the letterbox bars
-    function viewportShift() {
-      const vv = window.visualViewport;
-      if (!vv) return { x: 0, y: 0 };
-      return { x: vv.offsetLeft || 0, y: vv.offsetTop || 0 };
-    }
-    function paintedVideoRect() {
-      const el = (!liveCanvas.hidden && liveCanvas.offsetParent !== null) ? liveCanvas
-        : ((!liveShot.hidden && liveShot.offsetParent !== null) ? liveShot : null);
-      if (el) {
-        const r = el.getBoundingClientRect();
-        if (r.width > 1 && r.height > 1) return r;
-      }
-      return null;
-    }
+    // viewRect (from layoutView) is the source of truth: it already includes
+    // letterbox/pillarbox offsets for contain-nav. Do NOT add visualViewport
+    // offset on top of getBoundingClientRect — that double-counted on mobile
+    // Chrome and made bottom taps miss the Android nav keys.
+    const EDGE_TOL = 48;  // device px of slack into the letterbox bars
     function clientToDevice(clientX, clientY) {
-      if (!viewRect.width) layoutView();
-      const shift = viewportShift();
-      const px = clientX + shift.x;
-      const py = clientY + shift.y;
-      const painted = paintedVideoRect();
-      let left, top, scaleX, scaleY;
-      if (painted) {
-        left = painted.left; top = painted.top;
-        scaleX = painted.width / deviceW;
-        scaleY = painted.height / deviceH;
-      } else {
-        const sr = screenEl.getBoundingClientRect();
-        if (!sr.width || !sr.height || !viewRect.width || !viewRect.scale) return null;
-        left = sr.left + viewRect.left;
-        top = sr.top + viewRect.top;
-        scaleX = scaleY = viewRect.scale;
-      }
-      if (!scaleX || !scaleY) return null;
-      const ix = (px - left) / scaleX;
-      const iy = (py - top) / scaleY;
+      if (!viewRect.width || !viewRect.scale) layoutView();
+      const sr = screenEl.getBoundingClientRect();
+      if (!sr.width || !sr.height || !viewRect.width || !viewRect.scale) return null;
+      const left = sr.left + viewRect.left;
+      const top = sr.top + viewRect.top;
+      const scale = viewRect.scale;
+      const ix = (clientX - left) / scale;
+      const iy = (clientY - top) / scale;
       if (ix < -EDGE_TOL || iy < -EDGE_TOL || ix > deviceW + EDGE_TOL || iy > deviceH + EDGE_TOL) {
         return null;
       }
@@ -2205,7 +2190,7 @@
       // gen must be a real number: NaN === NaN is false and silently drops every decoded frame.
       gen: 0, packets: 0, played: 0, healthy: 0, channels: 2, sampleRate: 48000,
       armed: false, wantPlay: true,
-      viewerBuild: '20260923-play1',
+      viewerBuild: '20260923-nav1',
     };
 
     function mediaWsUrl(path) {
@@ -2509,7 +2494,7 @@
     }
 
     function onAudioStatus(msg) {
-      if (msg.type === 'hello' || msg.type === 'audio') {
+      if (msg.type === 'hello' || msg.type === 'audio' || msg.type === 'ping') {
         if (msg.codec === 'opus' && !deviceAudio.configured && deviceAudio.armed) configureOpus(deviceAudio.opusHead);
         if (msg.codec === 'pcm') {
           deviceAudio.codec = 'pcm';
@@ -2518,12 +2503,18 @@
         if (!deviceAudio.tuned && typeof msg.jitter_ms === 'number' && msg.jitter_ms >= 40 && msg.jitter_ms <= 120) {
           deviceAudio.jitterMs = msg.jitter_ms;
         }
-        const live = msg.codec && (msg.source === 'scrcpy' || msg.source === 'pulse' || msg.source === 'device');
-        if (msg.source === 'error' || msg.available === false) {
-          deviceAudio.blocked = msg.reason || 'Device audio is not available yet';
+        const src = String(msg.source || '');
+        const reason = String(msg.reason || '');
+        // Opening/idle is transient — never toast "opening scrcpy audio socket".
+        const transient = !src || src === 'idle' || src === 'starting'
+          || /opening scrcpy audio/i.test(reason)
+          || /no listeners/i.test(reason);
+        const live = msg.codec && (src === 'scrcpy' || src === 'pulse' || src === 'device');
+        if (src === 'error' && !transient) {
+          deviceAudio.blocked = reason || 'Device audio is not available yet';
           setAudioNote(deviceAudio.blocked);
           setAudioBtn('blocked', deviceAudio.blocked);
-        } else if (live || msg.enabled) {
+        } else if (live || (msg.available === true) || (msg.enabled && !transient && msg.available !== false)) {
           deviceAudio.blocked = '';
           if (deviceAudio.armed && !deviceAudio.muted) {
             setAudioNote('');
@@ -2532,9 +2523,16 @@
             setAudioBtn('off', 'Tap once to hear the phone');
             setAudioNote('Tap the phone once to unlock sound');
           }
+        } else if (transient) {
+          // Keep unlock hint if needed; clear a stuck "opening…" toast.
+          if (deviceAudio.blocked && /opening scrcpy audio/i.test(deviceAudio.blocked)) {
+            deviceAudio.blocked = '';
+            setAudioNote(deviceAudio.armed ? '' : 'Tap the phone once to unlock sound');
+            setAudioBtn(deviceAudio.armed ? 'off' : 'off', 'Tap once to hear the phone');
+          }
         }
       } else if (msg.reason && msg.source && msg.source !== 'idle' && msg.source !== 'starting' && deviceAudio.errors < 4) {
-        setAudioNote(msg.reason);
+        if (!/opening scrcpy audio/i.test(String(msg.reason || ''))) setAudioNote(msg.reason);
       }
     }
 

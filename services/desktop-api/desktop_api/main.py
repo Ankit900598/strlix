@@ -339,7 +339,14 @@ async def debug_client(req: ClientDebugReport):
 
 @app.websocket("/ws/audio")
 async def ws_audio(ws: WebSocket):
-    """Opus packets from scrcpy playback capture. Config frames have flags bit 0."""
+    """Opus packets from scrcpy playback capture. Config frames have flags bit 0.
+
+    Compatible with both AudioBroker (_WireQueue.get → bytes|dict) and
+    DeviceAudioBroker (raw asyncio.Queue of wire bytes|dict). PR #9 switched
+    AudioBroker.subscribe to yield _WireQueue; the old ``sub.queue.get`` +
+    ``broker.wire(packet)`` path AttributeError'd and closed the socket in
+    ~100ms — the live "opening scrcpy audio socket" toast hang.
+    """
     broker = adb.audio
     await ws.accept()
     if not broker.enabled:
@@ -355,23 +362,51 @@ async def ws_audio(ws: WebSocket):
     async def reader() -> None:
         try:
             while not stop.is_set():
-                msg = await ws.receive_json()
-                if (msg or {}).get("type") == "stats":
-                    await ws.send_json({"type": "stats", **broker.stats()})
+                msg = await ws.receive()
+                if msg.get("type") == "websocket.disconnect":
+                    stop.set()
+                    return
+                if msg.get("type") == "websocket.receive" and msg.get("text"):
+                    import json as _json
+                    with contextlib.suppress(Exception):
+                        data = _json.loads(msg["text"])
+                        if (data or {}).get("type") == "stats":
+                            await ws.send_json({"type": "stats", **broker.stats()})
         except Exception:  # noqa: BLE001
             stop.set()
 
+    async def _queue_get(queue_obj):
+        # AudioBroker: _WireQueue.get() → bytes|dict
+        # DeviceAudioBroker: asyncio.Queue.get() → bytes|dict
+        get = getattr(queue_obj, "get", None)
+        if get is None and hasattr(queue_obj, "queue"):
+            get = queue_obj.queue.get
+        if get is None:
+            raise AudioError("audio subscribe() yielded an unknown queue type")
+        return await get()
+
+    async def _send_item(item: object) -> None:
+        if isinstance(item, dict):
+            # Never forward sticky "opening…" as a hard error — client ignores it.
+            src = str(item.get("source") or "")
+            if src in ("starting", "idle"):
+                return
+            await ws.send_json(item)
+            return
+        if isinstance(item, (bytes, bytearray, memoryview)):
+            await ws.send_bytes(bytes(item))
+            return
+        # Legacy AudioPacket object
+        await ws.send_bytes(broker.wire(item))
+
     tasks = [asyncio.create_task(reader())]
     try:
-        async with broker.subscribe(name=f"desktop-audio-{ws.client.host if ws.client else '?'}") as sub:
-            hello = broker.hello()
+        async with broker.subscribe(name=f"desktop-audio-{ws.client.host if ws.client else '?'}") as queue:
+            hello = broker.hello() if hasattr(broker, "hello") else {"type": "hello", "service": "audio", **broker.stats()}
             hello["server_time"] = time.time()
             await ws.send_json(hello)
-            # Push a status line once the producer has had a moment to open scrcpy.
-            await asyncio.sleep(0.05)
-            await ws.send_json({"type": "audio", **{k: broker.stats()[k] for k in ("source", "codec", "reason", "available")}})
             while not stop.is_set():
-                getter = asyncio.create_task(sub.queue.get())
+                getter = asyncio.create_task(_queue_get(queue))
                 stop_wait = asyncio.create_task(stop.wait())
                 done, _ = await asyncio.wait(
                     {getter, stop_wait}, timeout=5.0, return_when=asyncio.FIRST_COMPLETED
@@ -381,11 +416,14 @@ async def ws_audio(ws: WebSocket):
                     stop_wait.cancel()
                     if stop.is_set():
                         break
-                    await ws.send_json({"type": "audio", **{k: broker.stats()[k] for k in ("source", "codec", "reason", "available", "packet_rate", "packet_age_ms")}})
+                    # Soft keepalive — omit transient opening reason so the toast stays clear.
+                    st = broker.stats()
+                    if st.get("source") not in ("starting", "idle"):
+                        await ws.send_json({"type": "audio", **{k: st.get(k) for k in ("source", "codec", "reason", "available", "packet_rate", "packet_age_ms")}})
                     continue
                 stop_wait.cancel()
-                packet = getter.result()
-                await ws.send_bytes(broker.wire(packet))
+                item = getter.result()
+                await _send_item(item)
     except WebSocketDisconnect:
         pass
     except AudioError as e:
