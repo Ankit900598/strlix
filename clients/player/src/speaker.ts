@@ -165,7 +165,7 @@ export class Speaker {
     try {
       const buffer = ctx.createBuffer(data.numberOfChannels, data.numberOfFrames, data.sampleRate);
       for (let channel = 0; channel < data.numberOfChannels; channel++) {
-        data.copyTo(buffer.getChannelData(channel), { planeIndex: channel, format: "f32" });
+        data.copyTo(buffer.getChannelData(channel), { planeIndex: channel, format: "f32-planar" });
       }
       this.schedule(buffer);
     } catch {

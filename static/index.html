@@ -1587,6 +1587,10 @@
     let motionBusy = false;
 
     function enqueueMotion(action, x, y) {
+      // UP/CANCEL must not sit behind a backlog of coalesced MOVEs.
+      if (action === 'UP' || action === 'CANCEL') {
+        motionQueue = motionQueue.filter((it) => it.action !== 'MOVE');
+      }
       const last = motionQueue[motionQueue.length - 1];
       if (action === 'MOVE' && last && last.action === 'MOVE') {
         last.x = x;
@@ -1628,6 +1632,7 @@
       ptrDown = {
         id: ev.pointerId, ...pt, cx: ev.clientX, cy: ev.clientY, t: Date.now(),
         usedMotion: motionCaps, lastX: pt.x, lastY: pt.y,
+        pointerType: ev.pointerType || 'mouse',
       };
       showRipple(ev.clientX, ev.clientY);
       interactiveUntil = Date.now() + 5000;
@@ -1649,14 +1654,22 @@
       if (!pt) return;
       ev.preventDefault();
       ptrDown.pending = pt;
-      if (ptrDown.moveTimer) return;
-      ptrDown.moveTimer = setTimeout(() => {
-        if (!ptrDown) return;
-        ptrDown.moveTimer = null;
+      // First MOVE after DOWN: flush immediately (snappy drag start).
+      if (!ptrDown.movedOnce) {
+        ptrDown.movedOnce = true;
         const pending = ptrDown.pending;
         ptrDown.pending = null;
         flushMove(ptrDown, pending);
-      }, 50);
+        return;
+      }
+      if (ptrDown.moveRaf) return;
+      ptrDown.moveRaf = requestAnimationFrame(() => {
+        if (!ptrDown) return;
+        ptrDown.moveRaf = 0;
+        const pending = ptrDown.pending;
+        ptrDown.pending = null;
+        flushMove(ptrDown, pending);
+      });
     }
 
     function onPtrUp(ev) {
@@ -1665,6 +1678,7 @@
       const start = ptrDown;
       ptrDown = null;
       if (start.moveTimer) clearTimeout(start.moveTimer);
+      if (start.moveRaf) cancelAnimationFrame(start.moveRaf);
       try { touchLayer.releasePointerCapture(ev.pointerId); } catch (_) {}
       const end = clientToDevice(ev.clientX, ev.clientY) || { x: start.x, y: start.y };
       showRipple(ev.clientX, ev.clientY);
@@ -1675,10 +1689,11 @@
       const slop = start.pointerType === 'touch' ? 28 : SWIPE_PX;
 
       if (start.usedMotion) {
-        flushMove(start, start.pending || (clientDist >= SWIPE_PX ? end : null));
-        const up = clientDist < SWIPE_PX ? { x: start.x, y: start.y } : end;
+        const slop = start.pointerType === 'touch' ? 28 : SWIPE_PX;
+        flushMove(start, start.pending || (clientDist >= slop ? end : null));
+        const up = clientDist < slop ? { x: start.x, y: start.y } : end;
         enqueueMotion('UP', up.x, up.y);
-        const label = clientDist < SWIPE_PX
+        const label = clientDist < slop
           ? ('tap ' + start.x + ',' + start.y)
           : ('drag ' + start.x + ',' + start.y + ' → ' + end.x + ',' + end.y);
         shotStamp.textContent = label;
@@ -1741,6 +1756,7 @@
       const start = ptrDown;
       ptrDown = null;
       if (start.moveTimer) clearTimeout(start.moveTimer);
+      if (start.moveRaf) cancelAnimationFrame(start.moveRaf);
       if (start.usedMotion) enqueueMotion('CANCEL', start.lastX, start.lastY);
     }
     touchLayer.addEventListener('pointerdown', (ev) => { ensureDeviceAudio(); onPtrDown(ev); }, { passive: false });
@@ -1915,30 +1931,61 @@
       ws: null, ctx: null, dec: null, gain: null, playAt: 0,
       codec: null, muted: false, configured: false, blocked: '',
       jitterMs: 40, lastSeq: null, lastBuffer: null, forceResync: false,
-      opusHead: null, errors: 0, errorWindow: 0, tuned: false,
+      opusHead: null, description: null, errors: 0, errorWindow: 0, tuned: false,
+      // gen must be a real number: NaN === NaN is false and silently drops every decoded frame.
+      gen: 0, packets: 0, played: 0, healthy: 0, channels: 2, sampleRate: 48000,
+      armed: false, wantPlay: true,
+      viewerBuild: '20260923-sound2',
     };
 
-    function nextJitterMs(current, underrun, slackMs) {
-      let cur = current;
-      if (cur < 40) cur = 40;
-      if (cur > 120) cur = 120;
-      if (underrun) return Math.min(120, cur + 16);
-      if (slackMs > cur + 30) return Math.max(40, cur - 8);
-      return cur;
+    function mediaWsUrl(path) {
+      // Explicit override for market path-proxy / reverse-proxy handoff.
+      // Accept ws(s):// or http(s):// bases (market passes the stream origin).
+      function asWsBase(raw) {
+        let s = String(raw || '').trim().replace(/\/$/, '');
+        if (!s) return '';
+        if (s.startsWith('https://')) s = 'wss://' + s.slice(8);
+        else if (s.startsWith('http://')) s = 'ws://' + s.slice(7);
+        return s;
+      }
+      try {
+        const q = new URLSearchParams(location.search).get('ws');
+        const base = asWsBase(q);
+        if (base) return base + path;
+      } catch (_) {}
+      if (window.STRLIX_WS_BASE) {
+        const base = asWsBase(window.STRLIX_WS_BASE);
+        if (base) return base + path;
+      }
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+      // If the viewer is served under /stream/, keep that prefix for WS paths.
+      let prefix = '';
+      const pathName = location.pathname || '/';
+      if (pathName === '/stream' || pathName.startsWith('/stream/')) prefix = '/stream';
+      return proto + '://' + location.host + prefix + path;
+    }
+
+    function nextJitterMs(cur, underrun, slackMs) {
+      let v = cur;
+      if (v < 40) v = 40;
+      if (v > 120) v = 120;
+      if (underrun) return Math.min(120, v + 16);
+      if (slackMs > v + 30) return Math.max(40, v - 8);
+      return v;
     }
 
     function isOpusHead(payload) {
-      if (!payload || payload.byteLength < 8) return false;
-      return payload[0] === 79 && payload[1] === 112 && payload[2] === 117
+      return !!(payload && payload.byteLength >= 8
+        && payload[0] === 79 && payload[1] === 112 && payload[2] === 117
         && payload[3] === 115 && payload[4] === 72 && payload[5] === 101
-        && payload[6] === 97 && payload[7] === 100;
+        && payload[6] === 97 && payload[7] === 100);
     }
 
     function isOpusTags(payload) {
-      if (!payload || payload.byteLength < 8) return false;
-      return payload[0] === 79 && payload[1] === 112 && payload[2] === 117
+      return !!(payload && payload.byteLength >= 8
+        && payload[0] === 79 && payload[1] === 112 && payload[2] === 117
         && payload[3] === 115 && payload[4] === 84 && payload[5] === 97
-        && payload[6] === 103 && payload[7] === 115;
+        && payload[6] === 103 && payload[7] === 115);
     }
 
     function setAudioNote(text) {
@@ -1956,23 +2003,37 @@
     }
 
     function ensureAudioContext() {
-      if (deviceAudio.ctx) return deviceAudio.ctx;
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return null;
-      let ctx;
-      try { ctx = new AC({ latencyHint: 'interactive' }); }
-      catch (_) { ctx = new AC(); }
-      const gain = ctx.createGain();
-      gain.gain.value = deviceAudio.muted ? 0 : 1;
-      gain.connect(ctx.destination);
-      deviceAudio.ctx = ctx;
-      deviceAudio.gain = gain;
+      if (!deviceAudio.ctx) {
+        let ctx;
+        try { ctx = new AC({ latencyHint: 'interactive', sampleRate: 48000 }); }
+        catch (_) {
+          try { ctx = new AC({ latencyHint: 'interactive' }); }
+          catch (__) { ctx = new AC(); }
+        }
+        const gain = ctx.createGain();
+        gain.gain.value = deviceAudio.muted ? 0 : 1;
+        gain.connect(ctx.destination);
+        deviceAudio.ctx = ctx;
+        deviceAudio.gain = gain;
+      }
+      return deviceAudio.ctx;
+    }
+
+    function resumeAudioContext() {
+      const ctx = ensureAudioContext();
+      if (!ctx) return null;
+      if (ctx.state === 'suspended') {
+        try { ctx.resume(); } catch (_) {}
+      }
       return ctx;
     }
 
     function scheduleBuffer(buffer, opts) {
       const ctx = deviceAudio.ctx;
       if (!ctx || !deviceAudio.gain || deviceAudio.muted || !buffer) return;
+      if (!deviceAudio.armed || ctx.state !== 'running') return;
       const conceal = !!(opts && opts.conceal);
       const src = ctx.createBufferSource();
       src.buffer = buffer;
@@ -2012,12 +2073,12 @@
         deviceAudio.blocked = '';
         setAudioNote('');
       }
-      if (!deviceAudio.muted) setAudioBtn('live', 'Phone sound is on');
+      if (!deviceAudio.muted && deviceAudio.armed) setAudioBtn('live', 'Phone sound is on');
     }
 
     function playPcm16(bytes) {
-      const ctx = ensureAudioContext();
-      if (!ctx) return;
+      const ctx = deviceAudio.ctx;
+      if (!ctx || !deviceAudio.armed) return;
       const view = new Int16Array(bytes.buffer, bytes.byteOffset, Math.floor(bytes.byteLength / 2));
       const channels = deviceAudio.channels || 2;
       const frames = Math.floor(view.length / channels);
@@ -2033,39 +2094,42 @@
 
     function playAudioData(audioData) {
       const ctx = deviceAudio.ctx;
-      if (!ctx) { audioData.close(); return; }
+      if (!ctx || !deviceAudio.armed) { try { audioData.close(); } catch (_) {} return; }
       try {
-        const channels = audioData.numberOfChannels;
+        // WebCodecs: format 'f32' is INTERLEAVED (needs frames*channels floats).
+        // getChannelData(c) is one plane of length `frames`. Using 'f32' here
+        // threw RangeError: destination is not large enough. Must use planar.
+        const channels = audioData.numberOfChannels || deviceAudio.channels || 2;
         const frames = audioData.numberOfFrames;
-        const buffer = ctx.createBuffer(channels, frames, audioData.sampleRate);
+        const rate = audioData.sampleRate || deviceAudio.sampleRate || 48000;
+        if (channels > 0) deviceAudio.channels = channels;
+        if (rate > 0) deviceAudio.sampleRate = rate;
+        if (!frames || !channels) return;
+        const buffer = ctx.createBuffer(channels, frames, rate);
         for (let c = 0; c < channels; c++) {
-          audioData.copyTo(buffer.getChannelData(c), { planeIndex: c, format: 'f32' });
+          const dest = buffer.getChannelData(c);
+          const opts = { planeIndex: c, format: 'f32-planar' };
+          // allocationSize (bytes) — defensive if UA reports odd layout
+          let need = frames * 4;
+          try {
+            if (typeof audioData.allocationSize === 'function') {
+              need = audioData.allocationSize(opts);
+            }
+          } catch (_) {}
+          if (dest.byteLength < need) {
+            const tmp = new Float32Array(Math.ceil(need / 4));
+            audioData.copyTo(tmp, opts);
+            dest.set(tmp.subarray(0, frames));
+          } else {
+            audioData.copyTo(dest, opts);
+          }
         }
         scheduleBuffer(buffer);
         markAudioHealthy();
       } catch (err) {
         noteAudioError(err);
       } finally {
-        audioData.close();
-      }
-    }
-
-    function noteAudioError(err, gen) {
-      if (gen != null && gen !== deviceAudio.gen) return;
-      deviceAudio.errors += 1;
-      const msg = (err && err.message) ? err.message : String(err || 'decode error');
-      deviceAudio.blocked = 'Opus decoder: ' + msg;
-      // One bad packet (the OpusHead itself, historically) must not stick.
-      // Reconfigure and keep going. Only surface the banner if it persists.
-      deviceAudio.configured = false;
-      if (deviceAudio.dec) {
-        try { deviceAudio.dec.close(); } catch (_) {}
-        deviceAudio.dec = null;
-      }
-      if (deviceAudio.errors >= 4) {
-        setAudioNote(deviceAudio.blocked + ' — tap the speaker to retry');
-        setAudioBtn('blocked', deviceAudio.blocked);
-        reportClientDebug();
+        try { audioData.close(); } catch (_) {}
       }
     }
 
@@ -2084,6 +2148,38 @@
         && payload[6] === 0x67 && payload[7] === 0x73;
     }
 
+    function noteAudioError(err, gen) {
+      if (gen != null && gen !== deviceAudio.gen) return;
+      const now = Date.now();
+      if (now - deviceAudio.errorWindow > 5000) {
+        deviceAudio.errors = 0;
+        deviceAudio.errorWindow = now;
+      }
+      deviceAudio.errors += 1;
+      deviceAudio.forceResync = true;
+      const msg = (err && err.message) ? err.message : String(err || 'decode error');
+      deviceAudio.blocked = 'Opus decoder: ' + msg;
+      deviceAudio.configured = false;
+      if (deviceAudio.dec) {
+        try { deviceAudio.dec.close(); } catch (_) {}
+        deviceAudio.dec = null;
+      }
+      // Never toast-spam: silent reconfigure for first few hits; toast only if stuck.
+      if (deviceAudio.errors >= 6) {
+        setAudioNote(deviceAudio.blocked + ' — tap the speaker to retry');
+        setAudioBtn('blocked', deviceAudio.blocked);
+        reportClientDebug();
+        return;
+      }
+      // Back off reconfigure storms (copyTo used to fire every packet).
+      if (deviceAudio._reconfAt && now - deviceAudio._reconfAt < 400) return;
+      deviceAudio._reconfAt = now;
+      const head = deviceAudio.opusHead || deviceAudio.description;
+      if (head) {
+        try { configureOpus(head); } catch (_) {}
+      }
+    }
+
     function configureOpus(description) {
       if (typeof window.AudioDecoder !== 'function') {
         deviceAudio.blocked = 'This browser has no AudioDecoder. Chrome or Edge can play phone sound.';
@@ -2091,18 +2187,32 @@
         setAudioBtn('blocked', deviceAudio.blocked);
         return;
       }
-      const ctx = ensureAudioContext();
-      if (!ctx) return;
-      if (description && description.byteLength >= 19) {
-        deviceAudio.description = description;
-        deviceAudio.channels = description[9] || 2;
-        const rate = description[12] | (description[13] << 8) | (description[14] << 16) | (description[15] << 24);
-        if (rate > 0) deviceAudio.sampleRate = rate;
+      // Do not create AudioContext here before a gesture — keep config bytes only.
+      if (description && description.byteLength >= 8) {
+        if (looksLikeOpusHead(description) || (description.byteLength >= 19)) {
+          deviceAudio.description = description;
+          deviceAudio.opusHead = description;
+          if (description.byteLength >= 19) {
+            deviceAudio.channels = description[9] || 2;
+            const rate = description[12] | (description[13] << 8) | (description[14] << 16) | (description[15] << 24);
+            if (rate > 0) deviceAudio.sampleRate = rate;
+          }
+        }
       }
+      if (!deviceAudio.armed) {
+        // Cache description; finish configure after unlock gesture.
+        deviceAudio.codec = 'opus';
+        return;
+      }
+      const ctx = resumeAudioContext();
+      if (!ctx) return;
       try { if (deviceAudio.dec) deviceAudio.dec.close(); } catch (_) {}
       const gen = ++deviceAudio.gen;
       const dec = new window.AudioDecoder({
-        output: (data) => { if (gen === deviceAudio.gen) playAudioData(data); else { try { data.close(); } catch (_) {} } },
+        output: (data) => {
+          if (gen === deviceAudio.gen) playAudioData(data);
+          else { try { data.close(); } catch (_) {} }
+        },
         error: (err) => noteAudioError(err, gen),
       });
       const config = {
@@ -2110,9 +2220,8 @@
         sampleRate: deviceAudio.sampleRate || 48000,
         numberOfChannels: deviceAudio.channels || 2,
       };
-      if (deviceAudio.description && deviceAudio.description.byteLength) {
-        config.description = deviceAudio.description;
-      }
+      const desc = deviceAudio.opusHead || deviceAudio.description;
+      if (desc && desc.byteLength) config.description = desc;
       try {
         dec.configure(config);
       } catch (err) {
@@ -2120,7 +2229,7 @@
           delete config.description;
           dec.configure(config);
         } catch (err2) {
-          noteAudioError(err2);
+          noteAudioError(err2, gen);
           return;
         }
       }
@@ -2129,45 +2238,30 @@
       deviceAudio.codec = 'opus';
     }
 
-    function noteAudioError(err) {
-      const now = Date.now();
-      if (now - deviceAudio.errorWindow > 3000) {
-        deviceAudio.errors = 0;
-        deviceAudio.errorWindow = now;
-      }
-      deviceAudio.errors += 1;
-      deviceAudio.forceResync = true;
-      if (deviceAudio.errors >= 6) {
-        deviceAudio.blocked = 'Opus decoder: ' + (err && err.message ? err.message : err);
-        setAudioNote(deviceAudio.blocked);
-        setAudioBtn('blocked', deviceAudio.blocked);
-        return;
-      }
-      deviceAudio.configured = false;
-      if (deviceAudio.opusHead) {
-        try { configureOpus(deviceAudio.opusHead); } catch (_) {}
-      }
-    }
-
     function onAudioStatus(msg) {
       if (msg.type === 'hello' || msg.type === 'audio') {
-        if (msg.codec === 'opus' && !deviceAudio.configured) configureOpus(null);
+        if (msg.codec === 'opus' && !deviceAudio.configured && deviceAudio.armed) configureOpus(deviceAudio.opusHead);
         if (msg.codec === 'pcm') {
           deviceAudio.codec = 'pcm';
-          ensureAudioContext();
+          if (deviceAudio.armed) resumeAudioContext();
         }
         if (!deviceAudio.tuned && typeof msg.jitter_ms === 'number' && msg.jitter_ms >= 40 && msg.jitter_ms <= 120) {
           deviceAudio.jitterMs = msg.jitter_ms;
         }
-        const live = msg.codec && (msg.source === 'scrcpy' || msg.source === 'pulse');
-        if (msg.source === 'error') {
+        const live = msg.codec && (msg.source === 'scrcpy' || msg.source === 'pulse' || msg.source === 'device');
+        if (msg.source === 'error' || msg.available === false) {
           deviceAudio.blocked = msg.reason || 'Device audio is not available yet';
           setAudioNote(deviceAudio.blocked);
           setAudioBtn('blocked', deviceAudio.blocked);
-        } else if (live) {
+        } else if (live || msg.enabled) {
           deviceAudio.blocked = '';
-          setAudioNote('');
-          if (!deviceAudio.muted) setAudioBtn('live', 'Phone sound is on');
+          if (deviceAudio.armed && !deviceAudio.muted) {
+            setAudioNote('');
+            setAudioBtn('live', 'Phone sound is on');
+          } else if (!deviceAudio.armed) {
+            setAudioBtn('off', 'Tap once to hear the phone');
+            setAudioNote('Tap the phone once to unlock sound');
+          }
         }
       } else if (msg.reason && msg.source && msg.source !== 'idle' && msg.source !== 'starting' && deviceAudio.errors < 4) {
         setAudioNote(msg.reason);
@@ -2179,27 +2273,30 @@
       const dv = new DataView(buf);
       if (dv.getUint8(0) !== 1) return;
       const flags = dv.getUint8(1);
-      const seq = dv.getUint32(4, true);
       const payload = new Uint8Array(buf, 16);
       deviceAudio.packets += 1;
       if (deviceAudio.codec === 'pcm') {
         playPcm16(payload);
         return;
       }
-      // Flag bit 0, or the OpusHead magic even when a server forgot the flag.
+      // Flag bit 0, or OpusHead/OpusTags magic when a server forgot the flag.
       if ((flags & 1) || looksLikeOpusConfig(payload)) {
+        if (isOpusTags(payload)) return; // metadata only
         configureOpus(payload);
         deviceAudio.errors = 0;
-        if (!deviceAudio.muted) setAudioBtn('live', 'Phone sound is on');
-        setAudioNote('');
+        if (deviceAudio.armed && !deviceAudio.muted) {
+          setAudioBtn('live', 'Phone sound is on');
+          setAudioNote('');
+        }
         return;
       }
-      if (!deviceAudio.configured) configureOpus(deviceAudio.description);
-      const dec = deviceAudio.dec;
-      if (!dec || dec.state !== 'configured') {
-        configureOpus(deviceAudio.description);
+      if (!deviceAudio.armed) return; // buffer config only until gesture
+      if (!deviceAudio.configured) configureOpus(deviceAudio.opusHead || deviceAudio.description);
+      let liveDec = deviceAudio.dec;
+      if (!liveDec || liveDec.state !== 'configured') {
+        configureOpus(deviceAudio.opusHead || deviceAudio.description);
+        liveDec = deviceAudio.dec;
       }
-      const liveDec = deviceAudio.dec;
       if (!liveDec || liveDec.state !== 'configured') return;
       let ts = dv.getFloat64(8, true);
       if (!Number.isFinite(ts) || ts < 0) ts = deviceAudio.packets * 20000;
@@ -2216,12 +2313,9 @@
 
     function connectDeviceAudio() {
       if (deviceAudio.ws && (deviceAudio.ws.readyState === 0 || deviceAudio.ws.readyState === 1)) return;
-      const ctx = ensureAudioContext();
-      if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
       let ws;
       try {
-        const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-        ws = new WebSocket(proto + '://' + location.host + '/ws/audio');
+        ws = new WebSocket(mediaWsUrl('/ws/audio'));
       } catch (err) {
         setAudioNote('Sound socket failed to open.');
         setAudioBtn('blocked', 'Sound socket failed');
@@ -2239,41 +2333,69 @@
       ws.onerror = () => {};
       ws.onclose = () => {
         deviceAudio.ws = null;
-        if (!deviceAudio.muted && deviceAudio.errors < 4) {
+        if (deviceAudio.wantPlay && !deviceAudio.muted && deviceAudio.errors < 4) {
           setAudioBtn('off', 'Sound disconnected — tap to retry');
+          setTimeout(() => { if (deviceAudio.wantPlay && !deviceAudio.muted) connectDeviceAudio(); }, 1200);
         }
       };
     }
 
+    function unlockDeviceAudio() {
+      deviceAudio.armed = true;
+      deviceAudio.wantPlay = true;
+      deviceAudio.muted = false;
+      const ctx = resumeAudioContext();
+      if (deviceAudio.gain) deviceAudio.gain.gain.value = 1;
+      if (deviceAudio.opusHead || deviceAudio.description) {
+        try { configureOpus(deviceAudio.opusHead || deviceAudio.description); } catch (_) {}
+      }
+      connectDeviceAudio();
+      if (ctx && ctx.state === 'running') {
+        setAudioBtn('live', 'Phone sound is on');
+        setAudioNote('');
+      } else {
+        setAudioBtn('off', 'Unlocking phone sound…');
+        // Some browsers resolve resume() async after the gesture turn.
+        if (ctx && ctx.resume) {
+          ctx.resume().then(() => {
+            if (!deviceAudio.muted) {
+              setAudioBtn('live', 'Phone sound is on');
+              setAudioNote('');
+            }
+          }).catch(() => {});
+        }
+      }
+    }
+
     function ensureDeviceAudio() {
-      const ctx = ensureAudioContext();
-      if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
-      if (!deviceAudio.muted) connectDeviceAudio();
+      if (!deviceAudio.armed) unlockDeviceAudio();
+      else {
+        resumeAudioContext();
+        if (!deviceAudio.muted) connectDeviceAudio();
+      }
     }
 
     if (audioBtn) {
-      audioBtn.addEventListener('pointerdown', (ev) => ev.stopPropagation());
+      audioBtn.addEventListener('pointerdown', (ev) => {
+        ev.stopPropagation();
+        // Unlock inside the gesture, not on click (Safari/iOS).
+        ensureDeviceAudio();
+      });
       audioBtn.addEventListener('click', (ev) => {
         ev.stopPropagation();
         ev.preventDefault();
         if (deviceAudio.blocked || deviceAudio.errors) {
           deviceAudio.blocked = '';
           deviceAudio.errors = 0;
-          deviceAudio.muted = false;
           deviceAudio.configured = false;
-          if (deviceAudio.gain) deviceAudio.gain.gain.value = 1;
           if (deviceAudio.ws) { try { deviceAudio.ws.close(); } catch (_) {} deviceAudio.ws = null; }
           setAudioNote('');
           setAudioBtn('off', 'Connecting phone sound…');
-          ensureDeviceAudio();
+          unlockDeviceAudio();
           return;
         }
-        if (deviceAudio.muted || !deviceAudio.ws) {
-          deviceAudio.muted = false;
-          if (deviceAudio.gain) deviceAudio.gain.gain.value = 1;
-          setAudioBtn('off', 'Connecting phone sound…');
-          setAudioNote('');
-          ensureDeviceAudio();
+        if (deviceAudio.muted || !deviceAudio.armed || !deviceAudio.ws) {
+          unlockDeviceAudio();
         } else {
           deviceAudio.muted = true;
           if (deviceAudio.gain) deviceAudio.gain.gain.value = 0;
@@ -2282,6 +2404,12 @@
         }
       });
     }
+
+    // Prefetch OpusHead over WS before the gesture so the first tap can play immediately.
+    setAudioBtn('off', 'Tap once to hear the phone');
+    setAudioNote('Tap the phone once to unlock sound');
+    connectDeviceAudio();
+
     setInterval(reportClientDebug, 8000);
 
     // WebRTC is not the media path. ?webrtc=1 only explains why, so a

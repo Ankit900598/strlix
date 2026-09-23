@@ -42,7 +42,7 @@ pilot: Optional[PhonePilot] = None
 # protect memory/uplink, not the device.
 MAX_STREAM_CLIENTS = int(os.environ.get("MAX_STREAM_CLIENTS", "12"))
 
-INPUT_RATE_PER_SEC = float(os.environ.get("INPUT_RATE_PER_SEC", "30"))
+INPUT_RATE_PER_SEC = float(os.environ.get("INPUT_RATE_PER_SEC", "60"))
 CONTINUITY_MAX_FILE_BYTES = int(os.environ.get("CONTINUITY_MAX_FILE_BYTES", str(50 * 1024 * 1024)))
 CONTINUITY_MAX_TEXT_CHARS = int(os.environ.get("CONTINUITY_MAX_TEXT_CHARS", "100000"))
 _input_buckets: dict[str, list[float]] = {}

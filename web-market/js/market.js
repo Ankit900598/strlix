@@ -57,13 +57,13 @@
   let INVITE_REQUIRED = false;
 
   const IFRAME_ALLOW = [
-    "autoplay",
-    "clipboard-read",
-    "clipboard-write",
-    "microphone",
-    "camera",
-    "fullscreen",
-    "display-capture",
+    "autoplay *",
+    "clipboard-read *",
+    "clipboard-write *",
+    "microphone *",
+    "camera *",
+    "fullscreen *",
+    "display-capture *",
   ].join("; ");
 
   function paintLaunch() {
@@ -309,6 +309,14 @@
     const u = new URL(root, location.href);
     u.searchParams.set("embed", "1");
     if (cfg.viewerRev) u.searchParams.set("v", String(cfg.viewerRev));
+    // Cross-origin market → stream: pass an explicit WS base so the viewer
+    // never builds wss://<market-host>/ws/audio by mistake under a path proxy.
+    if (u.origin !== location.origin) {
+      const wsOrigin = u.protocol === "https:"
+        ? ("wss://" + u.host)
+        : ("ws://" + u.host);
+      u.searchParams.set("ws", wsOrigin);
+    }
     // Absolute stream hosts must keep origin.
     // Path-only return made phones load /?embed=1 on azurefd (404) forever.
     if (u.origin !== location.origin) return u.href;
@@ -380,6 +388,12 @@
         try { frame.focus({ preventScroll: true }); } catch (_) {}
         hideBoot();
       }, { once: true });
+      // Cross-origin: parent gesture cannot resume the iframe AudioContext.
+      // Tip the user once; the viewer unlocks on its own first pointerdown.
+      frame.setAttribute(
+        "allow",
+        IFRAME_ALLOW + (IFRAME_ALLOW.includes("autoplay") ? "" : "; autoplay *")
+      );
     }
     setTimeout(hideBoot, 900);
 
