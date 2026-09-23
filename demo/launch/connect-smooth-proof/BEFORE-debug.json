@@ -1,0 +1,20 @@
+{
+  "st": {
+    "emptyHidden": false,
+    "emptyText": "Connecting to your phone\u2026\nFree for your first month \u2014 no card required. Live preview appears when ADB is connected.",
+    "canvasHidden": true,
+    "cw": 300,
+    "ch": 150,
+    "hud": "",
+    "adb": "ADB \u2026",
+    "H264_OK": true,
+    "location": "https://strlix-stream-aabqdheycacyfah2.z03.azurefd.net/?embed=1&v=20260923-fs1",
+    "hasWs": "function"
+  },
+  "errs": [
+    "Unexpected token 'function'"
+  ],
+  "fails": [],
+  "reqs": [],
+  "logs": []
+}

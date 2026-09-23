@@ -1,0 +1,19 @@
+{
+  "first_frame_s": 1.618100643157959,
+  "elapsed": 1.8183367252349854,
+  "state": {
+    "emptyHidden": true,
+    "cw": 480,
+    "ch": 1072,
+    "hud": "H.264 \u00b7 4fps \u00b7 550kbps \u00b7 ws 9ms",
+    "phoneFs": true,
+    "viewerBuild": null
+  },
+  "errs": [],
+  "logs": [
+    "warning: Allow attribute will take precedence over 'allowfullscreen'.",
+    "error: Failed to load resource: the server responded with a status of 404 ()",
+    "error: Failed to load resource: the server responded with a status of 404 ()",
+    "warning: WebSocket connection to 'wss://strlix-stream-aabqdheycacyfah2.z03.azurefd.net/ws/stream' failed: WebSocket is closed before the connection is established."
+  ]
+}

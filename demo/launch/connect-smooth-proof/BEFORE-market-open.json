@@ -1,0 +1,25 @@
+{
+  "first_frame_s": null,
+  "elapsed": 13.53014874458313,
+  "state": {
+    "stageOpen": true,
+    "bootGone": true,
+    "stageW": 390,
+    "stageH": 844,
+    "frame": {
+      "src": "https://strlix-stream-aabqdheycacyfah2.z03.azurefd.net/?embed=1&v=20260923-fs1&ws=wss%3A%2F%2Fstrlix-stream-aabqdheycacyfah2.z03.azurefd.net",
+      "w": 390,
+      "h": 844
+    },
+    "inner": {
+      "emptyHidden": false,
+      "cw": 300,
+      "ch": 150,
+      "hud": "",
+      "phoneFs": true
+    }
+  },
+  "logs": [
+    "warning: Allow attribute will take precedence over 'allowfullscreen'."
+  ]
+}

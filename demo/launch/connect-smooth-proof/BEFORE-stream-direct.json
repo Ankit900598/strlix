@@ -1,0 +1,14 @@
+{
+  "first_frame_s": null,
+  "elapsed": 11.358963251113892,
+  "state": {
+    "emptyHidden": false,
+    "canvasHidden": true,
+    "cw": 300,
+    "ch": 150,
+    "hud": "",
+    "phoneFs": true,
+    "transport": null
+  },
+  "logs": []
+}

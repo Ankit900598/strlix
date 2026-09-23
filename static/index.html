@@ -321,9 +321,40 @@
       color: var(--muted); font-size: 13px; text-align: center; padding: 32px;
       background: linear-gradient(180deg, #0a0e18, #05070c);
       z-index: 1;
+      opacity: 1; transition: opacity 180ms ease, visibility 180ms ease;
     }
-    .phone-empty.hidden { display: none; }
-    .phone-empty strong { display: block; color: var(--fg); margin-bottom: 6px; font-size: 15px; }
+    .phone-empty.hidden {
+      opacity: 0; visibility: hidden; pointer-events: none;
+      display: grid; /* keep layout for fade */
+    }
+    .phone-empty strong { display: block; color: var(--fg); margin: 10px 0 6px; font-size: 15px; }
+    .phone-empty #connectDetail { display: block; max-width: 16rem; margin: 0 auto; line-height: 1.4; }
+    .connect-spin {
+      width: 28px; height: 28px; margin: 0 auto;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.12);
+      border-top-color: #5B8CFF;
+      animation: connectSpin 0.7s linear infinite;
+    }
+    @keyframes connectSpin { to { transform: rotate(360deg); } }
+    .connect-bar {
+      margin: 14px auto 0; width: min(180px, 55vw); height: 3px;
+      border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden;
+    }
+    .connect-bar i {
+      display: block; height: 100%; width: 18%;
+      border-radius: inherit; background: #5B8CFF;
+      animation: connectBar 1.4s ease-in-out infinite;
+    }
+    @keyframes connectBar {
+      0% { transform: translateX(-10%); width: 18%; }
+      50% { transform: translateX(120%); width: 42%; }
+      100% { transform: translateX(280%); width: 18%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .connect-spin, .connect-bar i { animation: none; }
+      .phone-empty { transition: none; }
+    }
 
     /* Continuity is a transient phone-surface state, not a desktop tray. */
     #continuityDrop {
@@ -838,9 +869,10 @@
         <div id="askHint">Press ⌘K / Ctrl+K to ask</div>
         <div class="phone-empty" id="phoneEmpty">
           <div>
-            <strong>Connecting to your phone…</strong>
-            Free for your first month — no card required.
-            Live preview appears when ADB is connected.
+            <div class="connect-spin" aria-hidden="true"></div>
+            <strong id="connectTitle">Connecting to your phone…</strong>
+            <span id="connectDetail">Free for your first month — waking live preview.</span>
+            <div class="connect-bar" aria-hidden="true"><i id="connectBarFill"></i></div>
           </div>
         </div>
         <div id="touchLayer" role="application" tabindex="0" aria-label="Phone screen — tap, swipe, paste, or drop to control"></div>
@@ -966,6 +998,20 @@
     const touchLayer = document.getElementById('touchLayer');
     const screenEl = document.querySelector('.device-screen');
     const phoneEmpty = document.getElementById('phoneEmpty');
+    const connectTitle = document.getElementById('connectTitle');
+    const connectDetail = document.getElementById('connectDetail');
+    function setConnectStatus(detail, progress) {
+      if (connectDetail && detail) connectDetail.textContent = detail;
+      if (connectTitle && !(phoneEmpty && phoneEmpty.classList.contains('hidden'))) {
+        connectTitle.textContent = 'Connecting to your phone…';
+      }
+      const fill = document.getElementById('connectBarFill');
+      if (fill && typeof progress === 'number') {
+        fill.style.animation = 'none';
+        fill.style.width = Math.max(8, Math.min(100, progress * 100)) + '%';
+        fill.style.transform = 'none';
+      }
+    }
     const shotStamp = document.getElementById('shotStamp');
     const streamBadge = document.getElementById('streamBadge');
     const streamHud = document.getElementById('streamHud');
@@ -1032,7 +1078,7 @@
     layoutView();
 
     // Phone-fs standalone: mark topbar as floating chip, auto-hide after first interaction.
-    (function (function phoneFsChrome() {
+    (function phoneFsChrome() {
       if (!document.documentElement.classList.contains('phone-fs')) return;
       if (document.documentElement.classList.contains('embed')) return;
       const bar = document.querySelector('.topbar');
@@ -1060,6 +1106,7 @@
     function markLive(label) {
       connected = true;
       phoneEmpty.classList.add('hidden');
+      setConnectStatus('Live', 1);
       streamBadge.classList.remove('off');
       // Keep the blinking dot; update the visible label.
       const _lbl = streamBadge.childNodes[streamBadge.childNodes.length-1];
@@ -1101,13 +1148,13 @@
       if (h264.giveUp || h264.ws) return;
       let ws;
       try {
-        const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-        ws = new WebSocket(proto + '://' + location.host + '/ws/h264');
+        ws = new WebSocket(mediaWsUrl('/ws/h264'));
       } catch (e) { h264Fail('construct: ' + e.message); return; }
       ws.binaryType = 'arraybuffer';
       h264.ws = ws;
       h264.closing = false;
       h264.connectedAt = Date.now();
+      setConnectStatus('Linking live video…', 0.35);
       ws.onmessage = (ev) => {
         if (typeof ev.data === 'string') {
           let m; try { m = JSON.parse(ev.data); } catch (_) { return; }
@@ -1125,17 +1172,27 @@
         if (transport === 'h264') {
           // We were live on H.264 — try once more before dropping to JPEG.
           h264.failures += 1;
-          if (h264.failures <= 3) { setTimeout(h264Connect, 500 * h264.failures); return; }
+          if (h264.failures <= 3) { setTimeout(h264Connect, 400 * h264.failures); return; }
           transport = 'ws';
           connectStreamWs();
         }
         h264Fail('closed ' + ev.code);
       };
-      // No first frame in time ⇒ this path is not going to work here.
+      // Fast fail → JPEG so Open phone never sits on Connecting forever.
       clearTimeout(h264.watchdog);
       h264.watchdog = setTimeout(() => {
-        if (!h264.frames) h264Fail('no frame in 9s');
-      }, 9000);
+        if (!h264.frames) h264Fail('no frame in 3.5s');
+      }, 3500);
+      // After first paint, if the encoder stalls, fall back so UI stays live.
+      clearInterval(h264.stallWatch);
+      h264.stallWatch = setInterval(() => {
+        if (transport !== 'h264' || !h264.frames) return;
+        if (Date.now() - h264.lastFrameAt > 2800) {
+          console.info('[strlix] h264 stall — JPEG ladder');
+          h264.giveUp = false;
+          h264Fail('stalled after first frame');
+        }
+      }, 900);
     }
 
     function h264Control(m) {
@@ -1391,6 +1448,8 @@
     /** Give up on H.264 for this page load and let the JPEG ladder carry on. */
     function h264Fail(why) {
       clearTimeout(h264.watchdog);
+      clearInterval(h264.stallWatch);
+      setConnectStatus('Switching to smooth JPEG preview…', 0.6);
       h264TeardownDecoder();
       try { if (h264.ws) h264.ws.close(); } catch (_) {}
       h264.ws = null;
@@ -1407,8 +1466,7 @@
       if (streamWs && (streamWs.readyState === 0 || streamWs.readyState === 1)) return;
       let ws;
       try {
-        const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-        ws = new WebSocket(proto + '://' + location.host + '/ws/stream');
+        ws = new WebSocket(mediaWsUrl('/ws/stream'));
       } catch (e) { fallbackToMjpeg('ws construct failed'); return; }
       ws.binaryType = 'arraybuffer';
       streamWs = ws;
@@ -1656,6 +1714,14 @@
         adbDot.className = 'dot ' + (connected ? 'ok' : err ? 'err' : 'warn');
         adbLabel.textContent = connected ? 'Phone on' : ('Phone ' + (state || 'offline'));
         if (!connected) streamBadge.classList.add('off');
+        if (!firstFrameAt) {
+          const h264 = j.h264 || {};
+          if (!connected) setConnectStatus('Phone offline — retrying ADB…', 0.15);
+          else if (h264.running && (h264.frame_age_ms || 0) < 5000)
+            setConnectStatus('Phone on — decoding first frame…', 0.55);
+          else if (connected)
+            setConnectStatus('Phone on — opening live preview…', 0.4);
+        }
         if (j.stream && j.stream.device) setDeviceSize(j.stream.device[0], j.stream.device[1]);
         if (j.input && j.input.motion) motionCaps = true;
       } catch (e) {
@@ -2119,7 +2185,7 @@
       // gen must be a real number: NaN === NaN is false and silently drops every decoded frame.
       gen: 0, packets: 0, played: 0, healthy: 0, channels: 2, sampleRate: 48000,
       armed: false, wantPlay: true,
-      viewerBuild: '20260923-fs1',
+      viewerBuild: '20260923-smooth1',
     };
 
     function mediaWsUrl(path) {

@@ -358,8 +358,9 @@
   function mountLiveIframe(src, device) {
     const boot = `<div class="stream-boot" id="streamBoot">
       <div>
-        <strong>Waking ${escapeHtml(device.model)}</strong>
-        <p>Stream loads inside this bezel. Ask Strlix stays on the phone — not a side panel.</p>
+        <div class="boot-spin" aria-hidden="true"></div>
+        <strong>Opening ${escapeHtml(device.model)}</strong>
+        <p id="bootDetail">Warming live preview — first frame in a moment.</p>
       </div>
       <div class="ask-peek"><span class="ask-s">S</span> Ask Strlix…</div>
     </div>`;
@@ -395,7 +396,7 @@
         IFRAME_ALLOW + (IFRAME_ALLOW.includes("autoplay") ? "" : "; autoplay *")
       );
     }
-    setTimeout(hideBoot, 900);
+    setTimeout(hideBoot, 450);
 
     probeStreamReady(activeStreamBase).then((ok) => {
       if (ok || settled) return;
@@ -412,6 +413,21 @@
         settled = true;
       });
     }
+  }
+
+  let streamWarmed = false;
+  function warmStreamPrefetch() {
+    if (streamWarmed) return;
+    streamWarmed = true;
+    const base = stripSlash(STREAM);
+    // DNS + TLS + /health so Open phone hits a hot origin.
+    fetch(base + "/health", { method: "GET", cache: "no-store", mode: "cors", credentials: "omit" }).catch(() => {});
+    try {
+      const link = document.createElement("link");
+      link.rel = "prefetch";
+      link.href = base + "/?embed=1&v=" + encodeURIComponent(cfg.viewerRev || "1");
+      document.head.appendChild(link);
+    } catch (_) {}
   }
 
   function openFullscreen(device, lease, options = {}) {
@@ -458,6 +474,7 @@
       };
     }
 
+    warmStreamPrefetch();
     els.stage.classList.add("open");
     els.stage.setAttribute("aria-hidden", "false");
     document.body.classList.add("phone-open");
@@ -792,6 +809,10 @@
     document.getElementById("catalog").scrollIntoView({ behavior: "smooth" });
   };
 
+  warmStreamPrefetch();
+  // Idle warm again after catalog so Open phone is instant.
+  if (window.requestIdleCallback) requestIdleCallback(() => warmStreamPrefetch(), { timeout: 1200 });
+  else setTimeout(warmStreamPrefetch, 400);
   loadDevices().then(() => {
     if (params.get("open") === "1") openHeroPhone();
   }).catch((err) => {
