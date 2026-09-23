@@ -13,9 +13,17 @@
     (function () {
       try {
         var q = new URLSearchParams(location.search);
-        if (q.get("embed") === "1" || q.get("embed") === "true") {
-          document.documentElement.classList.add("embed");
-        }
+        var embed = q.get("embed") === "1" || q.get("embed") === "true";
+        // Soft-launch is phone-first: real phone browsers must full-bleed even
+        // without ?embed=1 (direct stream URL / hard refresh).
+        var phone = false;
+        try {
+          phone = window.matchMedia(
+            "(max-width: 920px), (max-height: 520px) and (pointer: coarse), (pointer: coarse) and (hover: none)"
+          ).matches;
+        } catch (_) {}
+        if (embed) document.documentElement.classList.add("embed");
+        if (embed || phone) document.documentElement.classList.add("phone-fs");
       } catch (_) {}
     })();
   </script>
@@ -628,54 +636,74 @@
       #liveLayer[data-state="docked"] #liveOrb { width:160px; height:160px; left:40px; top:40px; }
     }
 
-    /* Embedded in web-market bezel: full-bleed screen, Ask stays in-phone */
-    html.embed, html.embed body {
+    /* Embedded / phone-first: full-bleed screen. Ask stays inside the phone. */
+    html.embed,
+    html.embed body,
+    html.phone-fs,
+    html.phone-fs body {
       overflow: hidden;
       background: #000;
       overscroll-behavior: none;
       -webkit-tap-highlight-color: transparent;
     }
     html.embed .topbar,
+    html.phone-fs .topbar,
     html.embed .device-footer,
+    html.phone-fs .device-footer,
     html.embed .trust-row,
-    html.embed .punch {
+    html.phone-fs .trust-row,
+    html.embed .punch,
+    html.phone-fs .punch,
+    html.embed .nav-rail-zone,
+    html.phone-fs .nav-rail-zone {
       display: none !important;
     }
-    html.embed .stage {
+    html.embed .stage,
+    html.phone-fs .stage {
       height: 100dvh;
+      min-height: 100svh;
       padding: 0;
       gap: 0;
+      margin: 0;
     }
     html.embed .device-wrap,
-    html.embed .device {
+    html.phone-fs .device-wrap,
+    html.embed .device,
+    html.phone-fs .device {
       width: 100%;
       height: 100%;
       max-width: none;
+      max-height: none;
       border-radius: 0;
       padding: 0;
       border: 0;
       box-shadow: none;
       background: #000;
+      aspect-ratio: auto;
     }
-    html.embed .device-screen {
+    html.embed .device-screen,
+    html.phone-fs .device-screen {
       border-radius: 0;
       touch-action: none;
+      overflow: hidden;
     }
-    html.embed .device-wrap {
+    html.embed .device-wrap,
+    html.phone-fs .device-wrap {
       width: 100vw;
+      width: 100dvw;
       height: 100dvh;
+      min-height: 100svh;
       padding: 0 !important;
     }
-    html.embed .nav-rail-zone {
-      display: none !important;
-    }
-    html.embed #touchLayer {
+    html.embed #touchLayer,
+    html.phone-fs #touchLayer {
       touch-action: none;
       -webkit-user-select: none;
       user-select: none;
       cursor: default;
     }
-    html.embed .audio-btn {
+    html.embed .audio-btn,
+    html.phone-fs .audio-btn {
       top: calc(10px + env(safe-area-inset-top, 0px));
       right: calc(10px + env(safe-area-inset-right, 0px));
     }
@@ -712,7 +740,74 @@
       border-radius: 8px;
       padding: 6px 8px;
     }
-    html.embed .audio-note { top: calc(56px + env(safe-area-inset-top, 0px)); }
+    html.embed .audio-note,
+    html.phone-fs .audio-note {
+      top: calc(56px + env(safe-area-inset-top, 0px));
+    }
+
+    /* Extra phone-fs hardening (direct URL without ?embed=1). */
+    html.phone-fs, html.phone-fs body {
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      min-height: 100svh;
+      overflow: hidden;
+      overscroll-behavior: none;
+      background: #000 !important;
+      touch-action: none;
+    }
+    html.phone-fs .stage {
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      min-height: 100svh;
+      padding: 0 !important;
+      margin: 0 !important;
+      gap: 0 !important;
+    }
+    html.phone-fs .device-wrap,
+    html.phone-fs .device,
+    html.phone-fs .device-screen {
+      width: 100% !important;
+      height: 100% !important;
+      max-width: none !important;
+      max-height: none !important;
+      border-radius: 0 !important;
+      padding: 0 !important;
+      border: 0 !important;
+      box-shadow: none !important;
+      aspect-ratio: auto !important;
+      background: #000 !important;
+    }
+    html.phone-fs .device-wrap {
+      width: 100vw !important;
+      width: 100dvw !important;
+      height: 100dvh !important;
+      min-height: 100svh !important;
+      padding: 0 !important;
+    }
+    /* Soft status chip on standalone phone — does not reserve layout height */
+    html.phone-fs:not(.embed) .topbar.phone-fs-chip {
+      display: flex !important;
+      position: fixed;
+      top: calc(8px + env(safe-area-inset-top, 0px));
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 30;
+      height: auto;
+      width: auto;
+      max-width: calc(100% - 24px);
+      padding: 6px 10px;
+      border: 0;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(10px);
+      opacity: 0.85;
+      pointer-events: none;
+      transition: opacity 200ms ease;
+    }
+    html.phone-fs:not(.embed).chrome-hide .topbar.phone-fs-chip { opacity: 0; }
+
   </style>
 </head>
 <body>
@@ -907,9 +1002,19 @@
     function layoutView() {
       const sr = screenEl.getBoundingClientRect();
       if (!sr.width || !sr.height || !deviceW || !deviceH) return;
-      const scale = Math.min(sr.width / deviceW, sr.height / deviceH);
+      // Phone-first / embed: cover the viewport (crop letterbox bars). Desktop
+      // keeps contain so the full Android frame stays visible in the bezel.
+      const immersive = document.documentElement.classList.contains('phone-fs')
+        || document.documentElement.classList.contains('embed');
+      const scale = immersive
+        ? Math.max(sr.width / deviceW, sr.height / deviceH)
+        : Math.min(sr.width / deviceW, sr.height / deviceH);
       const w = deviceW * scale, h = deviceH * scale;
       viewRect = { left: (sr.width - w) / 2, top: (sr.height - h) / 2, width: w, height: h, scale };
+      if (immersive) {
+        // Clip overflow from cover-scale so bars never show.
+        screenEl.style.overflow = 'hidden';
+      }
       for (const el of [liveCanvas, liveShot]) {
         el.style.left = viewRect.left + 'px';
         el.style.top = viewRect.top + 'px';
@@ -925,6 +1030,25 @@
     }
     if (window.ResizeObserver) new ResizeObserver(layoutView).observe(screenEl);
     layoutView();
+
+    // Phone-fs standalone: mark topbar as floating chip, auto-hide after first interaction.
+    (function (function phoneFsChrome() {
+      if (!document.documentElement.classList.contains('phone-fs')) return;
+      if (document.documentElement.classList.contains('embed')) return;
+      const bar = document.querySelector('.topbar');
+      if (bar) bar.classList.add('phone-fs-chip');
+      const hide = () => document.documentElement.classList.add('chrome-hide');
+      const show = () => document.documentElement.classList.remove('chrome-hide');
+      let tmr = 0;
+      const poke = () => {
+        show();
+        clearTimeout(tmr);
+        tmr = setTimeout(hide, 1800);
+      };
+      window.addEventListener('pointerdown', poke, { passive: true });
+      setTimeout(hide, 2400);
+    })();
+
 
     function setDeviceSize(w, h) {
       if (!w || !h) return;
@@ -1995,7 +2119,7 @@
       // gen must be a real number: NaN === NaN is false and silently drops every decoded frame.
       gen: 0, packets: 0, played: 0, healthy: 0, channels: 2, sampleRate: 48000,
       armed: false, wantPlay: true,
-      viewerBuild: '20260923-fast1',
+      viewerBuild: '20260923-fs1',
     };
 
     function mediaWsUrl(path) {

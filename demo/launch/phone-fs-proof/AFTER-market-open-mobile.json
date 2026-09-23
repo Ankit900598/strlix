@@ -1,0 +1,36 @@
+{
+  "vw": 390,
+  "vh": 844,
+  "phoneFs": false,
+  "embed": false,
+  "device": null,
+  "deviceWrap": null,
+  "stage": {
+    "sel": "#phoneStage",
+    "w": 390,
+    "h": 844,
+    "top": 0,
+    "left": 0,
+    "br": "0px",
+    "pad": "0px"
+  },
+  "topbar": {
+    "sel": ".stage-chrome",
+    "w": 390,
+    "h": 40,
+    "top": 0,
+    "left": 0,
+    "br": "0px",
+    "pad": "0px 14px"
+  },
+  "canvas": {
+    "sel": "iframe",
+    "w": 390,
+    "h": 844,
+    "top": 0,
+    "left": 0,
+    "br": "0px",
+    "pad": "0px"
+  },
+  "stageOpen": true
+}

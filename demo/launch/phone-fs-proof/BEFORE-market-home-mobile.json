@@ -1,0 +1,37 @@
+{
+  "vw": 390,
+  "vh": 844,
+  "dvh": 844,
+  "embed": false,
+  "device": null,
+  "deviceFrame": {
+    "sel": ".device-frame",
+    "w": 0,
+    "h": 0,
+    "top": 0,
+    "left": 0,
+    "br": "28px",
+    "pad": "8px"
+  },
+  "stage": {
+    "sel": "#phoneStage",
+    "w": 0,
+    "h": 0,
+    "top": 0,
+    "left": 0,
+    "br": "0px",
+    "pad": "0px"
+  },
+  "topbar": {
+    "sel": ".stage-chrome",
+    "w": 0,
+    "h": 0,
+    "top": 0,
+    "left": 0,
+    "br": "0px",
+    "pad": "0px 14px"
+  },
+  "canvas": null,
+  "phoneOpen": false,
+  "stageOpen": false
+}

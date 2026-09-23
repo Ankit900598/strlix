@@ -1,0 +1,45 @@
+{
+  "vw": 390,
+  "vh": 844,
+  "dvh": 844,
+  "embed": true,
+  "device": {
+    "sel": ".device",
+    "w": 390,
+    "h": 844,
+    "top": 0,
+    "left": 0,
+    "br": "0px",
+    "pad": "0px"
+  },
+  "deviceFrame": null,
+  "stage": {
+    "sel": ".stage",
+    "w": 390,
+    "h": 844,
+    "top": 0,
+    "left": 0,
+    "br": "0px",
+    "pad": "0px"
+  },
+  "topbar": {
+    "sel": ".topbar",
+    "w": 0,
+    "h": 0,
+    "top": 0,
+    "left": 0,
+    "br": "0px",
+    "pad": "0px 10px"
+  },
+  "canvas": {
+    "sel": "#liveCanvas",
+    "w": 380,
+    "h": 844,
+    "top": 0,
+    "left": 5,
+    "br": "0px",
+    "pad": "0px"
+  },
+  "phoneOpen": false,
+  "stageOpen": false
+}

@@ -537,51 +537,84 @@ body.phone-open { overflow: hidden; background: #000; }
 .modal .row { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
 .modal input { width: 100%; margin-top: 8px; font-size: 13px; }
 
-@media (max-width: 920px), (max-height: 520px) and (pointer: coarse) {
+@media (max-width: 920px), (max-height: 520px) and (pointer: coarse), (pointer: coarse) and (hover: none) {
   #phoneStage.open {
     background: #000;
-    width: 100vw;
+    width: 100%;
+    width: 100dvw;
+    height: 100%;
     height: 100dvh;
+    min-height: 100svh;
+    max-height: 100dvh;
+    inset: 0;
+    overscroll-behavior: none;
   }
   #phoneStage.open .stage-chrome {
     position: absolute;
     top: 0; left: 0; right: 0;
     z-index: 8;
     height: calc(40px + var(--safe-top));
+    padding-top: var(--safe-top);
     border: 0;
     background: linear-gradient(to bottom, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0));
-    transition: opacity 180ms ease;
+    transition: opacity 160ms ease;
   }
   #phoneStage.open.chrome-hide .stage-chrome {
     opacity: 0;
     pointer-events: none;
   }
-  #phoneStage.open .stage-body { padding: 0; }
-  #phoneStage.open .device-frame {
-    width: 100vw;
-    height: 100dvh;
-    max-width: none;
-    max-height: none;
-    border-radius: 0;
+  #phoneStage.open .stage-body {
     padding: 0;
-    border: 0;
-    box-shadow: none;
-    background: #000;
-    animation: none;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 100%;
+    place-items: stretch;
   }
-  #phoneStage.open .device-notch { display: none; }
-  #phoneStage.open .device-frame .screen { border-radius: 0; }
+  #phoneStage.open .device-frame {
+    width: 100% !important;
+    width: 100dvw !important;
+    height: 100% !important;
+    height: 100dvh !important;
+    min-height: 100svh !important;
+    max-width: none !important;
+    max-height: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: #000 !important;
+    animation: none !important;
+  }
+  #phoneStage.open .device-notch { display: none !important; }
+  #phoneStage.open .device-frame .screen {
+    border-radius: 0 !important;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  #phoneStage.open .device-frame iframe {
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+    border: 0;
+    border-radius: 0;
+  }
 }
 
 @media (max-width: 560px) {
   .shell-meta .pill.soft:not(.latency) { display: none; }
-  .device-frame {
+  /* Bezel sizing for non-immersive only. Open phone-first stage is owned by the
+     (max-width: 920px) immersive rules above — do NOT reintroduce letterboxing. */
+  #phoneStage:not(.open) .device-frame {
     width: min(100vw - 16px, 420px);
     height: min(calc(100dvh - 88px), 860px);
     border-radius: 28px; padding: 8px;
   }
-  .device-frame .screen { border-radius: 22px; }
-  .device-notch { top: 14px; }
+  #phoneStage:not(.open) .device-frame .screen { border-radius: 22px; }
+  #phoneStage:not(.open) .device-notch { top: 14px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

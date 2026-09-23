@@ -720,7 +720,7 @@
 
   let chromeTimer = 0;
   function immersivePhone() {
-    return window.matchMedia("(max-width: 920px), (max-height: 520px) and (pointer: coarse)").matches;
+    return window.matchMedia("(max-width: 920px), (max-height: 520px) and (pointer: coarse), (pointer: coarse) and (hover: none)").matches;
   }
   function pokeChrome() {
     if (!els.stage.classList.contains("open")) return;
@@ -729,7 +729,7 @@
     if (!immersivePhone()) return;
     chromeTimer = setTimeout(() => {
       if (els.stage.classList.contains("open")) els.stage.classList.add("chrome-hide");
-    }, 2200);
+    }, 1400);
   }
   function requestStageFullscreen() {
     if (!immersivePhone()) return;

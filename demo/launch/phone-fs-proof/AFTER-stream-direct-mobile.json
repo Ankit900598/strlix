@@ -1,0 +1,52 @@
+{
+  "vw": 390,
+  "vh": 844,
+  "phoneFs": true,
+  "embed": false,
+  "device": {
+    "sel": ".device",
+    "w": 390,
+    "h": 844,
+    "top": 0,
+    "left": 0,
+    "br": "0px",
+    "pad": "0px"
+  },
+  "deviceWrap": {
+    "sel": ".device-wrap",
+    "w": 390,
+    "h": 844,
+    "top": 0,
+    "left": 0,
+    "br": "0px",
+    "pad": "0px"
+  },
+  "stage": {
+    "sel": ".stage",
+    "w": 390,
+    "h": 844,
+    "top": 0,
+    "left": 0,
+    "br": "0px",
+    "pad": "0px"
+  },
+  "topbar": {
+    "sel": ".topbar",
+    "w": 0,
+    "h": 0,
+    "top": 0,
+    "left": 0,
+    "br": "0px",
+    "pad": "0px 10px"
+  },
+  "canvas": {
+    "sel": "#liveCanvas",
+    "w": 0,
+    "h": 0,
+    "top": 0,
+    "left": 0,
+    "br": "0px",
+    "pad": "0px"
+  },
+  "stageOpen": false
+}

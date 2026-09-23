@@ -1,0 +1,45 @@
+{
+  "vw": 390,
+  "vh": 844,
+  "dvh": 844,
+  "embed": false,
+  "device": {
+    "sel": ".device",
+    "w": 359,
+    "h": 672,
+    "top": 46,
+    "left": 16,
+    "br": "36px",
+    "pad": "10px"
+  },
+  "deviceFrame": null,
+  "stage": {
+    "sel": ".stage",
+    "w": 390,
+    "h": 844,
+    "top": 0,
+    "left": 0,
+    "br": "0px",
+    "pad": "68px 16px 24px"
+  },
+  "topbar": {
+    "sel": ".topbar",
+    "w": 390,
+    "h": 48,
+    "top": 0,
+    "left": 0,
+    "br": "0px",
+    "pad": "0px 10px"
+  },
+  "canvas": {
+    "sel": "#liveCanvas",
+    "w": 293,
+    "h": 650,
+    "top": 57,
+    "left": 49,
+    "br": "0px",
+    "pad": "0px"
+  },
+  "phoneOpen": false,
+  "stageOpen": false
+}
