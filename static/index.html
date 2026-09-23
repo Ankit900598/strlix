@@ -1019,8 +1019,30 @@
         if (m.device_width && m.device_height) setDeviceSize(m.device_width, m.device_height);
         if (m.motion_input) motionCaps = true;
         h264Configure(m.codec || 'avc1.42E01E');
+        // Measure WS RTT once after hello (AFD HTTP motion was 600–1300ms).
+        h264.pingT0 = performance.now();
+        h264Send({ type: 'ping', t: h264.pingT0 });
       } else if (m.type === 'ping') {
-        h264Send({ type: 'pong' });               // keeps our viewer slot alive
+        h264Send({ type: 'pong', t: m.t });               // keeps our viewer slot alive
+      } else if (m.type === 'pong') {
+        if (typeof m.t === 'number') {
+          h264.wsRtt = Math.round(performance.now() - m.t);
+        } else if (h264.pingT0) {
+          h264.wsRtt = Math.round(performance.now() - h264.pingT0);
+          h264.pingT0 = 0;
+        }
+      } else if (m.type === 'motion_ack') {
+        if (typeof m.t === 'number') {
+          const ms = Math.round(performance.now() - m.t);
+          h264.motionRtt = ms;
+          const label = (m.action || 'motion').toLowerCase();
+          if (m.ok === false) {
+            shotStamp.textContent = label + ' ✗ ' + (m.reason || 'fail');
+          } else {
+            shotStamp.textContent = label + ' · ' + ms + 'ms';
+            lastInputAt = performance.now();
+          }
+        }
       } else if (m.type === 'bye') {
         // Server is out of viewer slots (or H.264 is off): stop retrying.
         h264Fail(m.reason || 'server declined');
@@ -1065,7 +1087,10 @@
       // While a finger is down, drop late P-frames so glass latency stays
       // one frame. While the user is watching (movie, download UI idle),
       // keep a few frames so a drop does not smear YouTube until the next IDR.
-      const queueCap = Date.now() < interactiveUntil ? 1 : 3;
+      // Interactive: never let the decoder hold more than the frame being
+      // decoded (queueCap 0 ⇒ drop if anything is already pending). Idle
+      // viewing keeps a tiny cushion so YouTube does not smear on one drop.
+      const queueCap = Date.now() < interactiveUntil ? 0 : 2;
       if (!key && typeof dec.decodeQueueSize === 'number' && dec.decodeQueueSize > queueCap) {
         h264.droppedLate += 1;
         return;
@@ -1171,13 +1196,21 @@
         const cls = h264.latency < 400 ? 'lat' : 'warn';
         html += ' · <span class="' + cls + '">⌁ ' + h264.latency + 'ms</span>';
       }
+      if (h264.motionRtt != null) {
+        const cls = h264.motionRtt < 80 ? 'lat' : 'warn';
+        html += ' · <span class="' + cls + '">touch ' + h264.motionRtt + 'ms</span>';
+      } else if (h264.wsRtt != null) {
+        html += ' · <span class="lat">ws ' + h264.wsRtt + 'ms</span>';
+      }
       streamHud.innerHTML = html;
       streamHud.title = 'transport ' + transport
         + ' · decode ' + (h264.decodeMs == null ? '—' : h264.decodeMs + 'ms')
         + ' · paint ' + (h264.paintMs == null ? '—' : h264.paintMs + 'ms')
         + ' · frames ' + h264.frames
         + (h264.droppedLate ? ' · drop ' + h264.droppedLate : '')
-        + (h264.pokes ? ' · jpeg pokes ' + h264.pokes : '');
+        + (h264.pokes ? ' · jpeg pokes ' + h264.pokes : '')
+        + (h264.wsRtt != null ? ' · wsRtt ' + h264.wsRtt + 'ms' : '')
+        + (h264.motionRtt != null ? ' · motionRtt ' + h264.motionRtt + 'ms' : '');
     }
 
     /** Bridge the one case where JPEG beats video.
@@ -1601,12 +1634,32 @@
       pumpMotion();
     }
 
+    function motionViaWs() {
+      return !!(h264.ws && h264.ws.readyState === 1);
+    }
+
     function pumpMotion() {
+      // Prefer the open H.264 WebSocket. AFD HTTP POST was 600–1300ms/event;
+      // the same path's WS ping is ~10ms. Flush the whole queue in order —
+      // no serial wait between DOWN/MOVE/UP.
+      if (motionViaWs()) {
+        while (motionQueue.length) {
+          const item = motionQueue.shift();
+          h264Send({
+            type: 'motion',
+            action: item.action,
+            x: item.x,
+            y: item.y,
+            t: performance.now(),
+          });
+        }
+        motionBusy = false;
+        return;
+      }
       if (motionBusy || !motionQueue.length) return;
       motionBusy = true;
       const item = motionQueue.shift();
-      // One request at a time, latest MOVE only. Parallel fetches would
-      // reorder a drag, and a queue of every pointermove would be N×RTT late.
+      // HTTP fallback: one at a time so DOWN/MOVE/UP stay ordered.
       fetch('/adb/motion', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1657,6 +1710,13 @@
       // First MOVE after DOWN: flush immediately (snappy drag start).
       if (!ptrDown.movedOnce) {
         ptrDown.movedOnce = true;
+        const pending = ptrDown.pending;
+        ptrDown.pending = null;
+        flushMove(ptrDown, pending);
+        return;
+      }
+      // WS path: coalesce in the queue only — do not wait an extra frame.
+      if (motionViaWs()) {
         const pending = ptrDown.pending;
         ptrDown.pending = null;
         flushMove(ptrDown, pending);
@@ -1935,7 +1995,7 @@
       // gen must be a real number: NaN === NaN is false and silently drops every decoded frame.
       gen: 0, packets: 0, played: 0, healthy: 0, channels: 2, sampleRate: 48000,
       armed: false, wantPlay: true,
-      viewerBuild: '20260923-sound2',
+      viewerBuild: '20260923-fast1',
     };
 
     function mediaWsUrl(path) {

@@ -42,7 +42,7 @@ pilot: Optional[PhonePilot] = None
 # protect memory/uplink, not the device.
 MAX_STREAM_CLIENTS = int(os.environ.get("MAX_STREAM_CLIENTS", "12"))
 
-INPUT_RATE_PER_SEC = float(os.environ.get("INPUT_RATE_PER_SEC", "60"))
+INPUT_RATE_PER_SEC = float(os.environ.get("INPUT_RATE_PER_SEC", "90"))
 CONTINUITY_MAX_FILE_BYTES = int(os.environ.get("CONTINUITY_MAX_FILE_BYTES", str(50 * 1024 * 1024)))
 CONTINUITY_MAX_TEXT_CHARS = int(os.environ.get("CONTINUITY_MAX_TEXT_CHARS", "100000"))
 _input_buckets: dict[str, list[float]] = {}
@@ -312,7 +312,8 @@ async def ws_h264(ws: WebSocket):
     control/telemetry JSON (`hello`, `ping`, `stall`, `bye`).
 
     Client → server JSON: ``{"type":"pong"}``, ``{"type":"keyframe"}``,
-    ``{"type":"ping"}``, ``{"type":"stats"}``.
+    ``{"type":"ping"}``, ``{"type":"stats"}``,
+    ``{"type":"motion","action":"DOWN|MOVE|UP|CANCEL","x":int,"y":int,"t":?}``.
     """
     broker = adb.h264
     # A viewer means someone is about to touch. Rebuild a dead input shell
@@ -349,12 +350,50 @@ async def ws_h264(ws: WebSocket):
                 if typ in ("pong", "ping"):
                     last_pong = time.time()
                     if typ == "ping":
-                        await ws.send_json({"type": "pong", "t": time.time()})
+                        # Echo client `t` so the viewer can measure WS RTT.
+                        await ws.send_json({"type": "pong", "t": msg.get("t"), "server_time": time.time()})
                 elif typ == "keyframe":
                     # Viewer's decoder lost sync (tab restore, dropped AUs).
                     broker.request_keyframe("client")
                 elif typ == "stats":
                     await ws.send_json({"type": "stats", **broker.stats()})
+                elif typ == "motion":
+                    # Touch over the open H.264 socket — skips AFD HTTP POST RTT
+                    # (often 500–1300ms) for ~one WS frame + ADB pump (~20–50ms).
+                    ip = ws.client.host if ws.client else "unknown"
+                    client_t = msg.get("t")
+                    action = str(msg.get("action") or "").upper()
+                    try:
+                        x = int(msg.get("x"))
+                        y = int(msg.get("y"))
+                    except (TypeError, ValueError):
+                        await ws.send_json({"type": "motion_ack", "ok": False, "reason": "bad_xy", "t": client_t})
+                        continue
+                    if not _allow_input(ip):
+                        await ws.send_json({"type": "motion_ack", "ok": False, "reason": "rate", "t": client_t, "action": action})
+                        continue
+                    t0 = time.time()
+                    try:
+                        result = await adb.motion(action, x, y)
+                        await ws.send_json({
+                            "type": "motion_ack",
+                            "ok": True,
+                            "action": result.get("action", action),
+                            "x": x,
+                            "y": y,
+                            "t": client_t,
+                            "server_ms": round((time.time() - t0) * 1000, 1),
+                            "via": result.get("via"),
+                            "acked": result.get("acked"),
+                        })
+                    except AdbError as e:
+                        await ws.send_json({
+                            "type": "motion_ack",
+                            "ok": False,
+                            "action": action,
+                            "t": client_t,
+                            "reason": str(e)[:120],
+                        })
         except Exception:  # noqa: BLE001 — disconnect or malformed frame
             stop.set()
 

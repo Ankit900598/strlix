@@ -47,7 +47,7 @@ adb = AdbClient()
 STARTED = time.time()
 BROKER_URL = os.environ.get("SESSION_BROKER_URL", "http://127.0.0.1:8791")
 MAX_STREAM_CLIENTS = int(os.environ.get("MAX_STREAM_CLIENTS", "12"))
-INPUT_RATE_PER_SEC = float(os.environ.get("INPUT_RATE_PER_SEC", "60"))
+INPUT_RATE_PER_SEC = float(os.environ.get("INPUT_RATE_PER_SEC", "90"))
 WS_PING_INTERVAL_S = float(os.environ.get("WS_PING_INTERVAL_S", "15"))
 WS_PING_TIMEOUT_S = float(os.environ.get("WS_PING_TIMEOUT_S", "40"))
 _input_buckets: dict[str, list[float]] = {}
@@ -431,11 +431,46 @@ async def ws_h264(ws: WebSocket):
                 if typ in ("pong", "ping"):
                     last_pong = time.time()
                     if typ == "ping":
-                        await ws.send_json({"type": "pong", "t": time.time()})
+                        await ws.send_json({"type": "pong", "t": msg.get("t"), "server_time": time.time()})
                 elif typ == "keyframe":
                     broker.request_keyframe("client")
                 elif typ == "stats":
                     await ws.send_json({"type": "stats", **broker.stats()})
+                elif typ == "motion":
+                    ip = ws.client.host if ws.client else "unknown"
+                    client_t = msg.get("t")
+                    action = str(msg.get("action") or "").upper()
+                    try:
+                        x = int(msg.get("x"))
+                        y = int(msg.get("y"))
+                    except (TypeError, ValueError):
+                        await ws.send_json({"type": "motion_ack", "ok": False, "reason": "bad_xy", "t": client_t})
+                        continue
+                    if not _allow_input(ip):
+                        await ws.send_json({"type": "motion_ack", "ok": False, "reason": "rate", "t": client_t, "action": action})
+                        continue
+                    t0 = time.time()
+                    try:
+                        result = await adb.motion(action, x, y)
+                        await ws.send_json({
+                            "type": "motion_ack",
+                            "ok": True,
+                            "action": result.get("action", action),
+                            "x": x,
+                            "y": y,
+                            "t": client_t,
+                            "server_ms": round((time.time() - t0) * 1000, 1),
+                            "via": result.get("via"),
+                            "acked": result.get("acked"),
+                        })
+                    except AdbError as e:
+                        await ws.send_json({
+                            "type": "motion_ack",
+                            "ok": False,
+                            "action": action,
+                            "t": client_t,
+                            "reason": str(e)[:120],
+                        })
         except Exception:  # noqa: BLE001
             stop.set()
 

@@ -81,10 +81,10 @@ H264_GOP_MAX_AUS = int(os.environ.get("H264_GOP_MAX_AUS", "600"))
 # is the cheaper start — provided no one else is watching to be interrupted.
 H264_GOP_REPLAY_MAX_BYTES = int(os.environ.get("H264_GOP_REPLAY_MAX_BYTES", str(1024 * 1024)))
 # Per-client send queue budget before we start dropping.
-H264_QUEUE_MAX_AUS = int(os.environ.get("H264_QUEUE_MAX_AUS", "180"))
+H264_QUEUE_MAX_AUS = int(os.environ.get("H264_QUEUE_MAX_AUS", "8"))
 H264_QUEUE_MAX_BYTES = int(os.environ.get("H264_QUEUE_MAX_BYTES", str(4 * 1024 * 1024)))
 # A NAL is considered complete after this much silence on the pipe.
-H264_FLUSH_IDLE_MS = float(os.environ.get("H264_FLUSH_IDLE_MS", "12"))
+H264_FLUSH_IDLE_MS = float(os.environ.get("H264_FLUSH_IDLE_MS", "8"))
 # Don't let joiners restart the encoder more often than this.
 H264_KEYFRAME_COOLDOWN_S = float(os.environ.get("H264_KEYFRAME_COOLDOWN_S", "2.5"))
 
@@ -168,9 +168,13 @@ class Subscriber:
         if self.needs_key and not au.key:
             self.dropped += 1
             return False
+        # Soft live cap: more than ~2 queued AUs means the socket/browser is
+        # behind. Prefer a brief IDR wait over shipping a multi-frame backlog.
+        live_soft = 2
         over = (
             self.queue.qsize() >= H264_QUEUE_MAX_AUS
             or self.queued_bytes + au.size > H264_QUEUE_MAX_BYTES
+            or (self.queue.qsize() >= live_soft and not au.key)
         )
         if over:
             if not au.key:
