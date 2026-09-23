@@ -298,14 +298,18 @@
         font-size: 11px; color: var(--muted);
       }
     }
+    /* Instant finger feedback — client-only, never waits on device/WS.
+       Short-lived blue spot locked to pointer; CSS transition was ~180ms and
+       made glass-to-glass lag feel worse (spot arrives, phone reacts late). */
     #pressRipple {
-      position: absolute; width: 28px; height: 28px; margin: -14px 0 0 -14px;
-      border-radius: 50%; pointer-events: none; z-index: 5;
-      background: rgba(91,140,255,0.45);
-      border: 2px solid rgba(255,255,255,0.85);
-      box-shadow: 0 0 16px rgba(91,140,255,0.7);
-      opacity: 0; transform: scale(0.4);
-      transition: opacity .18s, transform .18s;
+      position: absolute; width: 36px; height: 36px; margin: -18px 0 0 -18px;
+      border-radius: 50%; pointer-events: none; z-index: 9;
+      background: rgba(91,140,255,0.55);
+      border: 2px solid rgba(255,255,255,0.9);
+      box-shadow: 0 0 18px rgba(91,140,255,0.85), 0 0 0 6px rgba(91,140,255,0.18);
+      opacity: 0; transform: scale(0.35);
+      will-change: transform, opacity;
+      transition: none;
     }
     #pressRipple.show {
       opacity: 1; transform: scale(1);
@@ -684,10 +688,52 @@
     html.embed .trust-row,
     html.phone-fs .trust-row,
     html.embed .punch,
-    html.phone-fs .punch,
+    html.phone-fs .punch {
+      display: none !important;
+    }
+    /* Easy-nav: keep Back/Home/Recents reachable in fullscreen. Soft-launch
+       users said Android system nav alone felt sticky vs a real phone. */
     html.embed .nav-rail-zone,
     html.phone-fs .nav-rail-zone {
-      display: none !important;
+      display: block !important;
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      top: auto; width: auto;
+      height: calc(56px + env(safe-area-inset-bottom, 0px));
+      z-index: 40;
+      pointer-events: auto;
+      background: linear-gradient(to top, rgba(0,0,0,0.72), rgba(0,0,0,0.28) 70%, transparent);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    html.embed .nav-rail-hint,
+    html.phone-fs .nav-rail-hint { display: none !important; }
+    html.embed .navbar,
+    html.phone-fs .navbar {
+      position: static; width: 100%; height: 52px; padding: 4px 10px 0;
+      display: flex; flex-direction: row; justify-content: space-evenly; align-items: center;
+      gap: 8px; border: 0; border-radius: 0; background: transparent;
+      box-shadow: none; backdrop-filter: none;
+      opacity: 1; pointer-events: auto; transform: none; transition: none;
+    }
+    html.embed .navbar button,
+    html.phone-fs .navbar button {
+      flex: 1 1 0; max-width: 140px; height: 48px; min-height: 48px;
+      border-radius: 14px; font-size: 18px;
+      background: rgba(18,24,40,0.78);
+      border: 1px solid rgba(255,255,255,0.16);
+      color: #fff;
+    }
+    html.embed .navbar button span.lbl,
+    html.phone-fs .navbar button span.lbl {
+      position: static; width: auto; height: auto; padding: 0; margin: 0;
+      overflow: visible; clip: auto; white-space: nowrap;
+      font-size: 11px; color: rgba(255,255,255,0.7);
+    }
+    html.embed .device-wrap,
+    html.phone-fs .device-wrap {
+      /* leave room so easy-nav does not cover Android nav band */
+      padding-bottom: calc(52px + env(safe-area-inset-bottom, 0px)) !important;
+      box-sizing: border-box !important;
     }
     html.embed .stage,
     html.phone-fs .stage {
@@ -725,6 +771,12 @@
       height: 100dvh;
       min-height: 100svh;
       padding: 0 !important;
+    }
+    /* Re-assert easy-nav inset after the full-bleed padding:0 reset above. */
+    html.embed .device-wrap,
+    html.phone-fs .device-wrap {
+      padding-bottom: calc(52px + env(safe-area-inset-bottom, 0px)) !important;
+      box-sizing: border-box !important;
     }
     html.embed #touchLayer,
     html.phone-fs #touchLayer {
@@ -1234,6 +1286,14 @@
             lastInputAt = performance.now();
           }
         }
+      } else if (m.type === 'key_ack') {
+        if (typeof m.t === 'number') {
+          const ms = Math.round(performance.now() - m.t);
+          h264.motionRtt = ms; // reuse touch HUD slot for nav key RTT
+          const label = String(m.keycode || 'key').toLowerCase();
+          if (m.ok === false) shotStamp.textContent = label + ' ✗ ' + (m.reason || 'fail');
+          else shotStamp.textContent = label + ' · ' + ms + 'ms';
+        }
       } else if (m.type === 'bye') {
         // Server is out of viewer slots (or H.264 is off): stop retrying.
         h264Fail(m.reason || 'server declined');
@@ -1323,12 +1383,54 @@
       reportClientDebug();
     }
 
+    function h264PresentFrame(f) {
+      if (!f) return;
+      try {
+        const w = f.displayWidth || f.codedWidth;
+        const h = f.displayHeight || f.codedHeight;
+        if (liveCanvas.width !== w || liveCanvas.height !== h) {
+          liveCanvas.width = w; liveCanvas.height = h;
+        }
+        liveCanvas.hidden = false;
+        liveShot.hidden = true;
+        const tDecoded = performance.now();
+        const arrivedAt = h264.arrivals.get(f.timestamp);
+        if (arrivedAt != null) {
+          h264.decodeMs = Math.round(tDecoded - arrivedAt);
+          h264.arrivals.delete(f.timestamp);
+        }
+        ctx.drawImage(f, 0, 0, w, h);
+        h264.paintMs = Math.round(performance.now() - tDecoded);
+        h264.frames += 1;
+        h264.lastFrameAt = Date.now();
+        if (h264.frames === 1) adoptH264();
+        if (lastInputAt) { h264.latency = Math.round(performance.now() - lastInputAt); lastInputAt = 0; }
+        markLive(null);
+        h264Hud();
+      } finally {
+        try { f.close(); } catch (_) {}
+      }
+    }
     function h264Paint(frame) {
       const w0 = frame.displayWidth || frame.codedWidth;
       const h0 = frame.displayHeight || frame.codedHeight;
       if (!w0 || !h0) { try { frame.close(); } catch (_) {} return; }
-      // Keep only the newest decoded frame pending present — drops late paints
-      // under touch so glass tracks the finger, not a backlog.
+      // Finger down / recent input: present synchronously (skip rAF coalesce)
+      // to cut ~8–16ms of display lag. Idle viewing keeps newest-frame coalesce.
+      const urgent = !!(ptrDown) || Date.now() < interactiveUntil;
+      if (urgent) {
+        if (h264._pendingFrame) {
+          try { h264._pendingFrame.close(); } catch (_) {}
+          h264.droppedLate = (h264.droppedLate || 0) + 1;
+          h264._pendingFrame = null;
+        }
+        if (h264._presentRaf) {
+          cancelAnimationFrame(h264._presentRaf);
+          h264._presentRaf = 0;
+        }
+        h264PresentFrame(frame);
+        return;
+      }
       if (h264._pendingFrame) {
         try { h264._pendingFrame.close(); } catch (_) {}
         h264.droppedLate = (h264.droppedLate || 0) + 1;
@@ -1339,37 +1441,7 @@
         h264._presentRaf = 0;
         const f = h264._pendingFrame;
         h264._pendingFrame = null;
-        if (!f) return;
-        try {
-          const w = f.displayWidth || f.codedWidth;
-          const h = f.displayHeight || f.codedHeight;
-          if (liveCanvas.width !== w || liveCanvas.height !== h) {
-            liveCanvas.width = w; liveCanvas.height = h;
-          }
-          liveCanvas.hidden = false;
-          liveShot.hidden = true;
-          const tDecoded = performance.now();
-          const arrivedAt = h264.arrivals.get(f.timestamp);
-          if (arrivedAt != null) {
-            h264.decodeMs = Math.round(tDecoded - arrivedAt);
-            h264.arrivals.delete(f.timestamp);
-          }
-          ctx.drawImage(f, 0, 0, w, h);
-          const donePaint = () => { h264.paintMs = Math.round(performance.now() - tDecoded); };
-          if (typeof liveCanvas.requestVideoFrameCallback === 'function') {
-            liveCanvas.requestVideoFrameCallback(() => donePaint());
-          } else {
-            requestAnimationFrame(donePaint);
-          }
-          h264.frames += 1;
-          h264.lastFrameAt = Date.now();
-          if (h264.frames === 1) adoptH264();
-          if (lastInputAt) { h264.latency = Math.round(performance.now() - lastInputAt); lastInputAt = 0; }
-          markLive(null);
-          h264Hud();
-        } finally {
-          try { f.close(); } catch (_) {}
-        }
+        h264PresentFrame(f);
       });
     }
     function adoptH264() {
@@ -1794,15 +1866,44 @@
       };
     }
 
-    function showRipple(clientX, clientY) {
+    // Client-only press feedback. Must feel locked to the finger even when
+    // glass-to-glass video is 100–300ms. Never gate this on motion_ack.
+    function showRipple(clientX, clientY, opts) {
+      opts = opts || {};
       const sr = screenEl.getBoundingClientRect();
       pressRipple.style.left = (clientX - sr.left) + 'px';
       pressRipple.style.top = (clientY - sr.top) + 'px';
-      pressRipple.classList.remove('show');
-      void pressRipple.offsetWidth;
+      const restartAnim = !(opts.followOnly && pressRipple.classList.contains('show'));
       pressRipple.classList.add('show');
+      if (restartAnim) {
+        try {
+          if (pressRipple.getAnimations) pressRipple.getAnimations().forEach((a) => a.cancel());
+          pressRipple.animate(
+            [
+              { opacity: 0.95, transform: 'scale(0.55)' },
+              { opacity: 0.75, transform: 'scale(1)' },
+              { opacity: 0.55, transform: 'scale(1.05)' },
+            ],
+            { duration: 140, easing: 'ease-out', fill: 'forwards' }
+          );
+        } catch (_) {
+          // WAAPI missing: hard show without CSS transition (transition:none in CSS).
+        }
+      }
+      // Always refresh hide timer so a held finger keeps the spot visible.
       clearTimeout(showRipple._t);
-      showRipple._t = setTimeout(() => pressRipple.classList.remove('show'), 280);
+      showRipple._t = setTimeout(() => {
+        pressRipple.classList.remove('show');
+        pressRipple.style.opacity = '';
+        pressRipple.style.transform = '';
+      }, opts.holdMs || 160);
+    }
+    function hideRipple() {
+      clearTimeout(showRipple._t);
+      pressRipple.classList.remove('show');
+      try {
+        if (pressRipple.getAnimations) pressRipple.getAnimations().forEach((a) => a.cancel());
+      } catch (_) {}
     }
 
     // ───────────── Pointer control (mouse + touch + pen) ─────────────
@@ -1815,8 +1916,10 @@
     let motionBusy = false;
 
     function enqueueMotion(action, x, y) {
-      // UP/CANCEL must not sit behind a backlog of coalesced MOVEs.
-      if (action === 'UP' || action === 'CANCEL') {
+      // Soft-launch ADB motion accepts DOWN/MOVE/UP. Treat CANCEL as UP.
+      if (action === 'CANCEL') action = 'UP';
+      // UP must not sit behind a backlog of coalesced MOVEs.
+      if (action === 'UP') {
         motionQueue = motionQueue.filter((it) => it.action !== 'MOVE');
       }
       const last = motionQueue[motionQueue.length - 1];
@@ -1882,7 +1985,7 @@
         usedMotion: motionCaps, lastX: pt.x, lastY: pt.y,
         pointerType: ev.pointerType || 'mouse',
       };
-      showRipple(ev.clientX, ev.clientY);
+      showRipple(ev.clientX, ev.clientY, { holdMs: 480 });
       interactiveUntil = Date.now() + 6000;
       // The game sees the press on pointerdown, not after the finger lifts.
       if (ptrDown.usedMotion) enqueueMotion('DOWN', pt.x, pt.y);
@@ -1897,7 +2000,10 @@
     }
 
     function onPtrMove(ev) {
-      if (!ptrDown || ptrDown.id !== ev.pointerId || !ptrDown.usedMotion) return;
+      if (!ptrDown || ptrDown.id !== ev.pointerId) return;
+      // Keep blue spot glued to the finger (client-only).
+      showRipple(ev.clientX, ev.clientY, { followOnly: true, holdMs: 480 });
+      if (!ptrDown.usedMotion) return;
       const pt = clientToDevice(ev.clientX, ev.clientY);
       if (!pt) return;
       ev.preventDefault();
@@ -1936,12 +2042,21 @@
       if (start.moveRaf) cancelAnimationFrame(start.moveRaf);
       try { touchLayer.releasePointerCapture(ev.pointerId); } catch (_) {}
       const end = clientToDevice(ev.clientX, ev.clientY) || { x: start.x, y: start.y };
-      showRipple(ev.clientX, ev.clientY);
+      hideRipple();
       interactiveUntil = Date.now() + 6000;
       const clientDist = Math.hypot(ev.clientX - start.cx, ev.clientY - start.cy);
       const dt = Date.now() - start.t;
       // Fingers jitter more than a mouse. 14px turned real taps into swipes.
       const slop = start.pointerType === 'touch' ? 28 : SWIPE_PX;
+
+      // Gesture assist: edge-swipe Back / bottom-swipe Home (real-phone muscle memory).
+      // Only when the path looks like a nav gesture — never steal short app swipes.
+      if (maybeGestureAssist(start, end, clientDist, dt)) {
+        if (start.usedMotion) enqueueMotion('CANCEL', end.x, end.y);
+        lastInputAt = performance.now();
+        nudgeStream();
+        return;
+      }
 
       if (start.usedMotion) {
         const slop = start.pointerType === 'touch' ? 28 : SWIPE_PX;
@@ -2135,13 +2250,53 @@
     });
 
     // ───────────── Nav bar (BACK / HOME / RECENTS) ─────────────
+    // Prefer /ws/h264 key messages (same low-RTT path as motion). HTTP fallback.
+    function sendKey(keycode, label) {
+      interactiveUntil = Date.now() + 6000;
+      const event = replayRecordInput('Pressed ' + String(keycode).toLowerCase(), 'key', { keycode });
+      if (motionViaWs()) {
+        const t0 = performance.now();
+        lastInputAt = t0;
+        h264Send({ type: 'key', keycode: keycode, t: t0 });
+        shotStamp.textContent = (label || String(keycode).toLowerCase()) + ' · ws';
+        nudgeStream();
+        try { h264Send({ type: 'keyframe' }); } catch (_) {}
+        return;
+      }
+      sendInput('/adb/key', { keycode }, label || keycode.toLowerCase(), event);
+    }
+
+    // Edge-swipe Back + bottom fling Home — mirrors real phone gestures when
+    // 3-button nav is tiny or gesture-nav on the emulator feels sticky.
+    function maybeGestureAssist(start, end, clientDist, dt) {
+      if (!start || !viewRect.scale) return false;
+      const dx = end.x - start.x;
+      const dy = end.y - start.y;
+      const minPx = start.pointerType === 'touch' ? 72 : 64;
+      if (clientDist < minPx || dt > 650) return false;
+      const edge = Math.max(48, Math.round(deviceW * 0.04));
+      const bottomBand = Math.max(96, Math.round(deviceH * 0.12));
+      // Left/right edge → BACK (horizontal dominant).
+      if (start.x <= edge || start.x >= deviceW - edge) {
+        if (Math.abs(dx) > Math.abs(dy) * 1.15 && Math.abs(dx) >= minPx * 0.7) {
+          sendKey('BACK', 'back · edge');
+          return true;
+        }
+      }
+      // Bottom fling up → HOME (or APP_SWITCH if long).
+      if (start.y >= deviceH - bottomBand && dy < -minPx && Math.abs(dy) > Math.abs(dx) * 1.1) {
+        if (Math.abs(dy) > deviceH * 0.28 || dt > 320) sendKey('APP_SWITCH', 'recents · gesture');
+        else sendKey('HOME', 'home · gesture');
+        return true;
+      }
+      return false;
+    }
+
     document.querySelector('.navbar').addEventListener('click', (e) => {
       const b = e.target.closest('button[data-key]');
       if (!b) return;
-      const keycode = b.dataset.key;
-      interactiveUntil = Date.now() + 6000;
-      const event = replayRecordInput('Pressed ' + keycode.toLowerCase(), 'key', { keycode });
-      sendInput('/adb/key', { keycode }, keycode.toLowerCase(), event);
+      e.preventDefault();
+      sendKey(b.dataset.key);
     });
 
     function notifyHost(type, extra) {
@@ -2190,7 +2345,7 @@
       // gen must be a real number: NaN === NaN is false and silently drops every decoded frame.
       gen: 0, packets: 0, played: 0, healthy: 0, channels: 2, sampleRate: 48000,
       armed: false, wantPlay: true,
-      viewerBuild: '20260923-nav1',
+      viewerBuild: '20260923-feel1',
     };
 
     function mediaWsUrl(path) {

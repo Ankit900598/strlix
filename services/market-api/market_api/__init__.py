@@ -1,1 +1,1 @@
-__version__ = "0.7.6+nav1"
+__version__ = "0.7.7+feel1"

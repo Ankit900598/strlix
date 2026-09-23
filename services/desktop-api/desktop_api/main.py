@@ -472,6 +472,40 @@ async def ws_h264(ws: WebSocket):
                         await ws.send_json({"type": "pong", "t": msg.get("t"), "server_time": time.time()})
                 elif typ == "keyframe":
                     broker.request_keyframe("client")
+                elif typ == "key":
+                    # Nav keys over the open H.264 socket — same RTT win as motion.
+                    ip = ws.client.host if ws.client else "unknown"
+                    client_t = msg.get("t")
+                    keycode = str(msg.get("keycode") or msg.get("key") or "").strip()
+                    if not keycode:
+                        await ws.send_json({"type": "key_ack", "ok": False, "reason": "bad_key", "t": client_t})
+                        continue
+                    if not _allow_input(ip):
+                        await ws.send_json({"type": "key_ack", "ok": False, "reason": "rate", "t": client_t, "keycode": keycode})
+                        continue
+                    t0 = time.time()
+                    try:
+                        result = await adb.key(keycode)
+                        await ws.send_json({
+                            "type": "key_ack",
+                            "ok": True,
+                            "keycode": keycode,
+                            "t": client_t,
+                            "server_ms": round((time.time() - t0) * 1000, 1),
+                            "result": result if isinstance(result, dict) else {"ok": True},
+                        })
+                        try:
+                            broker.request_keyframe("key")
+                        except Exception:
+                            pass
+                    except AdbError as e:
+                        await ws.send_json({
+                            "type": "key_ack",
+                            "ok": False,
+                            "keycode": keycode,
+                            "t": client_t,
+                            "reason": str(e)[:120],
+                        })
                 elif typ == "stats":
                     await ws.send_json({"type": "stats", **broker.stats()})
                 elif typ == "motion":
