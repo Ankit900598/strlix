@@ -84,7 +84,7 @@ H264_GOP_REPLAY_MAX_BYTES = int(os.environ.get("H264_GOP_REPLAY_MAX_BYTES", str(
 H264_QUEUE_MAX_AUS = int(os.environ.get("H264_QUEUE_MAX_AUS", "8"))
 H264_QUEUE_MAX_BYTES = int(os.environ.get("H264_QUEUE_MAX_BYTES", str(4 * 1024 * 1024)))
 # A NAL is considered complete after this much silence on the pipe.
-H264_FLUSH_IDLE_MS = float(os.environ.get("H264_FLUSH_IDLE_MS", "8"))
+H264_FLUSH_IDLE_MS = float(os.environ.get("H264_FLUSH_IDLE_MS", "5"))
 # Don't let joiners restart the encoder more often than this.
 H264_KEYFRAME_COOLDOWN_S = float(os.environ.get("H264_KEYFRAME_COOLDOWN_S", "2.5"))
 

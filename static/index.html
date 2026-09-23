@@ -1247,7 +1247,7 @@
           if (probe && probe.supported === false) { h264Fail('codec ' + codec + ' unsupported'); return; }
         }
         const dec = new window.VideoDecoder({
-          output: (frame) => { try { h264Paint(frame); } finally { frame.close(); } },
+          output: (frame) => { h264Paint(frame); },
           error: (e) => h264DecoderError(e),
         });
         dec.configure(config);
@@ -1314,34 +1314,54 @@
     }
 
     function h264Paint(frame) {
-      const w = frame.displayWidth || frame.codedWidth;
-      const h = frame.displayHeight || frame.codedHeight;
-      if (!w || !h) return;
-      if (liveCanvas.width !== w || liveCanvas.height !== h) {
-        liveCanvas.width = w; liveCanvas.height = h;
+      const w0 = frame.displayWidth || frame.codedWidth;
+      const h0 = frame.displayHeight || frame.codedHeight;
+      if (!w0 || !h0) { try { frame.close(); } catch (_) {} return; }
+      // Keep only the newest decoded frame pending present — drops late paints
+      // under touch so glass tracks the finger, not a backlog.
+      if (h264._pendingFrame) {
+        try { h264._pendingFrame.close(); } catch (_) {}
+        h264.droppedLate = (h264.droppedLate || 0) + 1;
       }
-      liveCanvas.hidden = false;
-      liveShot.hidden = true;
-      const tDecoded = performance.now();
-      const arrivedAt = h264.arrivals.get(frame.timestamp);
-      if (arrivedAt != null) {
-        h264.decodeMs = Math.round(tDecoded - arrivedAt);
-        h264.arrivals.delete(frame.timestamp);
-      }
-      ctx.drawImage(frame, 0, 0, w, h);
-      // paintMs = time from decoded callback to next animation frame (compositor).
-      requestAnimationFrame(() => {
-        h264.paintMs = Math.round(performance.now() - tDecoded);
+      h264._pendingFrame = frame;
+      if (h264._presentRaf) return;
+      h264._presentRaf = requestAnimationFrame(() => {
+        h264._presentRaf = 0;
+        const f = h264._pendingFrame;
+        h264._pendingFrame = null;
+        if (!f) return;
+        try {
+          const w = f.displayWidth || f.codedWidth;
+          const h = f.displayHeight || f.codedHeight;
+          if (liveCanvas.width !== w || liveCanvas.height !== h) {
+            liveCanvas.width = w; liveCanvas.height = h;
+          }
+          liveCanvas.hidden = false;
+          liveShot.hidden = true;
+          const tDecoded = performance.now();
+          const arrivedAt = h264.arrivals.get(f.timestamp);
+          if (arrivedAt != null) {
+            h264.decodeMs = Math.round(tDecoded - arrivedAt);
+            h264.arrivals.delete(f.timestamp);
+          }
+          ctx.drawImage(f, 0, 0, w, h);
+          const donePaint = () => { h264.paintMs = Math.round(performance.now() - tDecoded); };
+          if (typeof liveCanvas.requestVideoFrameCallback === 'function') {
+            liveCanvas.requestVideoFrameCallback(() => donePaint());
+          } else {
+            requestAnimationFrame(donePaint);
+          }
+          h264.frames += 1;
+          h264.lastFrameAt = Date.now();
+          if (h264.frames === 1) adoptH264();
+          if (lastInputAt) { h264.latency = Math.round(performance.now() - lastInputAt); lastInputAt = 0; }
+          markLive(null);
+          h264Hud();
+        } finally {
+          try { f.close(); } catch (_) {}
+        }
       });
-      h264.frames += 1;
-      h264.lastFrameAt = Date.now();
-      if (h264.frames === 1) adoptH264();
-      if (lastInputAt) { h264.latency = Math.round(performance.now() - lastInputAt); lastInputAt = 0; }
-      markLive(null);
-      h264Hud();
     }
-
-    /** First decoded frame: H.264 owns the canvas, JPEG transports stand down. */
     function adoptH264() {
       transport = 'h264';
       h264.failures = 0;
@@ -1878,7 +1898,7 @@
         pointerType: ev.pointerType || 'mouse',
       };
       showRipple(ev.clientX, ev.clientY);
-      interactiveUntil = Date.now() + 5000;
+      interactiveUntil = Date.now() + 6000;
       // The game sees the press on pointerdown, not after the finger lifts.
       if (ptrDown.usedMotion) enqueueMotion('DOWN', pt.x, pt.y);
     }
@@ -1932,7 +1952,7 @@
       try { touchLayer.releasePointerCapture(ev.pointerId); } catch (_) {}
       const end = clientToDevice(ev.clientX, ev.clientY) || { x: start.x, y: start.y };
       showRipple(ev.clientX, ev.clientY);
-      interactiveUntil = Date.now() + 5000;
+      interactiveUntil = Date.now() + 6000;
       const clientDist = Math.hypot(ev.clientX - start.cx, ev.clientY - start.cy);
       const dt = Date.now() - start.t;
       // Fingers jitter more than a mouse. 14px turned real taps into swipes.
@@ -2134,7 +2154,7 @@
       const b = e.target.closest('button[data-key]');
       if (!b) return;
       const keycode = b.dataset.key;
-      interactiveUntil = Date.now() + 5000;
+      interactiveUntil = Date.now() + 6000;
       const event = replayRecordInput('Pressed ' + keycode.toLowerCase(), 'key', { keycode });
       sendInput('/adb/key', { keycode }, keycode.toLowerCase(), event);
     });
@@ -2185,7 +2205,7 @@
       // gen must be a real number: NaN === NaN is false and silently drops every decoded frame.
       gen: 0, packets: 0, played: 0, healthy: 0, channels: 2, sampleRate: 48000,
       armed: false, wantPlay: true,
-      viewerBuild: '20260923-smooth1',
+      viewerBuild: '20260923-play1',
     };
 
     function mediaWsUrl(path) {

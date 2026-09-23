@@ -1,1 +1,1 @@
-__version__ = "0.7.4+smooth1"
+__version__ = "0.7.5+play1"
