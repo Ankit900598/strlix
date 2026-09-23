@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import Optional
 
 from .audio_stream import AudioBroker
+from .device_audio import DeviceAudioBroker
 from .h264_stream import H264Broker
 from .scrcpy_source import prefetch_scrcpy_server
 
@@ -478,7 +479,13 @@ class AdbClient:
         #   h264   — screenrecord H.264 broker (preferred, WebCodecs viewers)
         self.frames = FrameBroker(self)
         self.h264 = H264Broker(self)
-        self.audio = AudioBroker(self)
+        # AudioBroker uses ScrcpyRawSession(kind=audio) after the overnight hang
+        # fix. Set STRLIX_AUDIO_BROKER=device to force the proven DeviceAudio path.
+        _audio_kind = os.environ.get("STRLIX_AUDIO_BROKER", "audio").strip().lower()
+        if _audio_kind in ("device", "device_audio", "deviceaudiobroker"):
+            self.audio = DeviceAudioBroker(self)
+        else:
+            self.audio = AudioBroker(self)
         self.input_pump = InputPump(self)
         # None = not probed yet. False = this image has no `input motionevent`.
         self.motion_supported: Optional[bool] = None

@@ -23,9 +23,8 @@ from .audio_framing import (
 )
 from .scrcpy_source import (
     SCRCPY_SERVER_PATH,
-    SCRCPY_VERSION,
     ScrcpyError,
-    _REMOTE_JAR,
+    ScrcpyRawSession,
     scrcpy_available,
 )
 
@@ -71,122 +70,55 @@ class AudioSubscriber:
                 return
 
 
+class _WireQueue:
+    """DeviceAudio-compatible queue view: ``get()`` returns wire bytes.
+
+    ``/ws/audio`` in ``main.py`` expects ``queue.get()`` → ``bytes`` (or a
+    status ``dict``). AudioBroker's subscribers hold :class:`AudioPacket`
+    objects; this adapter packs them the same way DeviceAudioBroker does.
+    """
+
+    def __init__(self, sub: AudioSubscriber, broker: "AudioBroker") -> None:
+        self._sub = sub
+        self._broker = broker
+
+    async def get(self):
+        packet = await self._sub.queue.get()
+        return self._broker.wire(packet)
+
+
 class ScrcpyAudioSession:
-    """One audio-only scrcpy-server. Yields an asyncio reader of the socket."""
+    """Audio-only scrcpy socket.
+
+    Delegates to :class:`~app.scrcpy_source.ScrcpyRawSession` (``kind=audio``).
+
+    The previous hand-rolled ``_connect`` returned as soon as ``adb forward``
+    accepted TCP. That accept succeeds even when nothing is listening on the
+    device abstract socket, so :class:`AudioBroker` sat forever on
+    ``opening scrcpy audio socket`` while ``reader.read`` timed out empty.
+    ``ScrcpyRawSession`` waits for encoder log lines and insists on real
+    bytes before returning — the same path :class:`DeviceAudioBroker` uses.
+    """
 
     def __init__(self, adb: "AdbClient") -> None:
         self.adb = adb
-        self.server_path = SCRCPY_SERVER_PATH
-        self.version = SCRCPY_VERSION
-        self.bitrate = AUDIO_BITRATE
-        self.port = 0
-        self.scid = f"{int.from_bytes(os.urandom(4), 'big') & 0x7FFFFFFF:08x}"
-        self._abstract = f"localabstract:scrcpy_{self.scid}"
-        self._server_proc: Optional[asyncio.subprocess.Process] = None
-        self.writer: Optional[asyncio.StreamWriter] = None
-        self._stopped = False
+        self._raw: Optional[ScrcpyRawSession] = None
 
     async def start(self) -> asyncio.StreamReader:
-        if not os.path.isfile(self.server_path):
-            raise ScrcpyError(f"scrcpy-server missing: {self.server_path}")
-        await self._push()
-        await self._forward()
-        await self._kill_remote()
-        await self._spawn()
-        return await self._connect()
+        raw = ScrcpyRawSession(
+            self.adb,
+            max_size=64,
+            bitrate=AUDIO_BITRATE,
+            kind="audio",
+        )
+        self._raw = raw
+        return await raw.start()
 
     async def stop(self) -> None:
-        if self._stopped:
-            return
-        self._stopped = True
-        if self.writer is not None:
-            self.writer.close()
-            with contextlib.suppress(Exception):
-                await self.writer.wait_closed()
-        self.writer = None
-        proc = self._server_proc
-        self._server_proc = None
-        if proc is not None and proc.returncode is None:
-            with contextlib.suppress(ProcessLookupError):
-                proc.kill()
-            with contextlib.suppress(Exception):
-                await asyncio.wait_for(proc.wait(), 2.0)
-        await self._kill_remote()
-        if self.port > 0:
-            await self._adb("forward", "--remove", f"tcp:{self.port}")
-
-    async def _adb(self, *args: str, timeout: float = 8.0) -> tuple[int, bytes, bytes]:
-        proc = await asyncio.create_subprocess_exec(
-            self.adb.adb_bin, "-s", self.adb.serial, *args,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        try:
-            out, err = await asyncio.wait_for(proc.communicate(), timeout)
-        except asyncio.TimeoutError as e:
-            with contextlib.suppress(ProcessLookupError):
-                proc.kill()
-            raise ScrcpyError(f"adb {' '.join(args)} timed out") from e
-        return proc.returncode or 0, out, err
-
-    async def _push(self) -> None:
-        rc, out, _ = await self._adb("shell", f"stat -c %s {_REMOTE_JAR} 2>/dev/null || echo 0")
-        remote = 0
-        with contextlib.suppress(Exception):
-            remote = int((out or b"0").decode().strip().splitlines()[-1] or "0")
-        if remote == os.path.getsize(self.server_path) and remote > 0:
-            return
-        rc, _, err = await self._adb("push", self.server_path, _REMOTE_JAR, timeout=30.0)
-        if rc != 0:
-            raise ScrcpyError(f"adb push failed: {err.decode(errors='replace')[:200]}")
-
-    async def _forward(self) -> None:
-        rc, out, err = await self._adb("forward", "tcp:0", self._abstract)
-        if rc != 0:
-            raise ScrcpyError(f"adb forward failed: {err.decode(errors='replace')[:200]}")
-        text = (out or b"").decode().strip().splitlines()
-        if not text:
-            raise ScrcpyError("adb forward tcp:0 returned no port")
-        self.port = int(text[-1].strip())
-
-    async def _kill_remote(self) -> None:
-        await self._adb("shell", f"pkill -f 'scid={self.scid}' || true")
-
-    async def _spawn(self) -> None:
-        # video=false so this socket is audio only. Explicit meta flags: a
-        # default server writes the 64-byte device name on the first socket,
-        # and that block (``\\x00sdk_gphone…``) was being parsed as the codec.
-        opts = (
-            f"scid={self.scid} log_level=info tunnel_forward=true "
-            f"video=false audio=true audio_codec=opus audio_source=output "
-            f"audio_bit_rate={self.bitrate} control=false cleanup=false "
-            f"send_device_meta=false send_dummy_byte=false send_codec_meta=true "
-            f"send_frame_meta=true raw_stream=false power_on=false"
-        )
-        args = (
-            f"CLASSPATH={_REMOTE_JAR} app_process / "
-            f"com.genymobile.scrcpy.Server {self.version} {opts}"
-        )
-        self._server_proc = await asyncio.create_subprocess_exec(
-            self.adb.adb_bin, "-s", self.adb.serial, "shell", args,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT,
-        )
-
-    async def _connect(self) -> asyncio.StreamReader:
-        last: Optional[BaseException] = None
-        for _ in range(40):
-            try:
-                reader, writer = await asyncio.wait_for(
-                    asyncio.open_connection("127.0.0.1", self.port), 0.4
-                )
-            except (asyncio.TimeoutError, ConnectionRefusedError, OSError) as e:
-                last = e
-                await asyncio.sleep(0.1)
-                continue
-            self.writer = writer
-            return reader
-        raise ScrcpyError(f"audio forward connect failed: {last}")
+        raw = self._raw
+        self._raw = None
+        if raw is not None:
+            await raw.stop()
 
 
 class AudioBroker:
@@ -274,6 +206,7 @@ class AudioBroker:
 
     @contextlib.asynccontextmanager
     async def subscribe(self, name: str = "ws"):
+        """Yield a DeviceAudio-compatible queue (wire bytes via ``get()``)."""
         if not self.enabled:
             raise AudioError("audio disabled (AUDIO_ENABLED=0)")
         if len(self._subs) >= AUDIO_MAX_CLIENTS:
@@ -287,7 +220,7 @@ class AudioBroker:
                 payload=self._head, pts_us=0, config=True, codec=self._codec, seq=0,
             ))
         try:
-            yield sub
+            yield _WireQueue(sub, self)
         finally:
             sub.closed = True
             self._subs.discard(sub)
