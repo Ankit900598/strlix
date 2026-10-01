@@ -54,7 +54,7 @@ _input_buckets: dict[str, list[float]] = {}
 
 app = FastAPI(
     title="Strlix desktop-api",
-    version="0.3.1",
+    version="0.3.2",
     description="Viewer stream + input. Session-bound to one device from the pool.",
 )
 app.add_middleware(
@@ -148,12 +148,13 @@ async def health():
     info: dict[str, Any] = {
         "ok": True,
         "service": "desktop-api",
-        "version": "0.3.1",
+        "version": "0.3.2",
         "uptime_s": round(time.time() - STARTED, 1),
         "adb_serial": adb.serial,
         "stream": {**adb.frames.stats(), "max_clients": MAX_STREAM_CLIENTS},
         "h264": adb.h264.stats(),
         "audio": adb.audio.stats(),
+        "touch": adb.touch.stats(),
         "client_debug": client_debug_snapshot(),
         "input": adb.input_status(),
         "broker_url": BROKER_URL,
@@ -483,6 +484,7 @@ async def ws_h264(ws: WebSocket):
                     if not _allow_input(ip):
                         await ws.send_json({"type": "key_ack", "ok": False, "reason": "rate", "t": client_t, "keycode": keycode})
                         continue
+                    broker.note_input()
                     t0 = time.time()
                     try:
                         result = await adb.key(keycode)
@@ -494,10 +496,9 @@ async def ws_h264(ws: WebSocket):
                             "server_ms": round((time.time() - t0) * 1000, 1),
                             "result": result if isinstance(result, dict) else {"ok": True},
                         })
-                        try:
-                            broker.request_keyframe("key")
-                        except Exception:
-                            pass
+                        # No forced IDR here: request_keyframe() kills and respawns
+                        # scrcpy (~1 s of frozen video right when Back/Recents
+                        # animates). The encoder already emits on screen change.
                     except AdbError as e:
                         await ws.send_json({
                             "type": "key_ack",
@@ -518,9 +519,14 @@ async def ws_h264(ws: WebSocket):
                     except (TypeError, ValueError):
                         await ws.send_json({"type": "motion_ack", "ok": False, "reason": "bad_xy", "t": client_t})
                         continue
-                    if not _allow_input(ip):
+                    # Never rate-limit DOWN/UP/CANCEL: a dropped UP leaves a
+                    # finger stuck on the phone and breaks the next gesture.
+                    if action == "MOVE" and not _allow_input(ip):
                         await ws.send_json({"type": "motion_ack", "ok": False, "reason": "rate", "t": client_t, "action": action})
                         continue
+                    if action != "MOVE":
+                        _allow_input(ip)
+                    broker.note_input()
                     t0 = time.time()
                     try:
                         result = await adb.motion(action, x, y)

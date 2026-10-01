@@ -366,6 +366,7 @@ async def ws_h264(ws: WebSocket):
                     if not _allow_input(ip):
                         await ws.send_json({"type": "key_ack", "ok": False, "reason": "rate", "t": client_t, "keycode": keycode})
                         continue
+                    broker.note_input()
                     t0 = time.time()
                     try:
                         result = await adb.key(keycode)
@@ -377,10 +378,8 @@ async def ws_h264(ws: WebSocket):
                             "server_ms": round((time.time() - t0) * 1000, 1),
                             "result": result if isinstance(result, dict) else {"ok": True},
                         })
-                        try:
-                            broker.request_keyframe("key")
-                        except Exception:
-                            pass
+                        # No forced IDR: it respawns scrcpy and freezes the glass
+                        # exactly while Back/Recents animate (normal-feel fix).
                     except AdbError as e:
                         await ws.send_json({
                             "type": "key_ack",
@@ -403,9 +402,13 @@ async def ws_h264(ws: WebSocket):
                     except (TypeError, ValueError):
                         await ws.send_json({"type": "motion_ack", "ok": False, "reason": "bad_xy", "t": client_t})
                         continue
-                    if not _allow_input(ip):
+                    # Never rate-limit DOWN/UP/CANCEL (a dropped UP = stuck finger).
+                    if action == "MOVE" and not _allow_input(ip):
                         await ws.send_json({"type": "motion_ack", "ok": False, "reason": "rate", "t": client_t, "action": action})
                         continue
+                    if action != "MOVE":
+                        _allow_input(ip)
+                    broker.note_input()
                     t0 = time.time()
                     try:
                         result = await adb.motion(action, x, y)
