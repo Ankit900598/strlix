@@ -54,7 +54,7 @@ _input_buckets: dict[str, list[float]] = {}
 
 app = FastAPI(
     title="Strlix desktop-api",
-    version="0.3.2",
+    version="0.3.3",
     description="Viewer stream + input. Session-bound to one device from the pool.",
 )
 app.add_middleware(
@@ -105,6 +105,37 @@ class TapRequest(BaseModel):
     y: int
 
 
+# Touch playout pacing (normal-feel). Over AFD + the internet, WS motion events
+# arrive bunched or with a late UP. scrcpy stamps each injected event with the
+# *arrival* time, so Android's VelocityTracker sees a wrong finger speed and
+# flings (Recents swipe-away, tab swipe, fast scroll) snap back. Replay MOVE/UP
+# at the client's own spacing (msg "t") plus a small jitter buffer. DOWN is
+# never delayed, so tap latency is unchanged.
+MOTION_PLAYOUT_MS = float(os.getenv("MOTION_PLAYOUT_MS", "40"))
+MOTION_PACE_MAX_MS = float(os.getenv("MOTION_PACE_MAX_MS", "120"))
+_PACE_STATS: dict[str, Any] = {"playout_ms": MOTION_PLAYOUT_MS, "gestures": 0, "paced": 0, "late": 0, "late_max_ms": 0.0}
+
+
+async def _pace_motion(pace: dict, action: str, client_t: Any) -> None:
+    if MOTION_PLAYOUT_MS <= 0 or not isinstance(client_t, (int, float)):
+        return
+    now = time.monotonic()
+    if action == "DOWN" or pace.get("srv") is None:
+        pace["srv"], pace["cli"] = now, float(client_t)
+        _PACE_STATS["gestures"] += 1
+    else:
+        target = pace["srv"] + (float(client_t) - pace["cli"]) / 1000.0 + MOTION_PLAYOUT_MS / 1000.0
+        wait = target - now
+        if wait > 0:
+            _PACE_STATS["paced"] += 1
+            await asyncio.sleep(min(wait, MOTION_PACE_MAX_MS / 1000.0))
+        else:
+            _PACE_STATS["late"] += 1
+            _PACE_STATS["late_max_ms"] = round(max(_PACE_STATS["late_max_ms"], -wait * 1000.0), 1)
+    if action in ("UP", "CANCEL"):
+        pace["srv"] = None
+
+
 class MotionRequest(BaseModel):
     action: str = Field(..., min_length=2, max_length=8)
     x: int
@@ -148,13 +179,14 @@ async def health():
     info: dict[str, Any] = {
         "ok": True,
         "service": "desktop-api",
-        "version": "0.3.2",
+        "version": "0.3.3",
         "uptime_s": round(time.time() - STARTED, 1),
         "adb_serial": adb.serial,
         "stream": {**adb.frames.stats(), "max_clients": MAX_STREAM_CLIENTS},
         "h264": adb.h264.stats(),
         "audio": adb.audio.stats(),
         "touch": adb.touch.stats(),
+        "touch_pacing": dict(_PACE_STATS),
         "client_debug": client_debug_snapshot(),
         "input": adb.input_status(),
         "broker_url": BROKER_URL,
@@ -460,6 +492,7 @@ async def ws_h264(ws: WebSocket):
 
     stop = asyncio.Event()
     last_pong = time.time()
+    pace: dict = {}
 
     async def reader() -> None:
         nonlocal last_pong
@@ -527,6 +560,7 @@ async def ws_h264(ws: WebSocket):
                     if action != "MOVE":
                         _allow_input(ip)
                     broker.note_input()
+                    await _pace_motion(pace, action, client_t)
                     t0 = time.time()
                     try:
                         result = await adb.motion(action, x, y)

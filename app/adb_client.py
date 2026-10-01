@@ -892,11 +892,16 @@ class AdbClient:
             # "live tile", and on this swiftshader emulator the live tile can't
             # be swiped away (the card snaps back). Recents opened from Home has
             # no live tile and every card dismisses. So: from an app, go Home,
-            # let the launcher settle (~0.6 s; 0.25 s was flaky), then Recents.
+            # wait until the launcher is resumed + 0.8 s, then Recents.
+            # A fixed 0.6 s sleep was flaky (the launcher had not resumed yet
+            # under emulator load), so poll until it is resumed (max ~2 s),
+            # then give the home animation 0.8 s before opening Recents.
             script = (
-                "if dumpsys activity activities | grep -m1 topResumedActivity | grep -q nexuslauncher; "
-                "then input keyevent 187; "
-                "else input keyevent 3; sleep 0.6; input keyevent 187; fi"
+                "input keyevent 3; "
+                "for i in 1 2 3 4 5 6 7 8 9 10; do "
+                "dumpsys activity activities 2>/dev/null | grep -m1 topResumedActivity "
+                "| grep -q nexuslauncher && break; sleep 0.2; done; "
+                "sleep 0.8; input keyevent 187"
             )
             code, out, err = await self._run("shell", script)
             if code != 0:
