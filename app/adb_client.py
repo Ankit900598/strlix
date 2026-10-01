@@ -487,6 +487,9 @@ class AdbClient:
         else:
             self.audio = AudioBroker(self)
         self.input_pump = InputPump(self)
+        # normal-feel: real gestures (one downTime) via scrcpy control socket.
+        from app.scrcpy_touch import ScrcpyTouch
+        self.touch = ScrcpyTouch(self)
         # None = not probed yet. False = this image has no `input motionevent`.
         self.motion_supported: Optional[bool] = None
         self._jar_prefetched = False
@@ -589,6 +592,8 @@ class AdbClient:
                 pass
             else:
                 self._jar_prefetched = True
+        with contextlib.suppress(Exception):
+            await self.touch.warm()
         if not FAST_INPUT:
             return
         try:
@@ -719,9 +724,11 @@ class AdbClient:
         name = str(action or "").strip().upper()
         if name not in self._MOTION_ACTIONS:
             raise AdbError("motion action must be DOWN, MOVE, UP, or CANCEL")
+        x, y = int(x), int(y)
+        if await self.touch.send(name, x, y):
+            return {"ok": True, "action": name, "x": x, "y": y, "via": "scrcpy", "acked": True}
         if self.motion_supported is not True:
             raise AdbError("device input has no motionevent; use tap or swipe")
-        x, y = int(x), int(y)
         via = await self._try_fast(f"input motionevent {name} {x} {y}", timeout=1.4)
         if via in ("ok", "sent"):
             return {"ok": True, "action": name, "x": x, "y": y, "via": "pump", "acked": via == "ok"}
@@ -880,6 +887,22 @@ class AdbClient:
             "SEARCH": "84", "NOTIFICATION": "83",
         }
         kc = str(keycode)
+        if kc.upper() == "RECENTS_CLEAN":
+            # normal-feel: Recents opened *from an app* keeps that app as a
+            # "live tile", and on this swiftshader emulator the live tile can't
+            # be swiped away (the card snaps back). Recents opened from Home has
+            # no live tile and every card dismisses. So: from an app, go Home,
+            # let the launcher settle (~0.6 s; 0.25 s was flaky), then Recents.
+            script = (
+                "if dumpsys activity activities | grep -m1 topResumedActivity | grep -q nexuslauncher; "
+                "then input keyevent 187; "
+                "else input keyevent 3; sleep 0.6; input keyevent 187; fi"
+            )
+            code, out, err = await self._run("shell", script)
+            if code != 0:
+                raise AdbError(err.decode().strip() or "key failed")
+            self.frames.nudge_soon()
+            return {"ok": True, "action": "key", "keycode": "RECENTS_CLEAN"}
         kc = mapping.get(kc.upper(), kc)
         code, out, err = await self._run("shell", "input", "keyevent", kc)
         if code != 0:

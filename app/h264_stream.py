@@ -87,6 +87,18 @@ H264_QUEUE_MAX_BYTES = int(os.environ.get("H264_QUEUE_MAX_BYTES", str(4 * 1024 *
 H264_FLUSH_IDLE_MS = float(os.environ.get("H264_FLUSH_IDLE_MS", "5"))
 # Don't let joiners restart the encoder more often than this.
 H264_KEYFRAME_COOLDOWN_S = float(os.environ.get("H264_KEYFRAME_COOLDOWN_S", "2.5"))
+# Soft-launch India: MediaCodec often skips i-frame-interval; without IDRs
+# a single dropped P-frame sets needs_key and freezes every viewer forever.
+H264_IDR_WATCHDOG_S = float(os.environ.get("H264_IDR_WATCHDOG_S", "2.5"))
+# Normal-feel (2026-10): a static phone screen legitimately produces no AUs
+# (the emulator's MediaCodec ignores repeat-previous-frame). Restarting scrcpy
+# just because no AU / no IDR arrived for N seconds (the gaming-era "stale"
+# triggers) caused a kill/respawn every ~4 s while idle and mid-gesture.
+# Default off; set H264_IDR_STALE_RESTART=1 to bring the old behaviour back.
+H264_IDR_STALE_RESTART = os.environ.get("H264_IDR_STALE_RESTART", "0") == "1"
+# If the viewer sent input and *no* AU at all followed within this window, the
+# encoder is probably wedged: mint an IDR once (input-driven recovery).
+H264_INPUT_NOFRAME_S = float(os.environ.get("H264_INPUT_NOFRAME_S", "2.5"))
 
 # Producer: "screenrecord", "scrcpy", or "auto" (scrcpy, then a single
 # screenrecord segment, then scrcpy again). Never pin the process to
@@ -379,6 +391,9 @@ class H264Broker:
 
         self._subs: set[Subscriber] = set()
         self._task: Optional[asyncio.Task] = None
+        self._watchdog_task: Optional[asyncio.Task] = None
+        self._last_input_at = 0.0
+        self._input_recovered_at = 0.0
         self._proc: Optional[asyncio.subprocess.Process] = None
         self._stopping = False
         self._restart = asyncio.Event()
@@ -527,6 +542,8 @@ class H264Broker:
             "flush_tick_ms": round(self._tick() * 1000, 1),
             "intra_gap_max_ms": round(self._intra_gap_max * 1000, 1),
             "keyframe_requests": self._keyframe_reqs,
+            "idr_stale_restart": H264_IDR_STALE_RESTART,
+            "input_noframe_s": H264_INPUT_NOFRAME_S,
             "last_keyframe_why": self._last_keyframe_why,
             "errors": self._errors,
             "last_error": self._last_error,
@@ -539,6 +556,8 @@ class H264Broker:
             return
         if not self.running:
             self._task = asyncio.create_task(self._run(), name="h264-producer")
+        if self._watchdog_task is None or self._watchdog_task.done():
+            self._watchdog_task = asyncio.create_task(self._watchdog_loop(), name="h264-idr-watchdog")
 
     @contextlib.asynccontextmanager
     async def subscribe(self, name: str = "ws"):
@@ -588,6 +607,55 @@ class H264Broker:
             await asyncio.wait_for(self._ready.wait(), timeout)
         return self._ready.is_set()
 
+
+    async def _watchdog_loop(self) -> None:
+        """Independent of the scrcpy read path — recovers frozen viewers."""
+        try:
+            while not self._stopping:
+                await asyncio.sleep(max(0.5, H264_IDR_WATCHDOG_S / 2.0))
+                try:
+                    self._idr_watchdog(time.time())
+                except Exception:
+                    pass
+        except asyncio.CancelledError:
+            raise
+
+    def _idr_watchdog(self, now: float) -> None:
+        """Force an IDR if viewers are waiting on needs_key / encoder went silent on keys.
+
+        Azure centralindia soft-launch: guest MediaCodec ignores i-frame-interval
+        for long stretches. Subscriber.offer then latches needs_key after any
+        soft-queue P drop and the glass freezes until the next IDR.
+
+        Must run from the producer idle path too — if no AUs are emitted, an
+        emit-only hook never fires and viewers stay frozen.
+        """
+        if not self._subs or H264_IDR_WATCHDOG_S <= 0:
+            return
+        last_key = self._key_au.wall if self._key_au is not None else 0.0
+        last_au = self._last_au_at or 0.0
+        waiting = any(getattr(s, "needs_key", False) for s in self._subs)
+        if waiting:
+            # A viewer dropped a reference frame and can't decode until an IDR.
+            self.request_keyframe("idr-watchdog")
+            return
+        li = self._last_input_at
+        if (li and last_au < li and li > self._input_recovered_at
+                and (now - li) >= H264_INPUT_NOFRAME_S):
+            self._input_recovered_at = li
+            self.request_keyframe("input-no-frame")
+            return
+        if not H264_IDR_STALE_RESTART:
+            return
+        stale_key = (now - last_key) >= H264_IDR_WATCHDOG_S
+        stale_au = (now - last_au) >= H264_IDR_WATCHDOG_S
+        if stale_key or stale_au:
+            self.request_keyframe("idr-stale-au" if stale_au else "idr-stale")
+
+    def note_input(self) -> None:
+        """Called on every viewer input event (motion/key)."""
+        self._last_input_at = time.time()
+
     def request_keyframe(self, why: str = "manual") -> bool:
         """Restart the encoder to mint a fresh IDR (rate-limited).
 
@@ -627,6 +695,7 @@ class H264Broker:
         self._kill_proc()
         task = self._task
         self._task = None
+        self._watchdog_task = None
         if task and not task.done():
             task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
@@ -788,6 +857,7 @@ class H264Broker:
                     pending, pending_has_vcl = self._absorb(
                         nal, pending, pending_has_vcl, force_flush=True
                     )
+                    self._idr_watchdog(time.time())
                 elif buf:
                     quiet_len = len(buf)
                 elif pending:
@@ -871,6 +941,8 @@ class H264Broker:
                         self._emit(pending)
                         pending, pending_has_vcl = [], False
                         quiet_len = -1
+                    else:
+                        self._idr_watchdog(time.time())
                     continue
                 if not chunk:
                     break
@@ -979,6 +1051,7 @@ class H264Broker:
         self._remember(au)
         for sub in list(self._subs):
             sub.offer(au)
+        self._idr_watchdog(now)
 
     def _tick(self) -> float:
         """How long the pipe must be quiet before a buffered NAL looks finished."""

@@ -715,6 +715,16 @@
       box-shadow: none; backdrop-filter: none;
       opacity: 1; pointer-events: auto; transform: none; transition: none;
     }
+    /* normal1: the desktop hover-rail rule `.nav-rail-zone:focus-within .navbar
+       { transform: translate(0,-50%) }` out-ranks the rules above, so after the
+       first tap on Back/Home/Recents the rail jumped up ~26px and covered the
+       phone's gesture bar (swipe-up Home/Recents stopped reaching Android). */
+    html.embed .nav-rail-zone:hover .navbar,
+    html.embed .nav-rail-zone:focus-within .navbar,
+    html.phone-fs .nav-rail-zone:hover .navbar,
+    html.phone-fs .nav-rail-zone:focus-within .navbar {
+      transform: none !important;
+    }
     html.embed .navbar button,
     html.phone-fs .navbar button {
       flex: 1 1 0; max-width: 140px; height: 48px; min-height: 48px;
@@ -1015,7 +1025,7 @@
         <nav class="navbar" aria-label="Phone navigation">
           <button type="button" data-key="BACK" aria-label="Back" title="Back">◀<span class="lbl">Back</span></button>
           <button type="button" data-key="HOME" aria-label="Home" title="Home">●<span class="lbl">Home</span></button>
-          <button type="button" data-key="APP_SWITCH" aria-label="Recent apps" title="Recent apps">■<span class="lbl">Recents</span></button>
+          <button type="button" data-key="RECENTS_CLEAN" aria-label="Recent apps" title="Recent apps">■<span class="lbl">Recents</span></button>
         </nav>
       </div>
     </div>
@@ -1106,15 +1116,26 @@
       if (!sr.width || !sr.height || !deviceW || !deviceH) return;
       const immersive = document.documentElement.classList.contains('phone-fs')
         || document.documentElement.classList.contains('embed');
+      // normal1: the fixed easy-nav rail used to sit *on top of* the bottom
+      // ~56px of the phone, hiding Android's gesture bar — swipe-up for
+      // Home/Recents could never reach the phone. Reserve its height instead.
+      let availH = sr.height;
+      if (immersive) {
+        const rail = document.querySelector('.nav-rail-zone');
+        if (rail && getComputedStyle(rail).display !== 'none') {
+          const rr = rail.getBoundingClientRect();
+          if (rr.height && rr.top < sr.bottom) availH = Math.max(120, rr.top - sr.top);
+        }
+      }
       const scaleW = sr.width / deviceW;
-      const scaleH = sr.height / deviceH;
+      const scaleH = availH / deviceH;
       // Always contain for soft-launch: never crop the nav bar off-screen.
       // (Cover is what made bottom keys "sink" under the viewport edge.)
       const scale = Math.min(scaleW, scaleH);
       const w = deviceW * scale, h = deviceH * scale;
       viewRect = {
         left: (sr.width - w) / 2,
-        top: (sr.height - h) / 2,
+        top: (availH - h) / 2,
         width: w,
         height: h,
         scale,
@@ -1247,12 +1268,26 @@
       }, 3500);
       // After first paint, if the encoder stalls, fall back so UI stays live.
       clearInterval(h264.stallWatch);
+      // normal1: a static phone screen sends no AUs (the encoder only emits
+      // on change). The old rule "no frame for 2.8 s → JPEG" dropped every
+      // idle viewer to 3 fps JPEG *and* moved touch to one-at-a-time HTTP
+      // POSTs, which turned swipes into slow drags (tab close / Recents
+      // dismiss / back gestures failed). Only react when input got no frame.
       h264.stallWatch = setInterval(() => {
         if (transport !== 'h264' || !h264.frames) return;
-        if (Date.now() - h264.lastFrameAt > 2800) {
-          console.info('[strlix] h264 stall — JPEG ladder');
-          h264.giveUp = false;
-          h264Fail('stalled after first frame');
+        if (!h264.ws || h264.ws.readyState !== 1) return;   // onclose handles it
+        const now = Date.now();
+        const inputAt = h264.lastInputWall || 0;
+        if (inputAt > h264.lastFrameAt && now - inputAt > 3000) {
+          if (!h264.kickAt || now - h264.kickAt > 6000) {
+            h264.kickAt = now;
+            console.info('[strlix] input got no frame — asking for IDR');
+            h264Send({ type: 'keyframe' });
+          } else if (now - h264.kickAt > 5000 && now - h264.lastFrameAt > 10000) {
+            console.info('[strlix] h264 dead after input — JPEG ladder');
+            h264.giveUp = false;
+            h264Fail('no frame after input');
+          }
         }
       }, 900);
     }
@@ -1303,8 +1338,12 @@
     }
 
     function h264Send(obj) {
-      try { if (h264.ws && h264.ws.readyState === 1) h264.ws.send(JSON.stringify(obj)); }
-      catch (_) {}
+      try {
+        if (h264.ws && h264.ws.readyState === 1) {
+          h264.ws.send(JSON.stringify(obj));
+          if (obj && (obj.type === 'motion' || obj.type === 'key')) h264.lastInputWall = Date.now();
+        }
+      } catch (_) {}
     }
 
     async function h264Configure(codec) {
@@ -2051,7 +2090,12 @@
 
       // Gesture assist: edge-swipe Back / bottom-swipe Home (real-phone muscle memory).
       // Only when the path looks like a nav gesture — never steal short app swipes.
-      if (maybeGestureAssist(start, end, clientDist, dt)) {
+      // normal1: when the real finger is streamed (DOWN/MOVE/UP), Android's
+      // own gesture nav already handles edge-Back and swipe-up Home/Recents.
+      // Injecting an extra BACK/HOME/APP_SWITCH key on top doubled the action
+      // (Back twice → left the site; Recents opened then closed). Assist only
+      // on the tap/swipe fallback where the swipe itself is not sent.
+      if (!start.usedMotion && maybeGestureAssist(start, end, clientDist, dt)) {
         if (start.usedMotion) enqueueMotion('CANCEL', end.x, end.y);
         lastInputAt = performance.now();
         nudgeStream();
@@ -2260,7 +2304,8 @@
         h264Send({ type: 'key', keycode: keycode, t: t0 });
         shotStamp.textContent = (label || String(keycode).toLowerCase()) + ' · ws';
         nudgeStream();
-        try { h264Send({ type: 'keyframe' }); } catch (_) {}
+        // normal1: no {type:'keyframe'} here — it restarted scrcpy on every
+        // Back/Home/Recents and froze video for ~1 s mid-animation.
         return;
       }
       sendInput('/adb/key', { keycode }, label || keycode.toLowerCase(), event);
@@ -2296,6 +2341,7 @@
       const b = e.target.closest('button[data-key]');
       if (!b) return;
       e.preventDefault();
+      try { b.blur(); } catch (_) {}
       sendKey(b.dataset.key);
     });
 
@@ -2345,7 +2391,7 @@
       // gen must be a real number: NaN === NaN is false and silently drops every decoded frame.
       gen: 0, packets: 0, played: 0, healthy: 0, channels: 2, sampleRate: 48000,
       armed: false, wantPlay: true,
-      viewerBuild: '20260923-feel1',
+      viewerBuild: '20261001-normal1',
     };
 
     function mediaWsUrl(path) {
