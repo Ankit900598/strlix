@@ -690,6 +690,27 @@ async def ws_stream(ws: WebSocket):
             await ws.close()
 
 
+class AskIn(BaseModel):
+    message: str = Field(..., min_length=1, max_length=2000)
+    history: Optional[list[dict[str, Any]]] = None
+    language: Optional[str] = None
+
+
+@app.post("/chat")
+async def viewer_ask(body: AskIn, request: Request):
+    """Viewer Ask -> android-api (LLM) -> tools run on this phone via ADB."""
+    from . import agent_bridge
+
+    ip = request.headers.get("x-forwarded-for", "").split(",")[0].strip() or (
+        request.client.host if request.client else "")
+    if not agent_bridge.allow(ip):
+        raise HTTPException(429, "Too many Ask requests — wait a minute and try again.")
+    out = await agent_bridge.chat_turn(adb, body.message, body.history, body.language)
+    if not out.get("ok"):
+        raise HTTPException(int(out.get("status") or 502), out.get("error") or "Ask failed")
+    return out
+
+
 @app.get("/v1/openapi-sketch")
 async def openapi_sketch():
     return {
@@ -706,6 +727,7 @@ async def openapi_sketch():
             "WS /ws/stream": "JPEG fallback",
             "GET /adb/preview": "latest JPEG",
             "POST /adb/tap|swipe|key|type": "input (controller scope)",
+            "POST /chat": "viewer Ask: proxied to android-api, tools run on this phone",
         },
-        "not_here": ["/chat", "/v1/chat", "Accessibility tool protocol"],
+        "not_here": ["/v1/chat (android-api)", "Accessibility tool protocol"],
     }
