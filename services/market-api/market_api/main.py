@@ -1,11 +1,12 @@
 """Strlix market-api — catalog, JWT auth, gated checkout, per-user Postgres RLS."""
 from __future__ import annotations
-import json, time
+import json, re, time
 from pathlib import Path
 from typing import Any, Literal, Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 
@@ -25,7 +26,7 @@ def _repo_root() -> Path:
 ROOT = _repo_root()
 DEVICES = ROOT / "web-market" / "devices.json"
 
-app = FastAPI(title="Strlix market-api", version="0.7.7+feel1")
+app = FastAPI(title="Strlix market-api", version="0.7.8")
 origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
@@ -102,7 +103,7 @@ def health():
     return {
         "ok": True,
         "service": "market-api",
-        "version": "0.7.7+feel1",
+        "version": "0.7.8",
         "pay_mode": gates["effective_mode"],
         "pay_gates": gates,
         "billing_mode": launch.billing_mode(),
@@ -113,6 +114,7 @@ def health():
         "redis": redis_client.redis_ok(),
         "redis_error": redis_client.redis_error(),
         "jwt_access_ttl_sec": settings.jwt_access_ttl_sec,
+        "stream_url": settings.stream_url,
     }
 
 @app.get("/ready")
@@ -474,5 +476,43 @@ if _LEGAL.is_dir():
     app.mount("/legal", StaticFiles(directory=str(_LEGAL), html=True), name="legal")
 
 _WM = ROOT / "web-market"
+_STREAM_LINK_RE = re.compile(r'(<link\b[^>]*\bhref=")[^"]*("[^>]*\bdata-strlix-stream\b[^>]*>)')
+_STREAM_CFG_RE = re.compile(r'(\bstreamUrl:\s*")[^"]*(")')
+_market_index_cache: dict[str, Any] = {}
+
+
+def public_stream_url() -> str:
+    """Absolute public stream origin from STRLIX_STREAM_URL, or "" if unset/relative."""
+    v = (settings.stream_url or "").strip().rstrip("/")
+    return v if v.startswith(("https://", "http://")) else ""
+
+
+def render_market_index() -> str:
+    """web-market/index.html with the stream host taken from STRLIX_STREAM_URL."""
+    path = _WM / "index.html"
+    stream = public_stream_url()
+    mtime = path.stat().st_mtime
+    key = f"{mtime}|{stream}"
+    if _market_index_cache.get("key") == key:
+        return _market_index_cache["html"]
+    html = path.read_text(encoding="utf-8")
+    if stream:
+        safe = stream.replace('"', "").replace("<", "").replace(">", "")
+        html = _STREAM_LINK_RE.sub(lambda m: m.group(1) + safe + m.group(2), html)
+        html = _STREAM_CFG_RE.sub(lambda m: m.group(1) + safe + m.group(2), html, count=1)
+    _market_index_cache.update(key=key, html=html)
+    return html
+
+
+if (_WM / "index.html").is_file():
+    @app.get("/market", include_in_schema=False)
+    def market_no_slash():
+        return RedirectResponse("/market/", status_code=307)
+
+    @app.get("/market/", include_in_schema=False)
+    @app.get("/market/index.html", include_in_schema=False)
+    def market_index():
+        return HTMLResponse(render_market_index(), headers={"Cache-Control": "no-cache"})
+
 if _WM.is_dir():
     app.mount("/market", StaticFiles(directory=str(_WM), html=True), name="web_market")
