@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 
 from .settings import settings
-from . import db, auth, launch, redis_client, payments
+from . import db, auth, launch, redis_client, payments, entra_login
 from .jobs import create as create_job, get as get_job
 
 def _repo_root() -> Path:
@@ -35,6 +35,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(entra_login.router)
 
 class LoginIn(BaseModel):
     email: EmailStr
@@ -110,6 +112,7 @@ def health():
         "free_month_active": launch.free_month_active(),
         "card_required": not launch.free_month_active(),
         "auth_mode": auth.current_auth_mode(),
+        "entra_login": entra_login.enabled(),
         "db": "postgres" if settings.use_postgres else "sqlite",
         "redis": redis_client.redis_ok(),
         "redis_error": redis_client.redis_error(),

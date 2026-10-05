@@ -124,6 +124,8 @@
     claimName: document.getElementById("claimName"),
     claimMessage: document.getElementById("claimMessage"),
     dismissClaim: document.getElementById("dismissClaim"),
+    msSignin: document.getElementById("btnMsSignin"),
+    claimMsSignin: document.getElementById("claimMsSignin"),
     stageStatus: document.getElementById("stageStatus"),
     token: null,
   };
@@ -511,7 +513,8 @@
       refreshToken = j.refresh_token;
       localStorage.setItem("strlix_refresh_token", refreshToken);
     }
-    setSessionPill(isAnonymous ? "Anonymous · Save account" : "Account session");
+    const signedEmail = localStorage.getItem("strlix_signed_in_email");
+    setSessionPill(isAnonymous ? "Anonymous · Save account" : (signedEmail ? "Signed in · " + signedEmail : "Account session"));
     return els.token;
   }
 
@@ -536,6 +539,7 @@
       els.token = null;
       refreshToken = "";
       localStorage.removeItem("strlix_refresh_token");
+      localStorage.removeItem("strlix_signed_in_email");
       setSessionPill("Guest · no signup");
       return false;
     }
@@ -728,6 +732,57 @@
       buttons.forEach((button) => { button.disabled = false; });
     }
   }
+
+  // "Sign in with Microsoft": market-api runs the OIDC code flow and comes back
+  // to /market/#strlix_auth=entra&access_token=…&refresh_token=…&email=…
+  // (fragment only: never sent to a server). Store it and clear the URL.
+  function consumeSigninRedirect() {
+    const h = location.hash || "";
+    if (h.indexOf("strlix_auth=") >= 0) {
+      const f = new URLSearchParams(h.slice(1));
+      if (f.get("access_token")) {
+        saveAuthSession({
+          access_token: f.get("access_token"),
+          refresh_token: f.get("refresh_token") || "",
+          is_anonymous: false,
+        });
+        const email = f.get("email") || "";
+        if (email) localStorage.setItem("strlix_signed_in_email", email);
+        localStorage.setItem("strlix_claim_dismissed_at", String(Date.now()));
+      }
+      history.replaceState(null, "", location.pathname + location.search);
+    }
+    const err = params.get("signin_error");
+    if (err) {
+      const msg = {
+        cancelled: "Microsoft sign-in was cancelled.",
+        expired: "Sign-in took too long. Please try again.",
+        no_email: "Your Microsoft account didn't share an email address.",
+      }[err] || "Microsoft sign-in failed. Please try again.";
+      setSessionPill(msg);
+      params.delete("signin_error");
+      const qs = params.toString();
+      history.replaceState(null, "", location.pathname + (qs ? "?" + qs : ""));
+    }
+    const signed = localStorage.getItem("strlix_signed_in_email");
+    if (signed && refreshToken && !err) setSessionPill("Signed in · " + signed);
+  }
+
+  async function initMicrosoftSignin() {
+    if (!hasMarketApi) return;
+    try {
+      const r = await fetch(apiUrl("/v1/auth/entra/status"));
+      if (!r.ok) return;
+      const j = await r.json();
+      if (!j.enabled) return;
+      const signedIn = !!(localStorage.getItem("strlix_signed_in_email") && refreshToken);
+      if (els.msSignin) els.msSignin.hidden = signedIn;
+      if (els.claimMsSignin) els.claimMsSignin.hidden = false;
+    } catch (_) {}
+  }
+
+  consumeSigninRedirect();
+  initMicrosoftSignin();
 
   els.claimForm.addEventListener("submit", claimSession);
   els.dismissClaim.addEventListener("click", () => {
