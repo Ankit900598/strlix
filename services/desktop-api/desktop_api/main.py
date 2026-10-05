@@ -131,7 +131,10 @@ class TapRequest(BaseModel):
 # flings (Recents swipe-away, tab swipe, fast scroll) snap back. Replay MOVE/UP
 # at the client's own spacing (msg "t") plus a small jitter buffer. DOWN is
 # never delayed, so tap latency is unchanged.
-MOTION_PLAYOUT_MS = float(os.getenv("MOTION_PLAYOUT_MS", "40"))
+# B3 (5 Oct): 40 -> 16 ms. Home-screen drag DOWN->first frame on the VM: 160/163.5 ms -> 125/139.5 ms
+# (2 interleaved rounds x6). Recents dismiss via AFD unchanged (8/8 at both). Flings stay right because
+# events keep the client's spacing; anything later than the buffer is injected at once, as before.
+MOTION_PLAYOUT_MS = float(os.getenv("MOTION_PLAYOUT_MS", "16"))
 MOTION_PACE_MAX_MS = float(os.getenv("MOTION_PACE_MAX_MS", "250"))
 # feel2: adaptive jitter buffer. A late MOVE used to be injected at once and so
 # were all following events whose (old) targets had passed -> a burst of MOVEs
@@ -139,7 +142,7 @@ MOTION_PACE_MAX_MS = float(os.getenv("MOTION_PACE_MAX_MS", "250"))
 # re-anchors the timeline (later events keep the client's spacing relative to
 # it) and the per-connection buffer grows toward the observed lateness
 # (capped at MOTION_PACE_MAX_MS, default 250 ms), decaying 10% per gesture.
-# On a clean link it stays at MOTION_PLAYOUT_MS (40 ms); DOWN is never delayed.
+# On a clean link it stays at MOTION_PLAYOUT_MS (16 ms); DOWN is never delayed.
 # A/B on 5 Oct (5+5 Recents dismissals via AFD each): adaptive 6/10, fixed 6/10.
 # Cleaner injection traces but no measurable win, and it can delay DOWN (taps)
 # on jittery links, so it ships OFF by default. Turn on with MOTION_PACE_ADAPT=1.
