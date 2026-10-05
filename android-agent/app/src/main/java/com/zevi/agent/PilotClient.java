@@ -48,7 +48,7 @@ public final class PilotClient {
     public PilotClient() {
         // Azure HTTPS first (shipped default); localhost :8788/:8787 for emulator reverse.
         this(Arrays.asList(
-                BuildConfig.ANDROID_API_PUBLIC_URL,
+                ApiConfig.publicUrl(),
                 BuildConfig.ANDROID_API_URL,
                 BuildConfig.ANDROID_API_EMULATOR_URL,
                 BuildConfig.PILOT_BASE_URL,
@@ -59,7 +59,7 @@ public final class PilotClient {
     public PilotClient(String baseUrl) {
         this(Arrays.asList(
                 baseUrl,
-                BuildConfig.ANDROID_API_PUBLIC_URL,
+                ApiConfig.publicUrl(),
                 BuildConfig.ANDROID_API_URL,
                 BuildConfig.ANDROID_API_EMULATOR_URL,
                 BuildConfig.PILOT_BASE_URL,

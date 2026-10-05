@@ -47,7 +47,7 @@ public class LiveActivity extends AppCompatActivity {
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState); setContentView(R.layout.activity_live);
-        pilot = new PilotClient(); replay = new ReplaySession(pilot); liveLanguage = LangPrefs.get(this);
+        ApiConfig.init(this); pilot = new PilotClient(); replay = new ReplaySession(pilot); liveLanguage = LangPrefs.get(this);
         orb = findViewById(R.id.liveOrb); caption = findViewById(R.id.liveCaption); btnMute = findViewById(R.id.btnMute);
         btnShare = findViewById(R.id.btnShare);
         btnMute.setContentDescription(getString(R.string.live_mute_description));

@@ -66,7 +66,7 @@ public class ChatActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
 
-        pilot = new PilotClient();
+        ApiConfig.init(this); pilot = new PilotClient();
         replay = new ReplaySession(pilot);
         chatStatus = findViewById(R.id.chatStatus);
         input = findViewById(R.id.input);
