@@ -140,7 +140,10 @@ MOTION_PACE_MAX_MS = float(os.getenv("MOTION_PACE_MAX_MS", "250"))
 # it) and the per-connection buffer grows toward the observed lateness
 # (capped at MOTION_PACE_MAX_MS, default 250 ms), decaying 10% per gesture.
 # On a clean link it stays at MOTION_PLAYOUT_MS (40 ms); DOWN is never delayed.
-MOTION_PACE_ADAPT = os.getenv("MOTION_PACE_ADAPT", "1") not in ("0", "false", "no")
+# A/B on 5 Oct (5+5 Recents dismissals via AFD each): adaptive 6/10, fixed 6/10.
+# Cleaner injection traces but no measurable win, and it can delay DOWN (taps)
+# on jittery links, so it ships OFF by default. Turn on with MOTION_PACE_ADAPT=1.
+MOTION_PACE_ADAPT = os.getenv("MOTION_PACE_ADAPT", "0") in ("1", "true", "yes")
 _PACE_STATS: dict[str, Any] = {"playout_ms": MOTION_PLAYOUT_MS, "adaptive": MOTION_PACE_ADAPT, "gestures": 0,
                                "paced": 0, "late": 0, "late_max_ms": 0.0, "buffer_ms": MOTION_PLAYOUT_MS, "last": []}
 
