@@ -10,8 +10,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="preconnect" href="https://strlix-stream-aabqdheycacyfah2.z03.azurefd.net" crossorigin />
-  <link rel="dns-prefetch" href="https://strlix-stream-aabqdheycacyfah2.z03.azurefd.net" />
+  <link rel="preconnect" href="https://strlix-stream-euapehawccbcbuer.z02.azurefd.net" crossorigin data-strlix-stream />
+  <link rel="dns-prefetch" href="https://strlix-stream-euapehawccbcbuer.z02.azurefd.net" data-strlix-stream />
   <link rel="stylesheet" href="css/market.css" />
 </head>
 <body>
@@ -157,9 +157,12 @@
     window.STRLIX_MARKET = {
       // Same-origin via AFD (/v1/* → market-api). Empty string => fetch("/v1/...").
       marketApi: "",
-      // Azure Front Door → desktop-api on vm-zevi-cloudphone. Same-origin
-      // /stream is the fallback when this page is served beside the API.
-      streamUrl: "https://strlix-stream-aabqdheycacyfah2.z03.azurefd.net",
+      // Azure Front Door → desktop-api on vm-strlix-india. market-api rewrites
+      // this value (and the data-strlix-stream links above) from the
+      // STRLIX_STREAM_URL env var when it serves /market/, so a new AFD host is
+      // a config change, not an image rebuild. The literal below is the default
+      // for static hosting. Same-origin /stream is the fallback.
+      streamUrl: "https://strlix-stream-euapehawccbcbuer.z02.azurefd.net",
       streamFallback: "/stream",
       viewerRev: "20260923-feel1",
       payMode: "test",
