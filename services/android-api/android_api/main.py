@@ -41,9 +41,11 @@ chat_limiter = RateLimiter(per_minute=settings.chat_rate_per_min)
 _llm: Optional[AndroidLLM] = None
 STARTED = time.time()
 
+VERSION = "0.1.1"
+
 app = FastAPI(
     title="Strlix android-api",
-    version="0.1.0",
+    version=VERSION,
     description="Phone-first chat/voice/Accessibility backend. No ADB stream.",
 )
 app.add_middleware(
@@ -52,6 +54,43 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Public edge prefixes. Azure Front Door forwards /android/* and /agent/* on the
+# market domain to this app without rewriting the path, so the app accepts the
+# same routes under those prefixes ("/android/v1/chat" == "/v1/chat").
+# Override with ANDROID_API_PATH_PREFIXES="/android,/agent" (comma separated).
+EDGE_PREFIXES = tuple(
+    p.rstrip("/")
+    for p in os.environ.get("ANDROID_API_PATH_PREFIXES", "/android,/agent").split(",")
+    if p.strip().startswith("/") and p.strip() != "/"
+)
+
+
+class EdgePrefixMiddleware:
+    """Strip a known public prefix before routing (pure ASGI, keeps WebSockets/streams)."""
+
+    def __init__(self, inner, prefixes: tuple[str, ...]):
+        self.inner = inner
+        self.prefixes = prefixes
+
+    async def __call__(self, scope, receive, send):
+        if scope.get("type") in ("http", "websocket"):
+            path = scope.get("path") or ""
+            for pre in self.prefixes:
+                if path == pre or path.startswith(pre + "/"):
+                    new_path = path[len(pre):] or "/"
+                    scope = dict(scope)
+                    scope["path"] = new_path
+                    raw = scope.get("raw_path")
+                    if isinstance(raw, (bytes, bytearray)) and raw.startswith(pre.encode()):
+                        scope["raw_path"] = bytes(raw[len(pre):]) or b"/"
+                    scope["root_path"] = (scope.get("root_path") or "") + pre
+                    break
+        await self.inner(scope, receive, send)
+
+
+app.add_middleware(EdgePrefixMiddleware, prefixes=EDGE_PREFIXES)
 
 
 def get_llm() -> AndroidLLM:
@@ -105,7 +144,8 @@ async def health():
     return {
         "ok": True,
         "service": "android-api",
-        "version": "0.1.0",
+        "version": VERSION,
+        "edge_prefixes": list(EDGE_PREFIXES),
         "uptime_s": round(time.time() - STARTED, 1),
         "deployment": os.environ.get("AZURE_OPENAI_DEPLOYMENT"),
         "endpoint_set": bool(os.environ.get("AZURE_OPENAI_ENDPOINT")),

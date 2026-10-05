@@ -1,6 +1,6 @@
 [project]
 name = "strlix-android-api"
-version = "0.1.0"
+version = "0.1.1"
 description = "Strlix Android in-phone backend — chat, voice, agent tools (NO ADB stream)"
 requires-python = ">=3.11"
 dependencies = [
