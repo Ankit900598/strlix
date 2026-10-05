@@ -9,10 +9,10 @@ from playwright.async_api import async_playwright
 
 LABEL = sys.argv[1] if len(sys.argv) > 1 else "run"
 TAG = sys.argv[2] if len(sys.argv) > 2 else str(int(time.time()))
-STREAM = f"https://strlix-stream-euapehawccbcbuer.z02.azurefd.net/?v={TAG}"
-OUT = f"/workspace/strlix-overnight/sprint-1005/{LABEL}/"
+STREAM = os.environ.get("STRLIX_STREAM_URL", "https://strlix-stream-euapehawccbcbuer.z02.azurefd.net").rstrip("/") + f"/?v={TAG}"
+OUT = os.path.join(os.environ.get("STRLIX_E2E_OUT", "/tmp/strlix-e2e"), LABEL) + "/"
 subprocess.run(["mkdir", "-p", OUT])
-SSH = ["ssh", "-i", __import__("os").environ.get("STRLIX_VM_KEY", "~/.ssh/strlix-vm.pem"), "-o", "StrictHostKeyChecking=accept-new",
+SSH = ["ssh", "-i", os.path.expanduser(os.environ.get("STRLIX_VM_KEY", "~/.ssh/strlix-vm.pem")), "-o", "StrictHostKeyChecking=accept-new",
        "-o", "ConnectTimeout=15", __import__("os").environ["STRLIX_VM"]]
 DW, DH = 1080, 2400
 R = {"label": LABEL, "url": STREAM, "steps": {}, "lat": {}, "console_errors": []}
@@ -160,7 +160,7 @@ async def main():
     # --- setup on device (not user input): clean Chrome to 2 tabs, launcher home
     adb("am force-stop com.android.chrome"); adb("input keyevent HOME")
     async with async_playwright() as p:
-        b = await p.chromium.launch(executable_path="/usr/bin/google-chrome", args=["--autoplay-policy=no-user-gesture-required"])
+        b = await p.chromium.launch(executable_path=__import__("os").environ.get("CHROME", "/usr/bin/google-chrome"), args=["--autoplay-policy=no-user-gesture-required"])
         ctx = await b.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True,
                                   user_agent="Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Mobile Safari/537.36")
         page = await ctx.new_page()
@@ -283,12 +283,26 @@ async def main():
         lat["recents_button"] = await ph.latency(m, 3.0)
         r2 = dev_state(); await ph.shot("08b-recents-button")
         R["steps"]["recents_button"] = {"rail": used, "overview": r2["overview"], "top": r2["top"], "ok": r2["overview"]}
+        # Let the overview finish opening before swiping the card (the swipe used to land mid-animation).
+        for _ in range(12):
+            if dev_state()["overview"]: break
+            await asyncio.sleep(0.25)
+        await asyncio.sleep(1.0)
         m = await ph.mark(); await ph.drag(540, 1300, 540, 300, ms=250)
         lat["recents_dismiss"] = await ph.latency(m, 2.0)
         await asyncio.sleep(3)
         after_chrome = chrome_tasks(); r3 = dev_state(); await ph.shot("09-after-dismiss")
+        first_ok = before_chrome == "1" and after_chrome == "0"
+        retried = None
+        if not first_ok and r3["overview"] and after_chrome == before_chrome:
+            # Launcher "poisoning": a fling within ~1 s of a failed one can be swallowed while the card
+            # snaps back (VM bench: 20/22 at 0.3 s, 8/8 at 1.5 s). Settle, then retry once, the way a person would.
+            await asyncio.sleep(1.5)
+            await ph.drag(540, 1300, 540, 300, ms=250); await asyncio.sleep(3)
+            after_chrome = chrome_tasks(); retried = after_chrome == "0"
         R["steps"]["recents_dismiss"] = {"chrome_tasks_before": before_chrome, "chrome_tasks_after": after_chrome,
-                                         "overview_after": r3["overview"], "ok": before_chrome == "1" and after_chrome == "0"}
+                                         "overview_after": r3["overview"], "first_try": first_ok, "retried_ok": retried,
+                                         "ok": first_ok or bool(retried)}
         adb("input keyevent HOME")
         R["hud"] = await page.evaluate("(document.getElementById('streamHud')||{}).textContent||''")
         await b.close()

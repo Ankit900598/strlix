@@ -17,7 +17,7 @@ HOOK = """
 async def main():
     res = []
     async with async_playwright() as p:
-        b = await p.chromium.launch(executable_path="/usr/bin/google-chrome")
+        b = await p.chromium.launch(executable_path=__import__("os").environ.get("CHROME", "/usr/bin/google-chrome"))
         ctx = await b.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
         for k in range(int(sys.argv[2]) if len(sys.argv) > 2 else 3):
             pg = await ctx.new_page(); await pg.add_init_script(HOOK)
