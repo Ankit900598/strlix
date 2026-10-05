@@ -159,3 +159,14 @@ Prefer **android-api** for chat (no ADB stream on this path):
 | Emulator → legacy pilot | `http://10.0.2.2:8787` (still works) |
 
 `POST /chat` and `POST /v1/chat` both work on android-api. Desktop viewers should use **desktop-api :8789**, not the phone chat API.
+
+## API address (build-time and runtime)
+
+The public android-api base URL is not hard-coded in Java. Order of precedence:
+
+1. Runtime override, stored in app prefs: `adb shell am start -n com.zevi.agent/.MainActivity --es strlix_api_url https://host/android` (clear it with `--es strlix_api_url '""'`).
+2. Build-time: `./gradlew assembleDebug -Pstrlix.androidApiUrl=https://host/android` or env `STRLIX_ANDROID_API_URL`.
+3. Default: the AFD edge `https://strlix-edge-gjfueaccgwg9gmfv.z02.azurefd.net/android`.
+
+If it's unreachable, the client falls back to the adb-reverse/emulator URLs (127.0.0.1:8788, 10.0.2.2:8788, :8787).
+Build needs JDK 17 and `local.properties` with `sdk.dir=...` (not committed).

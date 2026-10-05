@@ -26,6 +26,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        ApiConfig.init(this);
+        ApiConfig.applyIntent(this, getIntent());
         pilot = new PilotClient();
         pilotStatus = findViewById(R.id.pilotStatus);
         pilotUrl = findViewById(R.id.pilotUrl);
@@ -76,6 +78,10 @@ public class MainActivity extends AppCompatActivity {
 
     private void handleLaunchExtras(Intent intent) {
         if (intent == null) return;
+        if (ApiConfig.applyIntent(this, intent)) {
+            pilot = new PilotClient();
+            android.util.Log.i("StrlixPilot", "api override -> " + ApiConfig.publicUrl());
+        }
         if (intent.getBooleanExtra("set_demo_wallpaper", false)) {
             String path = intent.getStringExtra("wallpaper_path");
             if (path == null || path.isEmpty()) {
