@@ -1,0 +1,7 @@
+# /etc/systemd/system/strlix-watchdog.service (triggered by strlix-watchdog.timer)
+[Unit]
+Description=Strlix phone stack watchdog
+[Service]
+Type=oneshot
+Environment=ADB_BIN=/usr/local/bin/adb
+ExecStart=/home/azureuser/strlix/scripts/phone-watchdog.sh

@@ -1,0 +1,17 @@
+# /etc/systemd/system/strlix-phone-ready.service
+# Runs after every emulator start (PartOf/After): waits for boot, applies the
+# guest profile, wakes + unlocks the screen, goes Home.
+[Unit]
+Description=Strlix phone ready (wait for boot, apply guest profile)
+After=strlix-emulator.service
+BindsTo=strlix-emulator.service
+PartOf=strlix-emulator.service
+[Service]
+Type=oneshot
+User=azureuser
+Environment=ADB_BIN=/usr/local/bin/adb
+ExecStart=/home/azureuser/strlix/scripts/phone-ready.sh emulator-5554
+TimeoutStartSec=300
+RemainAfterExit=yes
+[Install]
+WantedBy=strlix-emulator.service
