@@ -9,7 +9,7 @@ HOOK = """(() => { window.__sendLag = []; const S = WebSocket.prototype.send; We
   return S.call(this, d); }; })();"""
 async def main():
     async with async_playwright() as p:
-        b = await p.chromium.launch(executable_path="/usr/bin/google-chrome", args=os.environ.get("CARGS","").split())
+        b = await p.chromium.launch(executable_path=__import__("os").environ.get("CHROME", "/usr/bin/google-chrome"), args=os.environ.get("CARGS","").split())
         ctx = await b.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
         page = await ctx.new_page(); await page.add_init_script(HOOK); cdp = await ctx.new_cdp_session(page); ph = Phone(page, cdp)
         adb("input keyevent HOME")
