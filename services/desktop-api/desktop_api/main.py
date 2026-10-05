@@ -629,10 +629,14 @@ async def ws_h264(ws: WebSocket):
                     if action != "MOVE":
                         _allow_input(ip)
                     broker.note_input()
+                    t_recv = time.time()
                     await _pace_motion(pace, action, client_t)
                     t0 = time.time()
                     try:
                         result = await adb.motion(action, x, y)
+                        if action == "DOWN" and msg.get("trace"):
+                            # Opt-in latency trace: reported after the first AU that follows the tap.
+                            pace["taptrace"] = {"t": client_t, "recv": t_recv, "paced": t0, "inj": time.time(), "aus": []}
                         await ws.send_json({
                             "type": "motion_ack",
                             "ok": True,
@@ -697,6 +701,21 @@ async def ws_h264(ws: WebSocket):
                 au = getter.result()
                 sub.took(au)
                 await ws.send_bytes(pack_au(au))
+                tr = pace.get("taptrace")
+                if tr is not None and au.wall >= tr["inj"]:
+                    tr["aus"].append((au.wall, time.time(), au.size))
+                    if len(tr["aus"]) >= 3:
+                        pace.pop("taptrace", None)
+                        r = lambda a, b: round((a - b) * 1000, 1)
+                        await ws.send_json({
+                            "type": "tap_trace", "t": tr["t"],
+                            "pace_ms": r(tr["paced"], tr["recv"]),
+                            "inject_ms": r(tr["inj"], tr["paced"]),
+                            "inj_to_au_ms": [r(w, tr["inj"]) for w, _, _ in tr["aus"]],
+                            "au_to_send_ms": [r(sd, w) for w, sd, _ in tr["aus"]],
+                            "au_bytes": [n for _, _, n in tr["aus"]],
+                            "server_recv": tr["recv"],
+                        })
             stop_wait.cancel()
     except WebSocketDisconnect:
         pass
