@@ -74,6 +74,12 @@ H264_MAX_CLIENTS = int(os.environ.get("H264_MAX_CLIENTS", "12"))
 # (screenrecord's own --time-limit 0).
 H264_SEGMENT_S = int(os.environ.get("H264_SEGMENT_S", "15"))
 H264_IDLE_STOP_S = float(os.environ.get("H264_IDLE_STOP_S", "10"))
+# perf1: keep the encoder running (and the GOP replay buffer fresh) for this
+# long after the last viewer leaves or after warm() at service start, so the
+# next "Open phone" joins instantly from the GOP instead of cold-starting
+# scrcpy (~550-700 ms). A static screen produces no frames, so a warm idle
+# encoder costs ~nothing. 0 = old behaviour (stop after H264_IDLE_STOP_S).
+H264_KEEP_WARM_S = float(os.environ.get("H264_KEEP_WARM_S", "0"))
 # GOP replay budget for late joiners.
 H264_GOP_MAX_BYTES = int(os.environ.get("H264_GOP_MAX_BYTES", str(3 * 1024 * 1024)))
 H264_GOP_MAX_AUS = int(os.environ.get("H264_GOP_MAX_AUS", "600"))
@@ -394,6 +400,7 @@ class H264Broker:
         self._watchdog_task: Optional[asyncio.Task] = None
         self._last_input_at = 0.0
         self._input_recovered_at = 0.0
+        self._warm_until = 0.0
         self._proc: Optional[asyncio.subprocess.Process] = None
         self._stopping = False
         self._restart = asyncio.Event()
@@ -534,6 +541,8 @@ class H264Broker:
             "frame_age_ms": round((now - self._last_au_at) * 1000) if self._last_au_at else None,
             "uptime_s": round(now - self._started_at, 1) if self._started_at else None,
             "gop_valid": self._gop_valid,
+            "keep_warm_s": H264_KEEP_WARM_S,
+            "warm_left_s": max(0, round(self._warm_until - time.time())),
             "gop_aus": len(self._gop),
             "gop_kb": round(self._gop_bytes / 1024),
             "idle_flushes": self._idle_flushes,
@@ -575,6 +584,19 @@ class H264Broker:
             sub.closed = True
             sub.drain()
             self._subs.discard(sub)
+            if not self._subs and H264_KEEP_WARM_S > 0:
+                self._warm_until = time.time() + H264_KEEP_WARM_S
+
+    def warm(self) -> bool:
+        """Start the encoder with no viewer so the first join is instant."""
+        if not self.enabled or H264_KEEP_WARM_S <= 0:
+            return False
+        self._warm_until = time.time() + H264_KEEP_WARM_S
+        self._ensure_task()
+        return True
+
+    def _warm(self) -> bool:
+        return time.time() < self._warm_until
 
     def _prime(self, sub: Subscriber) -> None:
         """Give a joiner something decodable: replay the GOP, else force an IDR.
@@ -721,7 +743,7 @@ class H264Broker:
         self._started_at = time.time()
         try:
             while not self._stopping:
-                if not self._subs:
+                if not self._subs and not self._warm():
                     # Nobody watching: let the encoder go so the device is idle.
                     idle_deadline = time.time() + self.idle_stop
                     while not self._subs and time.time() < idle_deadline and not self._stopping:
@@ -755,7 +777,7 @@ class H264Broker:
             self._kill_proc()
             self._task = None
             # Viewers still attached and we exited unexpectedly: come back.
-            if not self._stopping and self._subs:
+            if not self._stopping and (self._subs or self._warm()):
                 self._restarts += 1
                 self._task = asyncio.create_task(self._run(), name="h264-producer")
 

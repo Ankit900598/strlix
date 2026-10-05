@@ -3,6 +3,36 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <script>
+    // perf1: open the H.264 socket from the first bytes of the page so the
+    // WebSocket handshake (~0.8 s through AFD from far away) overlaps the HTML
+    // download instead of starting after it. h264Connect() adopts this socket
+    // (same URL rules as mediaWsUrl) and replays anything that arrived early.
+    (function () {
+      try {
+        if (!('VideoDecoder' in window) || !('WebSocket' in window)) return;
+        var q = new URLSearchParams(location.search);
+        if (q.get('h264') === '0' || document.visibilityState === 'hidden') return;
+        var raw = (q.get('ws') || '').trim().replace(/\/$/, '');
+        if (raw.indexOf('https://') === 0) raw = 'wss://' + raw.slice(8);
+        else if (raw.indexOf('http://') === 0) raw = 'ws://' + raw.slice(7);
+        var p = location.pathname || '/';
+        var prefix = (p === '/stream' || p.indexOf('/stream/') === 0) ? '/stream' : '';
+        var url = raw ? raw + '/ws/h264'
+          : (location.protocol === 'https:' ? 'wss' : 'ws') + '://' + location.host + prefix + '/ws/h264';
+        var ws = new WebSocket(url);
+        ws.binaryType = 'arraybuffer';
+        var early = { ws: ws, url: url, buf: [], at: performance.now() };
+        ws.onmessage = function (e) { early.buf.push(e.data); };
+        ws.onclose = function () { early.closed = true; };
+        window.__strlixEarlyH264 = early;
+        // Never leak it if the viewer decides not to use H.264.
+        setTimeout(function () {
+          if (window.__strlixEarlyH264 === early) { try { ws.close(1000, 'unused'); } catch (_) {} window.__strlixEarlyH264 = null; }
+        }, 15000);
+      } catch (_) {}
+    })();
+  </script>
   <title>Strlix — Cloud Phone</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -1230,9 +1260,18 @@
     function h264Connect() {
       if (h264.giveUp || h264.ws) return;
       let ws;
-      try {
-        ws = new WebSocket(mediaWsUrl('/ws/h264'));
-      } catch (e) { h264Fail('construct: ' + e.message); return; }
+      let earlyBuf = null;
+      const early = window.__strlixEarlyH264;
+      window.__strlixEarlyH264 = null;
+      if (early && !early.closed && early.ws.readyState <= 1 && early.url === mediaWsUrl('/ws/h264')) {
+        ws = early.ws;                 // perf1: handshake already in flight / done
+        earlyBuf = early.buf;
+      } else {
+        if (early) { try { early.ws.close(1000, 'unused'); } catch (_) {} }
+        try {
+          ws = new WebSocket(mediaWsUrl('/ws/h264'));
+        } catch (e) { h264Fail('construct: ' + e.message); return; }
+      }
       ws.binaryType = 'arraybuffer';
       h264.ws = ws;
       h264.closing = false;
@@ -1246,6 +1285,11 @@
           h264Feed(ev.data);
         }
       };
+      if (earlyBuf && earlyBuf.length) {
+        // Replay what arrived before the viewer script was ready (hello, GOP).
+        const items = earlyBuf.splice(0);
+        for (const data of items) ws.onmessage({ data });
+      }
       ws.onerror = () => {};
       ws.onclose = (ev) => {
         h264.ws = null;
@@ -1350,6 +1394,8 @@
       if (h264.dec && h264.codec === codec && h264.dec.state === 'configured') return;
       h264TeardownDecoder();
       const config = { codec, optimizeForLatency: true, hardwareAcceleration: 'no-preference' };
+      h264.configuring = true;
+      h264.preAu = [];
       try {
         if (window.VideoDecoder.isConfigSupported) {
           const probe = await window.VideoDecoder.isConfigSupported(config);
@@ -1365,11 +1411,34 @@
         h264.config = config;
         h264.needKey = true;
       } catch (e) { h264Fail('configure: ' + e.message); }
+      finally {
+        h264.configuring = false;
+        const backlog = h264.preAu || [];
+        h264.preAu = [];
+        if (h264.dec && h264.dec.state === 'configured') {
+          // Start from the newest key AU in the backlog (older ones are moot).
+          let start = -1;
+          for (let i = backlog.length - 1; i >= 0; i--) {
+            if ((new DataView(backlog[i]).getUint8(1) & 1) === 1) { start = i; break; }
+          }
+          if (start >= 0) for (let i = start; i < backlog.length; i++) h264Feed(backlog[i]);
+        }
+      }
     }
 
     function h264Feed(buf) {
       const dec = h264.dec;
-      if (!dec || dec.state !== 'configured' || buf.byteLength <= AU_HEADER_BYTES) return;
+      if (buf.byteLength <= AU_HEADER_BYTES) return;
+      if (!dec || dec.state !== 'configured') {
+        // perf1: hello → configure() awaits isConfigSupported(); on a fast
+        // link (or GOP replay) the key AU lands first and used to be dropped,
+        // leaving the viewer waiting for the next IDR. Hold a short backlog.
+        if (h264.configuring) {
+          (h264.preAu || (h264.preAu = [])).push(buf);
+          if (h264.preAu.length > 240) h264.preAu.shift();
+        }
+        return;
+      }
       const dv = new DataView(buf);
       const key = (dv.getUint8(1) & 1) === 1;
       const ts = dv.getFloat64(8, true);
@@ -2391,7 +2460,7 @@
       // gen must be a real number: NaN === NaN is false and silently drops every decoded frame.
       gen: 0, packets: 0, played: 0, healthy: 0, channels: 2, sampleRate: 48000,
       armed: false, wantPlay: true,
-      viewerBuild: '20261001-normal1',
+      viewerBuild: '20261005-perf1',
     };
 
     function mediaWsUrl(path) {

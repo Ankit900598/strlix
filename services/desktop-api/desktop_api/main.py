@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import gzip
 import os
 import sys
 import time
@@ -63,6 +64,25 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.on_event("startup")
+async def _warm_encoder() -> None:
+    """perf1: start the H.264 encoder at boot (H264_KEEP_WARM_S>0) once adb sees the phone."""
+    async def go() -> None:
+        # Wait for a fully booted guest; starting scrcpy earlier only racks up
+        # failed segments (the producer backs off and can mark itself unavailable).
+        for _ in range(150):
+            try:
+                r = await adb.shell("getprop sys.boot_completed")
+                if (r.get("stdout") or "").strip() == "1":
+                    await asyncio.sleep(3)  # let the launcher settle
+                    adb.h264.warm()
+                    return
+            except Exception:  # noqa: BLE001 - adb/phone still coming up
+                pass
+            await asyncio.sleep(2)
+    asyncio.create_task(go())
+
 
 static_dir = ROOT / "static"
 if static_dir.is_dir():
@@ -163,15 +183,30 @@ class BindRequest(BaseModel):
     ttl_s: int = Field(default=3600, ge=60, le=86400)
 
 
+_INDEX_CACHE: dict[str, Any] = {}
+
+
 @app.get("/")
-async def index():
-    """Serve the existing phone-first viewer (same static UI as pilot)."""
+async def index(request: Request):
+    """Serve the phone-first viewer, gzip-compressed when the client allows it.
+
+    perf1: the single-file viewer is ~180 KB. AFD forwards it uncompressed
+    (route caching/compression is off for the stream endpoint), which costs
+    several TCP round trips on a long path (~0.9 s from the US test box).
+    gzip makes it ~45 KB. Bytes are cached per file mtime.
+    """
     index_path = static_dir / "index.html"
     if not index_path.is_file():
         return HTMLResponse("<h1>desktop-api</h1><p>static/index.html missing</p>")
-    # Inject a small banner comment — page still talks to same-origin paths.
-    html = index_path.read_text(encoding="utf-8")
-    return HTMLResponse(html)
+    mtime = index_path.stat().st_mtime
+    if _INDEX_CACHE.get("mtime") != mtime:
+        raw = index_path.read_bytes()
+        _INDEX_CACHE.update(mtime=mtime, raw=raw, gz=gzip.compress(raw, compresslevel=9, mtime=0))
+    headers = {"Cache-Control": "no-cache", "Vary": "Accept-Encoding"}
+    if "gzip" in (request.headers.get("accept-encoding") or "").lower():
+        headers["Content-Encoding"] = "gzip"
+        return Response(_INDEX_CACHE["gz"], media_type="text/html; charset=utf-8", headers=headers)
+    return Response(_INDEX_CACHE["raw"], media_type="text/html; charset=utf-8", headers=headers)
 
 
 @app.get("/health")

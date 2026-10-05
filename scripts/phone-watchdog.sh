@@ -34,3 +34,8 @@ else
   n=$(bump api); echo "watchdog: desktop-api /health failing for ${n}s (limit ${API_FAIL_S}s)"
   if [ "$n" -ge "$API_FAIL_S" ]; then echo "watchdog: restarting strlix-desktop-api"; clear_ api; systemctl restart strlix-desktop-api; fi
 fi
+
+# perf1: a DHCP renew can rewrite the default route without initcwnd.
+if [ -x /home/azureuser/strlix/scripts/net-tune.sh ] && ! ip route show default | grep -q initcwnd; then
+  echo "watchdog: re-applying net-tune"; /home/azureuser/strlix/scripts/net-tune.sh || true
+fi

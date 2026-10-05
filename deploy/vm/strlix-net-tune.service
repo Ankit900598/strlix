@@ -1,0 +1,11 @@
+# /etc/systemd/system/strlix-net-tune.service (perf1) — see scripts/net-tune.sh
+[Unit]
+Description=Strlix TCP tuning (initcwnd/initrwnd on the default route)
+After=network-online.target
+Wants=network-online.target
+[Service]
+Type=oneshot
+ExecStart=/home/azureuser/strlix/scripts/net-tune.sh
+RemainAfterExit=yes
+[Install]
+WantedBy=multi-user.target
