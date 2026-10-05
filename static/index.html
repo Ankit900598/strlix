@@ -2023,7 +2023,19 @@
     let motionQueue = [];
     let motionBusy = false;
 
-    function enqueueMotion(action, x, y) {
+    // feel2: stamp motion with the OS event time (PointerEvent.timeStamp, same
+    // clock as performance.now()), not "when our handler got to run". When the
+    // main thread is busy decoding video, handlers run late and bunched; the
+    // server pacer replays our spacing, so handler-time stamps turned a quick
+    // flick into a slow drag + burst and Recents/tab swipes snapped back.
+    function evTime(ev) {
+      const now = performance.now();
+      const t = ev && ev.timeStamp;
+      return (typeof t === 'number' && t > 0 && t <= now + 5 && now - t < 1000) ? t : now;
+    }
+
+    function enqueueMotion(action, x, y, t) {
+      if (typeof t !== 'number') t = performance.now();
       // Soft-launch ADB motion accepts DOWN/MOVE/UP. Treat CANCEL as UP.
       if (action === 'CANCEL') action = 'UP';
       // UP must not sit behind a backlog of coalesced MOVEs.
@@ -2034,8 +2046,9 @@
       if (action === 'MOVE' && last && last.action === 'MOVE') {
         last.x = x;
         last.y = y;
+        last.t = t;
       } else {
-        motionQueue.push({ action: action, x: x, y: y });
+        motionQueue.push({ action: action, x: x, y: y, t: t });
       }
       pumpMotion();
     }
@@ -2056,7 +2069,7 @@
             action: item.action,
             x: item.x,
             y: item.y,
-            t: performance.now(),
+            t: typeof item.t === 'number' ? item.t : performance.now(),
           });
         }
         motionBusy = false;
@@ -2096,15 +2109,15 @@
       showRipple(ev.clientX, ev.clientY, { holdMs: 480 });
       interactiveUntil = Date.now() + 6000;
       // The game sees the press on pointerdown, not after the finger lifts.
-      if (ptrDown.usedMotion) enqueueMotion('DOWN', pt.x, pt.y);
+      if (ptrDown.usedMotion) enqueueMotion('DOWN', pt.x, pt.y, evTime(ev));
     }
 
-    function flushMove(gesture, pt) {
+    function flushMove(gesture, pt, t) {
       if (!gesture || !gesture.usedMotion || !pt) return;
       if (Math.hypot(pt.x - gesture.lastX, pt.y - gesture.lastY) < MOVE_MIN_PX) return;
       gesture.lastX = pt.x;
       gesture.lastY = pt.y;
-      enqueueMotion('MOVE', pt.x, pt.y);
+      enqueueMotion('MOVE', pt.x, pt.y, typeof t === 'number' ? t : (gesture.pendingT || undefined));
     }
 
     function onPtrMove(ev) {
@@ -2115,7 +2128,23 @@
       const pt = clientToDevice(ev.clientX, ev.clientY);
       if (!pt) return;
       ev.preventDefault();
+      // feel2: replay every coalesced sample with its own timestamp, so the
+      // phone sees the real finger path/speed even if this handler ran late.
+      if (motionViaWs() && typeof ev.getCoalescedEvents === 'function') {
+        let evs = [];
+        try { evs = ev.getCoalescedEvents() || []; } catch (_) {}
+        if (evs.length > 1) {
+          for (const ce of evs) {
+            const cp = clientToDevice(ce.clientX, ce.clientY);
+            if (cp) flushMove(ptrDown, cp, evTime(ce));
+          }
+          ptrDown.movedOnce = true;
+          ptrDown.pending = null;
+          return;
+        }
+      }
       ptrDown.pending = pt;
+      ptrDown.pendingT = evTime(ev);
       // First MOVE after DOWN: flush immediately (snappy drag start).
       if (!ptrDown.movedOnce) {
         ptrDown.movedOnce = true;
@@ -2173,9 +2202,10 @@
 
       if (start.usedMotion) {
         const slop = start.pointerType === 'touch' ? 28 : SWIPE_PX;
-        flushMove(start, start.pending || (clientDist >= slop ? end : null));
+        const tUp = evTime(ev);
+        flushMove(start, start.pending || (clientDist >= slop ? end : null), tUp);
         const up = clientDist < slop ? { x: start.x, y: start.y } : end;
-        enqueueMotion('UP', up.x, up.y);
+        enqueueMotion('UP', up.x, up.y, tUp);
         const label = clientDist < slop
           ? ('tap ' + start.x + ',' + start.y)
           : ('drag ' + start.x + ',' + start.y + ' → ' + end.x + ',' + end.y);
@@ -2460,7 +2490,7 @@
       // gen must be a real number: NaN === NaN is false and silently drops every decoded frame.
       gen: 0, packets: 0, played: 0, healthy: 0, channels: 2, sampleRate: 48000,
       armed: false, wantPlay: true,
-      viewerBuild: '20261005-perf1',
+      viewerBuild: '20261005-feel2',
     };
 
     function mediaWsUrl(path) {

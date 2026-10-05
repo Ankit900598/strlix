@@ -132,28 +132,62 @@ class TapRequest(BaseModel):
 # at the client's own spacing (msg "t") plus a small jitter buffer. DOWN is
 # never delayed, so tap latency is unchanged.
 MOTION_PLAYOUT_MS = float(os.getenv("MOTION_PLAYOUT_MS", "40"))
-MOTION_PACE_MAX_MS = float(os.getenv("MOTION_PACE_MAX_MS", "120"))
-_PACE_STATS: dict[str, Any] = {"playout_ms": MOTION_PLAYOUT_MS, "gestures": 0, "paced": 0, "late": 0, "late_max_ms": 0.0}
+MOTION_PACE_MAX_MS = float(os.getenv("MOTION_PACE_MAX_MS", "250"))
+# feel2: adaptive jitter buffer. A late MOVE used to be injected at once and so
+# were all following events whose (old) targets had passed -> a burst of MOVEs
+# a few ms apart right before UP, i.e. a wrong fling velocity. Now a late event
+# re-anchors the timeline (later events keep the client's spacing relative to
+# it) and the per-connection buffer grows toward the observed lateness
+# (capped at MOTION_PACE_MAX_MS, default 250 ms), decaying 10% per gesture.
+# On a clean link it stays at MOTION_PLAYOUT_MS (40 ms); DOWN is never delayed.
+# A/B on 5 Oct (5+5 Recents dismissals via AFD each): adaptive 6/10, fixed 6/10.
+# Cleaner injection traces but no measurable win, and it can delay DOWN (taps)
+# on jittery links, so it ships OFF by default. Turn on with MOTION_PACE_ADAPT=1.
+MOTION_PACE_ADAPT = os.getenv("MOTION_PACE_ADAPT", "0") in ("1", "true", "yes")
+_PACE_STATS: dict[str, Any] = {"playout_ms": MOTION_PLAYOUT_MS, "adaptive": MOTION_PACE_ADAPT, "gestures": 0,
+                               "paced": 0, "late": 0, "late_max_ms": 0.0, "buffer_ms": MOTION_PLAYOUT_MS, "last": []}
 
 
 async def _pace_motion(pace: dict, action: str, client_t: Any) -> None:
     if MOTION_PLAYOUT_MS <= 0 or not isinstance(client_t, (int, float)):
         return
     now = time.monotonic()
+    buf = pace.setdefault("buf", MOTION_PLAYOUT_MS)
     if action == "DOWN" or pace.get("srv") is None:
-        pace["srv"], pace["cli"] = now, float(client_t)
+        if MOTION_PACE_ADAPT:
+            pace["buf"] = buf = max(MOTION_PLAYOUT_MS, buf * 0.9)
+        # Shift the whole gesture by the adaptive part of the buffer (DOWN too):
+        # a DOWN injected at once followed by MOVEs 200+ ms later reads as
+        # "press and hold, then drag" and the launcher refused the swipe.
+        # On a clean link buf == MOTION_PLAYOUT_MS, so DOWN is not delayed.
+        extra = max(0.0, buf - MOTION_PLAYOUT_MS)
+        if extra > 0:
+            await asyncio.sleep(extra / 1000.0)
+            now = time.monotonic()
+        pace["srv"], pace["cli"], pace["t0"] = now - extra / 1000.0, float(client_t), now
+        pace["trace"] = [("D", 0, 0)]
         _PACE_STATS["gestures"] += 1
+        _PACE_STATS["buffer_ms"] = round(buf, 1)
+        return
+    cli_ms = float(client_t) - pace["cli"]
+    target = pace["srv"] + (cli_ms + buf) / 1000.0
+    wait = target - now
+    if wait > 0:
+        _PACE_STATS["paced"] += 1
+        await asyncio.sleep(min(wait, MOTION_PACE_MAX_MS / 1000.0))
     else:
-        target = pace["srv"] + (float(client_t) - pace["cli"]) / 1000.0 + MOTION_PLAYOUT_MS / 1000.0
-        wait = target - now
-        if wait > 0:
-            _PACE_STATS["paced"] += 1
-            await asyncio.sleep(min(wait, MOTION_PACE_MAX_MS / 1000.0))
-        else:
-            _PACE_STATS["late"] += 1
-            _PACE_STATS["late_max_ms"] = round(max(_PACE_STATS["late_max_ms"], -wait * 1000.0), 1)
+        late_ms = -wait * 1000.0
+        _PACE_STATS["late"] += 1
+        _PACE_STATS["late_max_ms"] = round(max(_PACE_STATS["late_max_ms"], late_ms), 1)
+        if MOTION_PACE_ADAPT:
+            pace["srv"] += late_ms / 1000.0          # re-anchor: keep spacing after this event
+            pace["buf"] = min(MOTION_PACE_MAX_MS, buf + late_ms + 10.0)
+    tr = pace.get("trace")
+    if tr is not None and len(tr) < 64:
+        tr.append((action[0], round(cli_ms), round((time.monotonic() - pace["t0"]) * 1000)))
     if action in ("UP", "CANCEL"):
         pace["srv"] = None
+        _PACE_STATS["last"] = tr or []
 
 
 class MotionRequest(BaseModel):
