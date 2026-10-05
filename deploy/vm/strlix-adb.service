@@ -1,0 +1,16 @@
+# /etc/systemd/system/strlix-adb.service
+# Own unit for the adb server. Before, the first adb call from desktop-api's
+# ExecStartPost forked the server *inside desktop-api's cgroup*, so every
+# desktop-api restart/crash also killed adb and the phone went "offline".
+[Unit]
+Description=Strlix adb server
+After=network.target
+Before=strlix-desktop-api.service strlix-phone-ready.service
+[Service]
+Type=simple
+User=azureuser
+ExecStart=/usr/local/bin/adb -P 5037 nodaemon server
+Restart=always
+RestartSec=2
+[Install]
+WantedBy=multi-user.target
