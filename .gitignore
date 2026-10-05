@@ -56,3 +56,7 @@ demo/overnight/uvicorn.log
 demo/scale/logs/
 *.log
 .claude/
+
+# python build artifacts
+build/
+*.egg-info/

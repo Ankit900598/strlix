@@ -14,7 +14,7 @@ android {
         versionName = "0.3.1-split"
         // Probe order (see PilotClient): Azure HTTPS primary, then localhost reverse / emulator gateway.
         // Keys never ship in the APK.
-        buildConfigField("String", "ANDROID_API_PUBLIC_URL", "\"https://ca-android-api.salmonrock-c8e120f0.eastus2.azurecontainerapps.io\"")
+        buildConfigField("String", "ANDROID_API_PUBLIC_URL", "\"https://strlix-edge-gjfueaccgwg9gmfv.z02.azurefd.net/android\"")
         buildConfigField("String", "ANDROID_API_URL", "\"http://127.0.0.1:8788\"")
         buildConfigField("String", "ANDROID_API_EMULATOR_URL", "\"http://10.0.2.2:8788\"")
         buildConfigField("String", "PILOT_BASE_URL", "\"http://127.0.0.1:8787\"")
