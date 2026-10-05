@@ -26,6 +26,10 @@
       <span class="pill free" id="payPill" title="Free first month. Stripe stays in test mode.">Free month</span>
       <span class="pill soft" id="sessionPill">Guest · no signup</span>
       <span class="pill soft latency" id="latencyChip" title="HTTP RTT to stream">RTT —</span>
+      <a class="btn ghost ms-signin" id="btnMsSignin" href="/v1/auth/entra/login?ret=%2Fmarket%2F" hidden>
+        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 21 21"><rect width="10" height="10" fill="#f25022"/><rect x="11" width="10" height="10" fill="#7fba00"/><rect y="11" width="10" height="10" fill="#00a4ef"/><rect x="11" y="11" width="10" height="10" fill="#ffb900"/></svg>
+        <span>Sign in with Microsoft</span>
+      </a>
       <button class="btn ghost" type="button" id="btnCatalog">Devices</button>
       <button class="btn primary" type="button" id="btnTry">Open phone</button>
     </div>
@@ -136,6 +140,7 @@
         <label class="sr-only" for="claimName">Name (optional)</label>
         <input id="claimName" type="text" autocomplete="name" maxlength="120" placeholder="Name (optional)" />
         <button class="btn primary" type="submit">Save rental</button>
+        <a class="btn ghost ms-signin" id="claimMsSignin" href="/v1/auth/entra/login?ret=%2Fmarket%2F" hidden>Use Microsoft</a>
         <button class="btn ghost" type="button" id="dismissClaim">Not now</button>
       </form>
       <p class="claim-message" id="claimMessage"></p>

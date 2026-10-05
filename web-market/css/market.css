@@ -651,3 +651,8 @@ body.phone-open { overflow: hidden; background: #000; }
   #phoneStage.open { animation: none; }
   .stream-boot .boot-spin { animation: none; }
 }
+
+/* Sign in with Microsoft */
+.btn.ms-signin { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
+.btn.ms-signin[hidden] { display: none; }
+@media (max-width: 520px) { .shell-meta .btn.ms-signin span { display: none; } }
